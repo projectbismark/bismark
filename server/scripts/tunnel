@@ -1,0 +1,63 @@
+#!/bin/sh
+# Script to create a SSH tunnel toward a specific Bismark box
+#
+# author: walter.dedonato@gatech.edu
+
+PORT="5353"
+
+# Help screen
+if [ ! $2 ]; then
+	echo "usage: $(basename $0) <box_id> <local port>"
+	echo "       $(basename $0) stop <port> [user]"
+	exit
+fi
+
+# Work as backpipe script
+if [ $2 == pipe ]; then
+        read c i
+        # echo "Box id: $i - Command: $c" > /dev/stderr
+
+        if [ $i == $1 ]; then
+                echo $3
+		exit 1
+        else
+                echo pong
+		exit 2
+        fi
+fi
+
+# Stop active tunnel
+if [ $1 == stop ]; then
+	[ $3 ] && u="$3@"
+	ssh ${u}127.0.0.1 -p $2 'kill $(ps a | awk "/ssh -N -R/{print \$1}" | head -1)'
+	echo "Tunnel closed"
+	exit
+fi
+
+# Listen for incoming UDP probes
+[ -e .bp ] || mkfifo .bp
+count=0
+while [ true ]; do
+	nc -vv -q0 -n -l -u -p $PORT <.bp | ./tunnel $1 pipe $2 >.bp
+	status=$?
+	[ $((count++)) -eq 30 ] && { echo "Box $1 not found"; exit; }
+	[ $status -eq 1 ] && break
+	[ $status -eq 2 ] && echo -n "."
+done
+
+# Check tunnel availability
+echo "Waiting for tunnel"
+count=0
+while [ true ]; do 
+	sleep 1
+	port=$(netstat -lnt | grep -c "127.0.0.1:$2")
+	if [ $((count++)) -eq 10 ]; then 
+		echo "error: Unable to estabilish tunnel"
+		break
+	elif [ $port -ge 1 ]; then
+		echo "Tunnel ready on 127.0.0.1:$2"
+		break
+	else
+		echo -n "." 
+	fi
+done

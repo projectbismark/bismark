@@ -1,0 +1,12 @@
+#!/bin/sh
+# Send UDP probes to bismark server and
+# open SSH tunnel if requested
+#
+# author walter.dedonato@gatech.edu
+
+SERVER="143.215.131.215"
+USER="bismark"
+PORT="5353"
+BOXID="1"
+
+echo 'ping $BOXID' | nc -nu -w1 $SERVER $PORT | (read p; [ $((p)) -gt 1024 ] && ssh -N -R $p:127.0.0.1:22 $USER@$SERVER)
