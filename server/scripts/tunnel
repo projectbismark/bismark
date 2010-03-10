@@ -4,11 +4,18 @@
 # author: walter.dedonato@gatech.edu
 
 PORT="5353"
+KEY="~/.ssh/bismark_srv"
+SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 # Help screen
 if [ ! $2 ]; then
-	echo "usage: $(basename $0) <box_id> <local port>"
-	echo "       $(basename $0) stop <port> [user]"
+	echo "usage: $(basename $0) <box_id> <local_port> [ssh_options]"
+	echo "       $(basename $0) stop <local_port> [username]"
+	echo
+	echo "Options:	box_id       Box identifier"
+	echo "          local_port   Box ssh server will be available on localhost using this port number" 
+	echo "          ssh_options  Ssh options used when connecting to the box"
+	echo "          username     Box ssh username" 
 	exit
 fi
 
@@ -17,19 +24,15 @@ if [ $2 == pipe ]; then
         read c i
         # echo "Box id: $i - Command: $c" > /dev/stderr
 
-        if [ $i == $1 ]; then
-                echo $3
-		exit 1
-        else
-                echo pong
-		exit 2
-        fi
+        [ $i == $1 ] && { echo $3; exit 1; }
+	echo pong
+	exit 2
 fi
 
 # Stop active tunnel
 if [ $1 == stop ]; then
 	[ $3 ] && u="$3@"
-	ssh ${u}127.0.0.1 -p $2 'kill $(ps a | awk "/ssh -N -R/{print \$1}" | head -1)'
+	ssh ${u}127.0.0.1 $SSH_OPTIONS -p $2 -i $KEY 'kill $(ps a | awk "/ssh -N -R/{print \$1}" | head -1)'
 	echo "Tunnel closed"
 	exit
 fi
@@ -53,7 +56,7 @@ while [ true ]; do
 	port=$(netstat -lnt | grep -c "127.0.0.1:$2")
 	if [ $((count++)) -eq 10 ]; then 
 		echo "error: Unable to estabilish tunnel"
-		break
+		exit
 	elif [ $port -ge 1 ]; then
 		echo "Tunnel ready on 127.0.0.1:$2"
 		break
@@ -61,3 +64,7 @@ while [ true ]; do
 		echo -n "." 
 	fi
 done
+
+# Connect to the ssh server on the box
+ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $KEY $3
+
