@@ -8,5 +8,14 @@ SERVER="143.215.131.215"
 USER="bismark"
 PORT="5353"
 BOXID="1"
- 
-echo "ping $BOXID" | nc -nu $SERVER $PORT | (read p; [ $((p)) -gt 1024 ] && ssh -y -i ~/.ssh/id_rsa -N -R $p:127.0.0.1:22 $USER@$SERVER)
+
+if [ $1 ]; then
+	echo "ping $BOXID"
+	sleep 2
+	exit
+fi 
+
+$0 ping | nc -nuc $SERVER $PORT > /tmp/port
+
+p=$(cat /tmp/port)
+[ $((p)) -gt 1024 ] && ssh -y -i ~/.ssh/bismark_box -N -R $p:127.0.0.1:22 $USER@$SERVER
