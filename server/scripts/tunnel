@@ -3,16 +3,17 @@
 #
 # author: walter.dedonato@gatech.edu
 
-PORT="5353"
-KEY="~/.ssh/bismark_srv"
+PORT=5353
+KEY=~/.ssh/bismark_srv
 SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+TIMEOUT=60
 
 # Help screen
 if [ ! $2 ]; then
 	echo "usage: $(basename $0) <box_id> <local_port> [ssh_options]"
 	echo "       $(basename $0) stop <local_port> [username]"
 	echo
-	echo "Options:	box_id       Box identifier"
+	echo "Options:  box_id       Box identifier"
 	echo "          local_port   Box ssh server will be available on localhost using this port number" 
 	echo "          ssh_options  Ssh options used when connecting to the box"
 	echo "          username     Box ssh username" 
@@ -22,7 +23,9 @@ fi
 # Work as backpipe script
 if [ $2 == pipe ]; then
         read c i
-        # echo "Box id: $i - Command: $c" > /dev/stderr
+	[ $c ] || exit 3
+
+        echo -e "\nBox $i [$c]" > /dev/stderr
 
         [ $i == $1 ] && { echo $3; exit 1; }
 	echo pong
@@ -32,25 +35,30 @@ fi
 # Stop active tunnel
 if [ $1 == stop ]; then
 	[ $3 ] && u="$3@"
-	ssh ${u}127.0.0.1 $SSH_OPTIONS -p $2 -i $KEY 'kill $(ps a | awk "/ssh -N -R/{print \$1}" | head -1)'
-	echo "Tunnel closed"
+	ssh ${u}127.0.0.1 $SSH_OPTIONS -p $2 -i $KEY 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
+	if [ $(netstat -lnt | grep -c "127.0.0.1:$2") -eq 0 ]; then
+		echo "Tunnel closed"
+	else
+		echo "Unable to kill ssh client"
+	fi
 	exit
 fi
 
 # Listen for incoming UDP probes
 [ -e .bp ] || mkfifo .bp
 count=0
+echo -n "Waiting for probe packet from box $1"
 while [ true ]; do
-	nc -vv -q0 -n -l -u -p $PORT <.bp | ./tunnel $1 pipe $2 >.bp
+	nc -w1 -q0 -nlu -p $PORT <.bp 2>/dev/null | ./tunnel $1 pipe $2 >.bp
 	status=$?
-	[ $((count++)) -eq 30 ] && { echo "Box $1 not found"; exit; }
+	[ $((count++)) -eq $TIMEOUT ] && { echo -e "\nBox $1 not found"; exit; }
 	[ $status -eq 1 ] && break
-	[ $status -eq 2 ] && echo -n "."
+	[ $status -gt 1 ] && echo -n "."
 done
 
 # Check tunnel availability
-echo "Waiting for tunnel"
 count=0
+echo "Waiting for tunnel creation"
 while [ true ]; do 
 	sleep 1
 	port=$(netstat -lnt | grep -c "127.0.0.1:$2")
@@ -58,7 +66,7 @@ while [ true ]; do
 		echo "error: Unable to estabilish tunnel"
 		exit
 	elif [ $port -ge 1 ]; then
-		echo "Tunnel ready on 127.0.0.1:$2"
+		echo -e "\nTunnel ready on 127.0.0.1:$2"
 		break
 	else
 		echo -n "." 
