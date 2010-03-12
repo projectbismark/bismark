@@ -1,0 +1,110 @@
+#!/bin/sh
+# Bismark Box management script
+#
+# author: walter.dedonato@unina.it
+
+# Options
+PROBE_PORT=5353
+PROBE_TIMEOUT=60
+SSH_KEY=~/.ssh/bismark_srv
+SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_PORT_FWD_WAIT=60
+
+# Help screen
+function help() 
+{
+	echo "Syntax:"
+	echo ""
+	echo "    $(basename $0) [options] <command>"
+	echo ""
+	echo "Commands:"
+	echo ""
+	echo "    tunnel  <box_id> <on|off>    Open/Close a tunnel to <box_id> using SSH port forwarding"
+	echo ""
+	echo "    console <box_id>             Open a console on <box_id> over the SSH tunnel"
+	echo ""
+	echo "    exec    <box_id> <command>   Execute a shell command on <box_id>"
+	echo ""
+	echo "    info    <box_id>             Print some information about <box_id>"
+	echo ""
+	echo "    list                         List available boxes and tunnels"
+	echo ""
+	echo "Options:"
+	echo ""
+	echo "    -p <fwd_port>    SSH tunnel port number" 
+	echo "    -o <ssh_opts>    Additional SSH options"
+	echo "    -t <timeout>     Max time to wait for probe packets"
+	exit
+}
+
+# Reply to probe packet
+# $1 = reply command
+# $2 = reply value
+function probe_reply()
+{
+	# Read probe packet
+	read id cmd
+	# Timeout
+	[ $id ] || exit 1
+
+	echo -e "\nBox $id [$cmd]" > /dev/stderr
+
+	# If box_id matches
+	[ $i == $1 ] && { echo $1 $2; exit 0; }
+	# Otherwise
+	echo pong; exit 2
+}
+
+# Stop active tunnel
+function tunnel_off()
+{
+	ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $SSH_KEY 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
+	if [ $(netstat -lnt | grep -c "127.0.0.1:$2") -eq 0 ]; then
+		echo "Tunnel closed"
+	else
+		echo "Unable to kill SSH client"
+	fi
+}
+
+# Listen for incoming UDP probes
+# $1 = reply command
+# $2 = reply value
+function listen()
+{
+	[ -e /tmp/.bp ] || mkfifo /tmp/.bp
+	count=0
+	echo -n "Waiting for probe packet from box $1"
+	while [ true ]; do
+		nc -w1 -q0 -nlu -p $PORT </tmp/.bp 2>/dev/null | $0 reply $1 $2 >/tmp/.bp
+		status=$?
+		[ $((count++)) -eq $PROBE_TIMEOUT ] && { echo -e "\nBox $1 not found"; exit; }
+		[ $status -eq 0 ] && break
+		[ $status -gt 0 ] && echo -n "."
+	done
+}
+
+# Check tunnel availability
+function check_tunnel()
+{
+	count=0
+	echo "Waiting for tunnel creation"
+	while [ true ]; do 
+		sleep 1
+		port=$(netstat -lnt | grep -c "127.0.0.1:$2")
+		if [ $((count++)) -eq 10 ]; then 
+			echo "error: Unable to estabilish tunnel"
+			exit
+		elif [ $port -ge 1 ]; then
+			echo -e "\nTunnel ready on 127.0.0.1:$2"
+			break
+		else
+			echo -n "." 
+		fi
+	done
+}
+
+# Connect to the ssh server on the box
+function console()
+{
+	ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $SSH_KEY $3
+}

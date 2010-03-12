@@ -3,8 +3,9 @@
 #
 # author: walter.dedonato@gatech.edu
 
+# Options
 PORT=5353
-KEY=~/.ssh/bismark_srv
+SSH_KEY=~/.ssh/bismark_srv
 SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 TIMEOUT=60
 
@@ -13,10 +14,10 @@ if [ ! $2 ]; then
 	echo "usage: $(basename $0) <box_id> <local_port> [ssh_options]"
 	echo "       $(basename $0) stop <local_port> [username]"
 	echo
-	echo "Options:  box_id       Box identifier"
-	echo "          local_port   Box ssh server will be available on localhost using this port number" 
-	echo "          ssh_options  Ssh options used when connecting to the box"
-	echo "          username     Box ssh username" 
+	echo "Options:  <box_id>       Box identifier"
+	echo "          <local_port>   Box ssh server will be available on localhost using this port number" 
+	echo "          [ssh_options]  Ssh options used when connecting to the box"
+	echo "          [username]     Box ssh username" 
 	exit
 fi
 
@@ -35,7 +36,7 @@ fi
 # Stop active tunnel
 if [ $1 == stop ]; then
 	[ $3 ] && u="$3@"
-	ssh ${u}127.0.0.1 $SSH_OPTIONS -p $2 -i $KEY 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
+	ssh ${u}127.0.0.1 $SSH_OPTIONS -p $2 -i $SSH_KEY 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
 	if [ $(netstat -lnt | grep -c "127.0.0.1:$2") -eq 0 ]; then
 		echo "Tunnel closed"
 	else
@@ -74,5 +75,5 @@ while [ true ]; do
 done
 
 # Connect to the ssh server on the box
-ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $KEY $3
+ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $SSH_KEY $3
 
