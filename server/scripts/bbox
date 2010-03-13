@@ -8,103 +8,309 @@ PROBE_PORT=5353
 PROBE_TIMEOUT=60
 SSH_KEY=~/.ssh/bismark_srv
 SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-SSH_PORT_FWD_WAIT=60
+SSH_PORT_FWD_WAIT=20
+TUNNELS_DB=~/.tunnels.db
+BBOX_DB=~/.bbox.db
+SCRIPT=$0
 
 # Help screen
+# $1 = command
 function help() 
 {
-	echo "Syntax:"
-	echo ""
-	echo "    $(basename $0) [options] <command>"
-	echo ""
-	echo "Commands:"
-	echo ""
-	echo "    tunnel  <box_id> <on|off>    Open/Close a tunnel to <box_id> using SSH port forwarding"
-	echo ""
-	echo "    console <box_id>             Open a console on <box_id> over the SSH tunnel"
-	echo ""
-	echo "    exec    <box_id> <command>   Execute a shell command on <box_id>"
-	echo ""
-	echo "    info    <box_id>             Print some information about <box_id>"
-	echo ""
-	echo "    list                         List available boxes and tunnels"
-	echo ""
-	echo "Options:"
-	echo ""
-	echo "    -p <fwd_port>    SSH tunnel port number" 
-	echo "    -o <ssh_opts>    Additional SSH options"
-	echo "    -t <timeout>     Max time to wait for probe packets"
+	awk "/^ *$1/{ print }" <<-end
+	Syntax:
+
+	    $(basename $0) [options] <command>
+	
+	Commands:
+	
+	    tunnel  <box_id> <on|off>    Open/Close a tunnel to <box_id> using SSH port forwarding
+	
+	    console <box_id>             Open a console on <box_id> over the SSH tunnel
+	
+	    exec    <box_id> <command>   Execute a shell command on <box_id>
+	
+	    info    <box_id>             Print some information about <box_id>
+	
+	    list                         List available boxes and tunnels
+	
+	Options:
+	
+	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
+	    -o <ssh_opts>    Additional SSH options
+	    -p <fwd_port>    SSH tunnel port number (default: random)"
+	    -t <timeout>     Max seconds to wait for probe packets (default: $PROBE_TIMEOUT)
+	end
 	exit
 }
 
+# Parse command line
+function parse()
+{
+	# Parse options
+	while getopts 'l:o:p:t:' flag; do
+		case $flag in
+		l)
+			PROBE_PORT=$OPTARG
+		;;
+		o)
+			SSH_OPTIONS+=" $OPTARG"
+		;;
+		p)
+			FWD_PORT=$OPTARG
+		;;
+		t)
+			PROBE_TIMEOUT=$OPTARG
+		;;
+		*)
+			echo "Unknown option: $flag $OPTARG"
+			help
+		;;
+		esac
+	done
+	shift $(( OPTIND - 1 ))	
+	
+	# Parse commands
+	case $1 in
+	tunnel)
+		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help tunnel; }
+		[ $3 ] || { echo -e "Missing parameter: on|off\n"; help tunnel; }
+		[ $3 == "on" ] && start_tunnel $2
+		[ $3 == "off" ] && stop_tunnel $2
+	;;
+	console)
+		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help console; }
+		console $2
+	;;
+	exec)
+		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help exec; }
+		[ $3 ] || { echo -e "Missing parameter: command\n"; help exec; }
+		console $2 $3
+	;;
+	info)
+		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help info; }
+		info $2
+	;;
+	list)	
+		list
+	;;
+	*)
+		[ $1 ] && echo "Unknown command: $1"
+		help
+	;;
+	esac
+}
+
+# Delete DB row
+# $1 = DB
+# $2 = key
+function db_delete()
+{
+	ed $1 &> /dev/null <<-end
+		/^$2\>/
+		d
+		w
+		q
+	end
+}
+
+# Update DB row
+# $1 = DB
+# $2 = key
+# $* = other columns
+function db_update()
+{
+	db_delete $1 $2
+	ed $1 &> /dev/null <<-end
+		\$a
+		$2	$3	$4
+		.
+		w
+		q
+	end
+}
+
 # Reply to probe packet
-# $1 = reply command
-# $2 = reply value
+# $1 = box id
+# $2 = reply command
+# $3 = reply value
 function probe_reply()
 {
+	# Discard first line
+	read 
+	# Read source ip 
+	read ip
+	ip=$(echo $ip | awk -F'[\\[\\]]' '{print $4}')
 	# Read probe packet
 	read id cmd
 	# Timeout
-	[ $id ] || exit 1
+	[ $id ] || return 1
 
-	echo -e "\nBox $id [$cmd]" > /dev/stderr
+	echo -e "\nBox $id ($ip) [$cmd]" > /dev/stderr
+	db_update $BBOX_DB $id $ip $(date +%s)
 
 	# If box_id matches
-	[ $i == $1 ] && { echo $1 $2; exit 0; }
+	[ $id == $1 ] && { echo $2 $3; return 0; }
 	# Otherwise
-	echo pong; exit 2
-}
-
-# Stop active tunnel
-function tunnel_off()
-{
-	ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $SSH_KEY 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
-	if [ $(netstat -lnt | grep -c "127.0.0.1:$2") -eq 0 ]; then
-		echo "Tunnel closed"
-	else
-		echo "Unable to kill SSH client"
-	fi
+	echo pong; return 2
 }
 
 # Listen for incoming UDP probes
-# $1 = reply command
-# $2 = reply value
+# $1 = box id
+# $2 = reply command
+# $3 = reply value
 function listen()
 {
-	[ -e /tmp/.bp ] || mkfifo /tmp/.bp
-	count=0
 	echo -n "Waiting for probe packet from box $1"
+	
+	time=0
+	[ -e /tmp/.bp ] || mkfifo /tmp/.bp
 	while [ true ]; do
-		nc -w1 -q0 -nlu -p $PORT </tmp/.bp 2>/dev/null | $0 reply $1 $2 >/tmp/.bp
-		status=$?
-		[ $((count++)) -eq $PROBE_TIMEOUT ] && { echo -e "\nBox $1 not found"; exit; }
-		[ $status -eq 0 ] && break
-		[ $status -gt 0 ] && echo -n "."
+		nc -v -w1 -q0 -nlu -p $PROBE_PORT </tmp/.bp 2>&1 | probe_reply $1 $2 $3 >/tmp/.bp
+
+		[ $? -eq 0 ] && return 0
+		[ $((time++)) -eq $PROBE_TIMEOUT ] && { echo -e "\nBox $1 not found"; return 1; }
+
+		echo -n "."
 	done
+}
+
+# Set a valid SSH forwarding port
+function set_fwd_port()
+{
+	# Test requested port number availability
+	if [ $FWD_PORT ]; then
+		if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; then
+			echo "warning: $FWD_PORT not available"
+		else
+			return 0
+		fi
+	fi
+
+	# Find a random available port number
+	RANDOM=$(( `date +%s` % 32767 ))
+	FWD_PORT=$(( RANDOM + 10000 ))
+	while [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; do
+		FWD_PORT=$(( RANDOM + 10000 ))
+	done
+}
+
+# Get box currently used forwarding port
+# $1 = box id
+function get_fwd_port()
+{
+	# Query tunnels db
+	FWD_PORT=$(awk "/^$1\t/{ print \$2 }" $TUNNELS_DB)
+	[ $FWD_PORT ] || return 1
 }
 
 # Check tunnel availability
+# $1 = box id
 function check_tunnel()
 {
-	count=0
+	get_fwd_port $1 || { echo "Tunnel not found"; return 1; }
+	
+	if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; then
+		return 0
+	else
+		echo "Tunnel expired"
+		db_delete $TUNNELS_DB $1
+		return 2
+	fi
+}
+
+# Start new tunnel
+# $1 = box id
+function start_tunnel()
+{
+	check_tunnel $1 && { echo "Tunnel already running on port $FWD_PORT" ; return 1 ; }
+	set_fwd_port
+
+	echo "Starting SSH tunnel to box $1 on port $FWD_PORT"
+	(listen $1 fwd $FWD_PORT && wait_tunnel $FWD_PORT) || return 2
+
+	# Add tunnel to db
+	echo -e "$1\t$FWD_PORT\t$(date +%s)" >> $TUNNELS_DB
+}
+
+# Connect to the SSH server on the box
+# $1 = box id
+# $2 = optional shell command
+function console()
+{
+	echo "Connecting to $1 console"
+
+	start_tunnel $1
+	case $? in
+	0) new=1 ;;
+	2) return 1;;
+	esac
+
+	ssh 127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY "$2"
+
+	[ $new ] && stop_tunnel $1
+}
+
+# Stop active tunnel
+# $1 = box id
+function stop_tunnel()
+{
+	check_tunnel $1 || return 1 
+
+	echo "Stopping SSH tunnel to box $1 on port $FWD_PORT"
+	console $1 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
+
+	if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -eq 0 ]; then
+		echo "Tunnel closed"
+		db_delete $TUNNELS_DB $1
+	else
+		echo "Unable to close tunnel"
+	fi
+}
+
+# Wait for tunnel availability
+# $1 = port number
+function wait_tunnel()
+{
 	echo "Waiting for tunnel creation"
+	time=0
 	while [ true ]; do 
-		sleep 1
-		port=$(netstat -lnt | grep -c "127.0.0.1:$2")
-		if [ $((count++)) -eq 10 ]; then 
-			echo "error: Unable to estabilish tunnel"
-			exit
-		elif [ $port -ge 1 ]; then
-			echo -e "\nTunnel ready on 127.0.0.1:$2"
-			break
-		else
-			echo -n "." 
+		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
+
+		if [ $port -ge 1 ]; then
+			echo -e "\nTunnel ready on 127.0.0.1:$1"
+			return 0
+		elif [ $((time++)) -eq $SSH_PORT_FWD_WAIT ]; then 
+			echo "Error: tunnel not found"
+			return 1
 		fi
+
+		echo -n "." 
+		sleep 1
 	done
 }
 
-# Connect to the ssh server on the box
-function console()
+# Show box info
+# $1 = box id
+function info()
 {
-	ssh 127.0.0.1 $SSH_OPTIONS -p $2 -i $SSH_KEY $3
+	echo "command not implemented yet"
 }
+
+# List active boxes and tunnels
+function list()
+{
+	touch $BBOX_DB
+	echo -e "\nActive Boxes:"
+	echo -e "ID\tIP\tLAST"
+	sort $BBOX_DB
+
+	touch $TUNNELS_DB
+	echo -e "\nActive Tunnels:"
+	echo -e "ID\tPORT\tSTARTED"
+	sort $TUNNELS_DB
+}
+
+# Main
+parse $*
+
