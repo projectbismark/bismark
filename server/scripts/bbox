@@ -47,6 +47,8 @@ function help()
 # Parse command line
 function parse()
 {
+	p=$*
+
 	# Parse options
 	while getopts 'l:o:p:t:' flag; do
 		case $flag in
@@ -76,16 +78,18 @@ function parse()
 		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help tunnel; }
 		[ $3 ] || { echo -e "Missing parameter: on|off\n"; help tunnel; }
 		[ $3 == "on" ] && start_tunnel $2
-		[ $3 == "off" ] && stop_tunnel $2
+		[ $3 == "off" ] && stop_tunnel $2 $4
 	;;
 	console)
 		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help console; }
+		echo "Connecting to $1"
 		console $2
 	;;
 	exec)
 		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help exec; }
 		[ $3 ] || { echo -e "Missing parameter: command\n"; help exec; }
-		console $2 $3
+		echo "Executing \"${p#* * }\" on $2"
+		console $2 ${p#* * }
 	;;
 	info)
 		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help info; }
@@ -146,13 +150,19 @@ function probe_reply()
 	# Timeout
 	[ $id ] || return 1
 
-	echo -e "\nBox $id ($ip) [$cmd]" > /dev/stderr
+	# Update database
 	db_update $BBOX_DB $id $ip $(date +%s)
 
 	# If box_id matches
-	[ $id == $1 ] && { echo $2 $3; return 0; }
-	# Otherwise
-	echo pong; return 2
+	if [ $id == $1 ]; then
+		echo -e "\nBox $id ($ip) [$cmd] -> $2 $3" > /dev/stderr
+		echo $2 $3 
+		return 0
+	else
+		echo -e "\nBox $id ($ip) [$cmd] -> pong" > /dev/stderr
+		echo pong
+		return 2
+	fi
 }
 
 # Listen for incoming UDP probes
@@ -175,12 +185,23 @@ function listen()
 	done
 }
 
+# Check forwarding port
+# $1 = port number
+function check_fwd_port()
+{
+	if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 # Set a valid SSH forwarding port
 function set_fwd_port()
 {
 	# Test requested port number availability
 	if [ $FWD_PORT ]; then
-		if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; then
+		if (check_fwd_port $FWD_PORT); then
 			echo "warning: $FWD_PORT not available"
 		else
 			return 0
@@ -190,7 +211,7 @@ function set_fwd_port()
 	# Find a random available port number
 	RANDOM=$(( `date +%s` % 32767 ))
 	FWD_PORT=$(( RANDOM + 10000 ))
-	while [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; do
+	while (check_fwd_port $FWD_PORT); do
 		FWD_PORT=$(( RANDOM + 10000 ))
 	done
 }
@@ -204,16 +225,19 @@ function get_fwd_port()
 	[ $FWD_PORT ] || return 1
 }
 
+
 # Check tunnel availability
 # $1 = box id
+# rv = 0 if tunnel is active
+# rv = 1 if tunnel is not in DB
+# rv = 2 if tunnel is expired
 function check_tunnel()
 {
-	get_fwd_port $1 || { echo "Tunnel not found"; return 1; }
+	get_fwd_port $1 || return 1
 	
-	if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; then
+	if (check_fwd_port $FWD_PORT); then
 		return 0
 	else
-		echo "Tunnel expired"
 		db_delete $TUNNELS_DB $1
 		return 2
 	fi
@@ -223,7 +247,10 @@ function check_tunnel()
 # $1 = box id
 function start_tunnel()
 {
-	check_tunnel $1 && { echo "Tunnel already running on port $FWD_PORT" ; return 1 ; }
+	if check_tunnel $1; then 
+		echo "Tunnel listening on 127.0.0.1:$FWD_PORT" 
+		return 1
+	fi
 	set_fwd_port
 
 	echo "Starting SSH tunnel to box $1 on port $FWD_PORT"
@@ -235,36 +262,44 @@ function start_tunnel()
 
 # Connect to the SSH server on the box
 # $1 = box id
-# $2 = optional shell command
+# $* = optional shell command
 function console()
 {
-	echo "Connecting to $1 console"
-
 	start_tunnel $1
 	case $? in
 	0) new=1 ;;
 	2) return 1;;
 	esac
 
-	ssh 127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY "$2"
+	[ $2 ] && { p=$* ; cmd=${p#* } ; }
+	ssh 127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
 
 	[ $new ] && stop_tunnel $1
 }
 
 # Stop active tunnel
 # $1 = box id
+# $2 = quick mode
 function stop_tunnel()
 {
-	check_tunnel $1 || return 1 
+	if ! check_tunnel $1; then
+		echo "Tunnel expired"
+		return 1 
+	fi
 
 	echo "Stopping SSH tunnel to box $1 on port $FWD_PORT"
-	console $1 'kill $(ps a | awk "/ssh.*-N -R/{print \$1}" | head -1)'
+	if [ "$2" == quick ]; then 
+		console $1 ./stop $FWD_PORT 
+	else
+		listen $1 stop $FWD_PORT || return 1
+		sleep 5
+	fi
 
-	if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -eq 0 ]; then
+	if (check_fwd_port $FWD_PORT); then
+		echo "Unable to close tunnel"
+	else
 		echo "Tunnel closed"
 		db_delete $TUNNELS_DB $1
-	else
-		echo "Unable to close tunnel"
 	fi
 }
 
@@ -301,14 +336,15 @@ function info()
 function list()
 {
 	touch $BBOX_DB
-	echo -e "\nActive Boxes:"
-	echo -e "ID\tIP\tLAST"
-	sort $BBOX_DB
+	echo -e "\nBoxes:"
+	echo -e "ID\tIP\t\tLAST"
+	sort $BBOX_DB | gawk '{ printf "%s\t%s\t%s\n", $1, $2, strftime("%Y-%M-%d %H:%M:%S",$3) }'
 
 	touch $TUNNELS_DB
-	echo -e "\nActive Tunnels:"
+	echo -e "\nTunnels:"
 	echo -e "ID\tPORT\tSTARTED"
-	sort $TUNNELS_DB
+	sort $TUNNELS_DB | gawk '{ printf "%s\t%s\t%s\n", $1, $2, strftime("%Y-%M-%d %H:%M:%S",$3) }'
+
 }
 
 # Main
