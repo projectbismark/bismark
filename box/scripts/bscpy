@@ -1,0 +1,15 @@
+#!/bin/sh
+# Script to easily copy files to the bismark server
+#
+# author: walter.dedonato@unina.it
+
+. ~/box.conf
+
+# Help screen
+[ $2 ] || { echo "usage: $(basename $0) <relative_dst_path> <file1> [...]" ; exit ; }
+
+# Copy files using scp
+path=$1
+shift
+scp -i ~/.ssh/bismark_box $* bismark@143.215.131.215:~/$path
+

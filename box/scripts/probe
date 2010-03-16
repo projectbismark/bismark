@@ -1,21 +1,39 @@
 #!/bin/sh
-# Send UDP probes to bismark server and
-# open SSH tunnel if requested
+# Send UDP probes to Bismark server and
+# acts depending on the answer
+#
+# Currently implements:
+# - Bismark server heartbeat
+# - on-demand SSH tunnel
 #
 # author walter.dedonato@gatech.edu
 
 SERVER="143.215.131.215"
 USER="bismark"
+SSH_KEY=/root/.ssh/bismark_box
 PORT="5353"
 BOXID="1"
 
-if [ $1 ]; then
-	echo "ping $BOXID"
-	sleep 2
-	exit
-fi 
+# Probe message generator
+msg () {
+	echo "$BOXID ping"
+	sleep 3
+	return 0
+}
 
-$0 ping | nc -nuc $SERVER $PORT > /tmp/port
+# Send probe and store reply
+msg | nc -nuc $SERVER $PORT > /tmp/reply
 
-p=$(cat /tmp/port)
-[ $((p)) -gt 1024 ] && ssh -y -i ~/.ssh/bismark_box -N -R $p:127.0.0.1:22 $USER@$SERVER
+# Parse reply
+read cmd value < /tmp/reply
+case $cmd in 
+fwd)
+	# on-demand SSH tunnel
+	ssh -y -i $SSH_KEY -N -R $value:127.0.0.1:22 $USER@$SERVER &
+;;
+pong)
+	# Server heartbeat
+	date +%s > /tmp/server_last
+;;
+esac
+
