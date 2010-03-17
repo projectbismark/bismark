@@ -3,6 +3,7 @@
 #
 # author: walter.dedonato@unina.it
 
+# Load configuration file
 . ~/box.conf
 
 # Help screen

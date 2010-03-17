@@ -5,14 +5,12 @@
 # Currently implements:
 # - Bismark server heartbeat
 # - on-demand SSH tunnel
+# - light SSH tunnel shutdown
 #
-# author walter.dedonato@gatech.edu
+# author: walter.dedonato@unina.it
 
-SERVER="143.215.131.215"
-USER="bismark"
-SSH_KEY=/root/.ssh/bismark_box
-PORT="5353"
-BOXID="1"
+# Load configuration file
+. ~/box.conf
 
 # Probe message generator
 msg () {
@@ -21,19 +19,32 @@ msg () {
 	return 0
 }
 
+# OS depending options
+if [ -e /etc/openwrt_version ]; then
+	NC_OPTS="-nuc"
+	SSH_OPTS="-yN"
+else
+	NC_OPTS="-q1 -nu"
+	SSH_OPTS="-N"
+fi
+
 # Send probe and store reply
-msg | nc -nuc $SERVER $PORT > /tmp/reply
+msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
 
 # Parse reply
 read cmd value < /tmp/reply
 case $cmd in 
 fwd)
 	# on-demand SSH tunnel
-	ssh -y -i $SSH_KEY -N -R $value:127.0.0.1:22 $USER@$SERVER &
+	ssh $SSH_OPTS -i $SSH_KEY -R $value:127.0.0.1:22 $USER@$SERVER &
 ;;
 pong)
 	# Server heartbeat
 	date +%s > /tmp/server_last
+;;
+stop)
+	# Stop tunnel
+	kill $(ps a | awk "/ssh.*-R $value:127/{print \$1}" | head -1)
 ;;
 esac
 

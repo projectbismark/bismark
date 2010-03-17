@@ -1,0 +1,14 @@
+# Measurement servers list
+# 
+# Servers are organized in groups and each server has some flags
+# depending on its measurement capabilities
+
+# Bismark
+143.215.131.215	PNG FTPUP FTPDW
+
+# Planetlab
+
+# Popular
+
+# ISP
+
