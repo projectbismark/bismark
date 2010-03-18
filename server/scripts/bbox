@@ -6,12 +6,12 @@
 # Options
 PROBE_PORT=5353
 PROBE_TIMEOUT=60
+SSH_USER="root"
 SSH_KEY=~/.ssh/bismark_srv
 SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH_PORT_FWD_WAIT=20
 TUNNELS_DB=~/.tunnels.db
 BBOX_DB=~/.bbox.db
-SCRIPT=$0
 
 # Help screen
 # $1 = command
@@ -272,7 +272,7 @@ function console()
 	esac
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
-	ssh 127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
+	ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
 
 	[ $new ] && stop_tunnel $1
 }
@@ -307,7 +307,7 @@ function stop_tunnel()
 # $1 = port number
 function wait_tunnel()
 {
-	echo "Waiting for tunnel creation"
+	echo "Waiting for tunnel establishment"
 	time=0
 	while [ true ]; do 
 		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
