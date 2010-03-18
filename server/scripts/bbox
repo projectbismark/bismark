@@ -1,17 +1,13 @@
 #!/bin/sh
-# Bismark Box management script
+# Bismark Devices Management script
 #
 # author: walter.dedonato@unina.it
 
-# Options
-PROBE_PORT=5353
-PROBE_TIMEOUT=60
-SSH_USER="root"
-SSH_KEY=~/.ssh/bismark_srv
-SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-SSH_PORT_FWD_WAIT=20
-TUNNELS_DB=~/.tunnels.db
-BBOX_DB=~/.bbox.db
+# Load configuration file
+. ~/etc/bbox.conf
+
+# Aliases
+query(){ sqlite3 -column $BBOX_DB "$1"; }
 
 # Help screen
 # $1 = command
@@ -32,7 +28,7 @@ function help()
 	
 	    info    <box_id>             Print some information about <box_id>
 	
-	    list                         List available boxes and tunnels
+	    list    [update]             List available devices and tunnels
 	
 	Options:
 	
@@ -47,6 +43,7 @@ function help()
 # Parse command line
 function parse()
 {
+	FWD_PORT=0
 	p=$*
 
 	# Parse options
@@ -56,7 +53,7 @@ function parse()
 			PROBE_PORT=$OPTARG
 		;;
 		o)
-			SSH_OPTIONS+=" $OPTARG"
+			SSH_OPTIONS+=" -$OPTARG"
 		;;
 		p)
 			FWD_PORT=$OPTARG
@@ -82,7 +79,7 @@ function parse()
 	;;
 	console)
 		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help console; }
-		echo "Connecting to $1"
+		echo "Connecting to $2"
 		console $2
 	;;
 	exec)
@@ -96,42 +93,13 @@ function parse()
 		info $2
 	;;
 	list)	
-		list
+		list $2
 	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
 		help
 	;;
 	esac
-}
-
-# Delete DB row
-# $1 = DB
-# $2 = key
-function db_delete()
-{
-	ed $1 &> /dev/null <<-end
-		/^$2\>/
-		d
-		w
-		q
-	end
-}
-
-# Update DB row
-# $1 = DB
-# $2 = key
-# $* = other columns
-function db_update()
-{
-	db_delete $1 $2
-	ed $1 &> /dev/null <<-end
-		\$a
-		$2	$3	$4
-		.
-		w
-		q
-	end
 }
 
 # Reply to probe packet
@@ -151,7 +119,11 @@ function probe_reply()
 	[ $id ] || return 1
 
 	# Update database
-	db_update $BBOX_DB $id $ip $(date +%s)
+	if [ $(query "SELECT id FROM devices WHERE id='$id';") ]; then
+		query "UPDATE devices SET ip='$ip',ts='$(date +%s)' WHERE id='$id';"
+	else
+		query "INSERT INTO devices VALUES('$id','$ip','$(date +%s)');"
+	fi
 
 	# If box_id matches
 	if [ $id == $1 ]; then
@@ -171,7 +143,7 @@ function probe_reply()
 # $3 = reply value
 function listen()
 {
-	echo -n "Waiting for probe packet from box $1"
+	[ "$1" == "UPDATE"  ] && echo -n "Listening to probe packets" || echo -n "Waiting for probe packet from device $1"
 	
 	time=0
 	[ -e /tmp/.bp ] || mkfifo /tmp/.bp
@@ -179,7 +151,7 @@ function listen()
 		nc -v -w1 -q0 -nlu -p $PROBE_PORT </tmp/.bp 2>&1 | probe_reply $1 $2 $3 >/tmp/.bp
 
 		[ $? -eq 0 ] && return 0
-		[ $((time++)) -eq $PROBE_TIMEOUT ] && { echo -e "\nBox $1 not found"; return 1; }
+		[ $((time++)) -eq $PROBE_TIMEOUT ] && { return 1; }
 
 		echo -n "."
 	done
@@ -200,7 +172,7 @@ function check_fwd_port()
 function set_fwd_port()
 {
 	# Test requested port number availability
-	if [ $FWD_PORT ]; then
+	if [ $FWD_PORT -gt 0 ]; then
 		if (check_fwd_port $FWD_PORT); then
 			echo "warning: $FWD_PORT not available"
 		else
@@ -221,8 +193,8 @@ function set_fwd_port()
 function get_fwd_port()
 {
 	# Query tunnels db
-	FWD_PORT=$(awk "/^$1\t/{ print \$2 }" $TUNNELS_DB)
-	[ $FWD_PORT ] || return 1
+	FWD_PORT=$(( $(query "SELECT port FROM tunnels WHERE id='$1';") ))
+	[ $FWD_PORT -gt 0 ] || return 1
 }
 
 
@@ -238,7 +210,7 @@ function check_tunnel()
 	if (check_fwd_port $FWD_PORT); then
 		return 0
 	else
-		db_delete $TUNNELS_DB $1
+		query "DELETE FROM tunnels WHERE id='$1';"
 		return 2
 	fi
 }
@@ -254,10 +226,11 @@ function start_tunnel()
 	set_fwd_port
 
 	echo "Starting SSH tunnel to box $1 on port $FWD_PORT"
-	(listen $1 fwd $FWD_PORT && wait_tunnel $FWD_PORT) || return 2
+	listen $1 fwd $FWD_PORT || { echo -e "\nBox $1 not found"; return 2; }
+ 	wait_tunnel $FWD_PORT || return 3
 
 	# Add tunnel to db
-	echo -e "$1\t$FWD_PORT\t$(date +%s)" >> $TUNNELS_DB
+	query "INSERT INTO tunnels VALUES('$1','$FWD_PORT','$(date +%s)');"
 }
 
 # Connect to the SSH server on the box
@@ -279,7 +252,7 @@ function console()
 
 # Stop active tunnel
 # $1 = box id
-# $2 = quick mode
+# $2 = light mode
 function stop_tunnel()
 {
 	if ! check_tunnel $1; then
@@ -287,19 +260,20 @@ function stop_tunnel()
 		return 1 
 	fi
 
-	echo "Stopping SSH tunnel to box $1 on port $FWD_PORT"
-	if [ "$2" == quick ]; then 
-		console $1 ./stop $FWD_PORT 
-	else
-		listen $1 stop $FWD_PORT || return 1
+	echo "Stopping SSH tunnel to device $1 on port $FWD_PORT"
+	if [ "$2" == light ]; then 
+		listen $1 stop $FWD_PORT || { echo -e "\nBox $1 not found"; return 1; }
 		sleep 5
+	else
+		pid=$(sudo netstat -lntp | grep 127.0.0.1:$FWD_PORT | awk '{ print $7 }')
+		kill ${pid%/*}
 	fi
 
 	if (check_fwd_port $FWD_PORT); then
 		echo "Unable to close tunnel"
 	else
 		echo "Tunnel closed"
-		db_delete $TUNNELS_DB $1
+		query "DELETE FROM tunnels WHERE id='$1';"
 	fi
 }
 
@@ -307,7 +281,7 @@ function stop_tunnel()
 # $1 = port number
 function wait_tunnel()
 {
-	echo "Waiting for tunnel establishment"
+	echo -n "Waiting for tunnel establishment"
 	time=0
 	while [ true ]; do 
 		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
@@ -329,22 +303,36 @@ function wait_tunnel()
 # $1 = box id
 function info()
 {
-	echo "command not implemented yet"
+	echo "command not implemented"
 }
 
-# List active boxes and tunnels
+# List active devices and tunnels
+# $1 = update flag
 function list()
 {
-	touch $BBOX_DB
-	echo -e "\nBoxes:"
-	echo -e "ID\tIP\t\tLAST"
-	sort $BBOX_DB | gawk '{ printf "%s\t%s\t%s\n", $1, $2, strftime("%Y-%M-%d %H:%M:%S",$3) }'
+	# Update list
+	if [ $1  ]; then
+		echo "Updating devices list..."
+		listen UPDATE
+	fi
 
-	touch $TUNNELS_DB
+	# Dump devices table
+	echo -e "\nDevices:"
+	echo -e "ID\tIP\t\tLAST PROBE"
+	IFS=$'\n' 
+	for dev in $(query 'SELECT * FROM devices;'); do
+		IFS=" " read id ip ts <<< "$dev"
+		printf "%s\t%s\t%s\n" $id $ip $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+	done
+
+	# Dump tunnels table
 	echo -e "\nTunnels:"
-	echo -e "ID\tPORT\tSTARTED"
-	sort $TUNNELS_DB | gawk '{ printf "%s\t%s\t%s\n", $1, $2, strftime("%Y-%M-%d %H:%M:%S",$3) }'
-
+	echo -e "ID\tPORT\tSTART TIME"
+	IFS=$'\n' 
+	for dev in $(query 'SELECT * FROM tunnels;'); do
+		IFS=" " read id port ts <<< "$dev"
+		check_tunnel $id && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+	done
 }
 
 # Main
