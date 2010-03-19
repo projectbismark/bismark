@@ -1,0 +1,74 @@
+#!/bin/bash
+# Bismark Devices Installation script
+#
+# author: walter.dedonato@unina.it
+
+DEVHOST_PUB_KEY=~/.ssh/id_rsa.pub
+SERVER_PUB_KEY="server/keys/bismark_srv.pub"
+SERVER_HOST_KEY="box/keys/known_hosts"
+DEVICE_SSH_KEY="box/keys/bismark"
+
+if [ ! $2 ]; then
+	cat <<-end
+		usage: $(basename $0) <address> <dev_id>"
+		
+		Device ids:
+		       LSx = Linksys WRT54GL (OpenWRT Kamikaze 8.09.1)
+		       NBx = NoxBox (Debian Lenny 5.0.4)
+	end
+	exit
+fi
+
+case ${2:0:2} in
+LS)
+	echo "Installing Bismark on Lynksys WRT54GL router ($1 $2)..."
+
+;;
+NB)
+	echo "Installing Bismark on NoxBox router ($1 $2)..."
+	echo "-- if requested insert \"n0xb0xr0x\" password --"
+
+	echo "Adding SSH public and host keys:"
+	ssh root@$1 "
+		mkdir -p .ssh
+		echo \"$(cat $SERVER_PUB_KEY $DEVHOST_PUB_KEY)\" > ~/.ssh/authorized_keys
+		echo \"$(cat $SERVER_HOST_KEY.ls)\" > ~/.ssh/known_hosts
+	"
+
+	echo "Copying SSH key pair:"
+	scp ${DEVICE_SSH_KEY}_nb{,.pub}  root@$1:~/.ssh 
+
+	echo "Copying scripts files:"
+	scp box/scripts/* root@$1:~
+
+	echo -n "Copying configuration files..."
+	ssh root@$1 "
+		echo \"$(awk '
+		{ 
+		  if ($0 ~ /^BOXID/){ 
+			print "BOXID=\"'$2'\""
+		  } else if ($0 ~ /^SSH_KEY/){
+			print "SSH_KEY=\"~/.ssh/bismark_nb\""
+		  } else { 
+			print 
+		  } 
+		}
+		' box/conf/box.conf)\" > ~/box.conf
+	"
+	echo "done"
+
+	echo -n "Configuring cronjobs..."
+	ssh root@$1 "
+		echo \"*/1 * * * * root /root/probe\" > /etc/cron.d/bismark
+	"
+	echo "done"
+
+	echo -n "Persisting changes to flash memory:" 
+	ssh root@$1 "/noxbox/bin/persist_changes"
+
+	echo "Installation completed"
+;;
+*)
+	echo "Model ${2:0:2} unknown"
+;;
+esac
