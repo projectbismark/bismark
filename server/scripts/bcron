@@ -1,0 +1,40 @@
+#!/bin/bash 
+# Bismark cron daemon (only minutes jobs for now)
+#
+# author: walter.dedonato@unina.it
+
+CRONTAB=~/etc/crontab
+PIDS=/tmp/bcron.pids
+
+# Parse crontab
+jobs=$(awk '
+/^[^#]/{ 
+	printf (60*substr($1,3)) " ";
+	for (p=6; p<=NF; p++) 
+		printf $p " "; 
+	printf "\n" 
+}' $CRONTAB)
+
+# Job process
+function job() {
+	while [ true ]; do
+		sleep $1
+		$2
+	done
+}
+
+# Kill pre-existing jobs
+for pid in $([ -e $PIDS ] && cat $PIDS); do
+	kill -9 $pid 2>/dev/null
+done
+[ $1 ] && exit
+
+# Launch jobs
+rm -f $PIDS
+IFS=$'\n'
+for job in $jobs; do
+	IFS=" " read time cmd <<< $job
+	job $time $cmd &
+	echo $! >> $PIDS
+done
+
