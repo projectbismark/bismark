@@ -43,7 +43,6 @@ function help()
 # Parse command line
 function parse()
 {
-	FWD_PORT=0
 	p=$*
 
 	# Parse options
@@ -172,7 +171,7 @@ function check_fwd_port()
 function set_fwd_port()
 {
 	# Test requested port number availability
-	if [ $FWD_PORT -gt 0 ]; then
+	if [ $FWD_PORT ]; then
 		if (check_fwd_port $FWD_PORT); then
 			echo "warning: $FWD_PORT not available"
 		else
@@ -194,7 +193,7 @@ function get_fwd_port()
 {
 	# Query tunnels db
 	FWD_PORT=$(query "SELECT port FROM tunnels WHERE id='$1';" | head -1)
-	[ $FWD_PORT -gt 0 ] || return 1
+	[ $FWD_PORT ] || return 1
 }
 
 
