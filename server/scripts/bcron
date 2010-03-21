@@ -17,6 +17,7 @@ jobs=$(awk '
 
 # Job process
 function job() {
+	IFS=$' '
 	while [ true ]; do
 		sleep $1
 		$2
@@ -33,7 +34,7 @@ done
 rm -f $PIDS
 IFS=$'\n'
 for job in $jobs; do
-	IFS=" " read time cmd <<< $job
+	IFS=$' ' read time cmd <<< $job
 	job $time $cmd &
 	echo $! >> $PIDS
 done
