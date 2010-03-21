@@ -12,5 +12,5 @@
 # Copy files using scp
 path=$1
 shift
-scp -i ~/.ssh/bismark_box $* bismark@143.215.131.215:~/$path
+scp -i $SSH_KEY $* $USER@$SERVER:~/$path
 

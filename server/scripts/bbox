@@ -7,7 +7,7 @@
 . ~/etc/bbox.conf
 
 # Aliases
-query(){ sqlite3 -column $BBOX_DB "$1"; }
+query(){ sqlite3 -list $BBOX_DB "$1"; }
 
 # Help screen
 # $1 = command
@@ -193,19 +193,24 @@ function set_fwd_port()
 function get_fwd_port()
 {
 	# Query tunnels db
-	FWD_PORT=$(( $(query "SELECT port FROM tunnels WHERE id='$1';") ))
+	FWD_PORT=$(query "SELECT port FROM tunnels WHERE id='$1';" | head -1)
 	[ $FWD_PORT -gt 0 ] || return 1
 }
 
 
 # Check tunnel availability
 # $1 = box id
+# $2 = port number
 # rv = 0 if tunnel is active
 # rv = 1 if tunnel is not in DB
 # rv = 2 if tunnel is expired
 function check_tunnel()
 {
-	get_fwd_port $1 || return 1
+	if [ $2 ]; then
+		FWD_PORT=$2
+	else
+		get_fwd_port $1 || return 1
+	fi
 	
 	if (check_fwd_port $FWD_PORT); then
 		return 0
@@ -321,7 +326,7 @@ function list()
 	echo -e "ID\tIP\t\tLAST PROBE"
 	IFS=$'\n' 
 	for dev in $(query 'SELECT * FROM devices;'); do
-		IFS=" " read id ip ts <<< "$dev"
+		IFS=$'|' read id ip ts <<< "$dev"
 		printf "%s\t%s\t%s\n" $id $ip $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 
@@ -330,8 +335,8 @@ function list()
 	echo -e "ID\tPORT\tSTART TIME"
 	IFS=$'\n' 
 	for dev in $(query 'SELECT * FROM tunnels;'); do
-		IFS=" " read id port ts <<< "$dev"
-		check_tunnel $id && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+		IFS=$'|' read id port ts <<< "$dev"
+		check_tunnel $id $port && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 }
 
