@@ -32,6 +32,7 @@ fi
 msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
 
 # If unable to probe the server open a tunnel for 15 minutes each 30 minutes
+[ -e /tmp/server_last ] || echo `date +%s` > /tmp/server_last
 if [ ! -s /tmp/reply && $(( `date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
     if [ -e /tmp/tunnel ]; then
         echo "stop $(cat /tmp/tunnel)" > /tmp/reply
