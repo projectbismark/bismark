@@ -1,3 +1,3 @@
 # Bismark server crontab
 # m h  dom mon dow   command
-*/5 * * * * /home/bismark/bin/bbox list update
+*/5 * * * * /home/bismark/bin/bdm list update > /dev/null

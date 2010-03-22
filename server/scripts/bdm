@@ -4,10 +4,10 @@
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/etc/bbox.conf
+. ~/etc/bdm.conf
 
 # Aliases
-query(){ sqlite3 -list $BBOX_DB "$1"; }
+query(){ sqlite3 -list $BDM_DB "$1"; }
 
 # Help screen
 # $1 = command
@@ -20,13 +20,13 @@ function help()
 	
 	Commands:
 	
-	    tunnel  <box_id> <on|off>    Open/Close a tunnel to <box_id> using SSH port forwarding
+	    tunnel  <dev_id> <on|off>    Open/Close a tunnel to <dev_id> using SSH port forwarding
 	
-	    console <box_id>             Open a console on <box_id> over the SSH tunnel
+	    console <dev_id>             Open a console on <dev_id> over the SSH tunnel
 	
-	    exec    <box_id> <command>   Execute a shell command on <box_id>
+	    exec    <dev_id> <command>   Execute a shell command on <dev_id>
 	
-	    info    <box_id>             Print some information about <box_id>
+	    info    <dev_id>             Print some information about <dev_id>
 	
 	    list    [update]             List available devices and tunnels
 	
@@ -71,24 +71,24 @@ function parse()
 	# Parse commands
 	case $1 in
 	tunnel)
-		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help tunnel; }
+		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help tunnel; }
 		[ $3 ] || { echo -e "Missing parameter: on|off\n"; help tunnel; }
 		[ $3 == "on" ] && start_tunnel $2
 		[ $3 == "off" ] && stop_tunnel $2 $4
 	;;
 	console)
-		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help console; }
+		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help console; }
 		echo "Connecting to $2"
 		console $2
 	;;
 	exec)
-		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help exec; }
+		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help exec; }
 		[ $3 ] || { echo -e "Missing parameter: command\n"; help exec; }
 		echo "Executing \"${p#* * }\" on $2"
 		console $2 ${p#* * }
 	;;
 	info)
-		[ $2 ] || { echo -e "Missing parameter: box_id\n"; help info; }
+		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help info; }
 		info $2
 	;;
 	list)	
@@ -102,7 +102,7 @@ function parse()
 }
 
 # Reply to probe packet
-# $1 = box id
+# $1 = dev id
 # $2 = reply command
 # $3 = reply value
 function probe_reply()
@@ -124,20 +124,20 @@ function probe_reply()
 		query "INSERT INTO devices VALUES('$id','$ip','$(date +%s)');"
 	fi
 
-	# If box_id matches
+	# If dev_id matches
 	if [ $id == $1 ]; then
-		echo -e "\nBox $id ($ip) [$cmd] -> $2 $3" > /dev/stderr
+		echo -e "\nDevice $id ($ip) [$cmd] -> $2 $3" > /dev/stderr
 		echo $2 $3 
 		return 0
 	else
-		echo -e "\nBox $id ($ip) [$cmd] -> pong" > /dev/stderr
+		echo -e "\nDevice $id ($ip) [$cmd] -> pong" > /dev/stderr
 		echo pong
 		return 2
 	fi
 }
 
 # Listen for incoming UDP probes
-# $1 = box id
+# $1 = dev id
 # $2 = reply command
 # $3 = reply value
 function listen()
@@ -187,8 +187,8 @@ function set_fwd_port()
 	done
 }
 
-# Get box currently used forwarding port
-# $1 = box id
+# Get dev currently used forwarding port
+# $1 = dev id
 function get_fwd_port()
 {
 	# Query tunnels db
@@ -198,7 +198,7 @@ function get_fwd_port()
 
 
 # Check tunnel availability
-# $1 = box id
+# $1 = dev id
 # $2 = port number
 # rv = 0 if tunnel is active
 # rv = 1 if tunnel is not in DB
@@ -220,7 +220,7 @@ function check_tunnel()
 }
 
 # Start new tunnel
-# $1 = box id
+# $1 = dev id
 function start_tunnel()
 {
 	if check_tunnel $1; then 
@@ -229,16 +229,16 @@ function start_tunnel()
 	fi
 	set_fwd_port
 
-	echo "Starting SSH tunnel to box $1 on port $FWD_PORT"
-	listen $1 fwd $FWD_PORT || { echo -e "\nBox $1 not found"; return 2; }
+	echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
+	listen $1 fwd $FWD_PORT || { echo -e "\nDevice $1 not found"; return 2; }
  	wait_tunnel $FWD_PORT || return 3
 
 	# Add tunnel to db
 	query "INSERT INTO tunnels VALUES('$1','$FWD_PORT','$(date +%s)');"
 }
 
-# Connect to the SSH server on the box
-# $1 = box id
+# Connect to the SSH server on the dev
+# $1 = dev id
 # $* = optional shell command
 function console()
 {
@@ -255,7 +255,7 @@ function console()
 }
 
 # Stop active tunnel
-# $1 = box id
+# $1 = dev id
 # $2 = light mode
 function stop_tunnel()
 {
@@ -266,7 +266,7 @@ function stop_tunnel()
 
 	echo "Stopping SSH tunnel to device $1 on port $FWD_PORT"
 	if [ "$2" == light ]; then 
-		listen $1 stop $FWD_PORT || { echo -e "\nBox $1 not found"; return 1; }
+		listen $1 stop $FWD_PORT || { echo -e "\nDevice $1 not found"; return 1; }
 		sleep 5
 	else
 		pid=$(sudo netstat -lntp | grep 127.0.0.1:$FWD_PORT | awk '{ print $7 }')
@@ -303,8 +303,8 @@ function wait_tunnel()
 	done
 }
 
-# Show box info
-# $1 = box id
+# Show dev info
+# $1 = dev id
 function info()
 {
 	echo "command not implemented"
@@ -339,6 +339,14 @@ function list()
 	done
 }
 
-# Main
+## Main ##
+
+# Check DB
+if [ ! -e $BDM_DB ]; then
+	query "CREATE TABLE devices(id, ip, ts);"
+	query "CREATE TABLE tunnels(id, port, ts);"
+fi
+
+# Parse command-line
 parse $*
 

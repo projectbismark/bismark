@@ -10,11 +10,11 @@
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/box.conf
+. ~/dev.conf
 
 # Probe message generator
 msg () {
-	echo "$BOXID ping"
+	echo "$DEVID ping"
 	sleep 3
 	return 0
 }
@@ -41,7 +41,7 @@ if [ ! -s /tmp/reply && $(( `date +%s` - `cat /tmp/server_last`)) -gt 900 ]; the
         RANDOM=$(( `date +%s` % 32767 ))
         port=$(( RANDOM % 5000 + 5000 ))
         echo "fwd $port" > /tmp/reply
-        ssh -i $SSH_KEY $USER@$SERVER '. etc/bbox.conf ; bin/sqlite3 -list $BBOX_DB "INSERT INTO tunnels VALUES(\"'$BOXID'\",'$port','$(date +%s)');"'
+        ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bin/sqlite3 -list $BDM_DB "INSERT INTO tunnels VALUES(\"'$DEVID'\",'$port','$(date +%s)');"'
         echo $port > /tmp/tunnel
     fi
     echo `date +%s` > /tmp/server_last
