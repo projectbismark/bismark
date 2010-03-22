@@ -10,7 +10,7 @@
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/dev.conf
+. ~/conf/dev.conf
 
 # Probe message generator
 msg () {
@@ -58,9 +58,23 @@ pong)
 	# Server heartbeat
 	date +%s > /tmp/server_last
 ;;
-stop)
-	# Stop tunnel
-	kill $(ps a | awk "/ssh.*-R $value:127/{print \$1}" | head -1)
+update)
+	# Software update
+	echo "$(date) - Updating $value" >> /tmp/update.log
+	case $value in
+	all)
+		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar --exclude=dev.conf -cf - conf/* scripts/*' | tar -xvf - 2>> /tmp/update.log
+	;;
+	scripts)
+		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar -cf - scripts/*' | tar -xvf - 2>> /tmp/update.log
+	;;
+	conf)
+		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar --exclude=dev.conf -cf - conf/* ' | tar -xvf - 2>> /tmp/update.log
+	;;
+	*)
+		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar --exclude=dev.conf -cf - '$value | tar -xvf - 2>> /tmp/update.log
+	;;
+	esac
+	echo "$(date) - Update completed" >> /tmp/update.log
 ;;
 esac
-

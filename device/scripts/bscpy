@@ -4,7 +4,7 @@
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/dev.conf
+. ~/conf/dev.conf
 
 # Help screen
 [ $2 ] || { echo "usage: $(basename $0) <server_path> <file1> [...]" ; exit ; }

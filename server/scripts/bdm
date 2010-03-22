@@ -20,15 +20,17 @@ function help()
 	
 	Commands:
 	
-	    tunnel  <dev_id> <on|off>    Open/Close a tunnel to <dev_id> using SSH port forwarding
+	    tunnel   <dev_id> <on|off>    Open/Close a tunnel to <dev_id> using SSH port forwarding
 	
-	    console <dev_id>             Open a console on <dev_id> over the SSH tunnel
+	    console  <dev_id>             Open a console on <dev_id> over the SSH tunnel
 	
-	    exec    <dev_id> <command>   Execute a shell command on <dev_id>
+	    exec     <dev_id> <command>   Execute a shell command on <dev_id>
 	
-	    info    <dev_id>             Print some information about <dev_id>
+	    info     <dev_id>             Print some information about <dev_id>
 	
-	    list    [update]             List available devices and tunnels
+	    list     [update]             List available devices and tunnels
+	
+	    swupdate <dev_id> <all|scripts|conf|<file>>   Update software on <dev_id> 
 	
 	Options:
 	
@@ -93,6 +95,10 @@ function parse()
 	;;
 	list)	
 		list $2
+	;;
+	swupdate)
+		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help swupdate; }
+		swupdate $2 $3
 	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
@@ -256,7 +262,6 @@ function console()
 
 # Stop active tunnel
 # $1 = dev id
-# $2 = light mode
 function stop_tunnel()
 {
 	if ! check_tunnel $1; then
@@ -265,13 +270,8 @@ function stop_tunnel()
 	fi
 
 	echo "Stopping SSH tunnel to device $1 on port $FWD_PORT"
-	if [ "$2" == light ]; then 
-		listen $1 stop $FWD_PORT || { echo -e "\nDevice $1 not found"; return 1; }
-		sleep 5
-	else
-		pid=$(sudo netstat -lntp | grep 127.0.0.1:$FWD_PORT | awk '{ print $7 }')
-		kill ${pid%/*}
-	fi
+	pid=$(sudo netstat -lntp | grep 127.0.0.1:$FWD_PORT | awk '{ print $7 }')
+	kill ${pid%/*}
 
 	if (check_fwd_port $FWD_PORT); then
 		echo "Unable to close tunnel"
@@ -301,6 +301,13 @@ function wait_tunnel()
 		echo -n "." 
 		sleep 1
 	done
+}
+
+# Update device software
+# $1 = dev id
+# $2 = file to update (all|scripts|conf|<file>)
+function swupdate(){
+	listen $1 update $2 || { echo -e "\nDevice $1 not found"; return 1; }
 }
 
 # Show dev info

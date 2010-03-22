@@ -5,8 +5,8 @@
 
 DEVHOST_PUB_KEY=~/.ssh/id_rsa.pub
 SERVER_PUB_KEY="server/keys/bismark_srv.pub"
-SERVER_HOST_KEY="box/keys/known_hosts"
-DEVICE_SSH_KEY="box/keys/bismark"
+SERVER_HOST_KEY="device/keys/known_hosts"
+DEVICE_SSH_KEY="device/keys/bismark"
 
 if [ ! $2 ]; then
 	cat <<-end
@@ -38,28 +38,28 @@ NB)
 	echo "Copying SSH key pair:"
 	scp ${DEVICE_SSH_KEY}_nb{,.pub}  root@$1:~/.ssh 
 
-	echo "Copying scripts files:"
-	scp box/scripts/* root@$1:~
+	echo "Copying files:"
+	tar -cf - conf/* scripts/* | ssh root@$1 'tar -xvf -'
 
-	echo -n "Copying configuration files..."
+	echo -n "Customizing configuration files..."
 	ssh root@$1 "
 		echo \"$(awk '
 		{ 
-		  if ($0 ~ /^BOXID/){ 
-			print "BOXID=\"'$2'\""
+		  if ($0 ~ /^DEVID/){ 
+			print "DEVID=\"'$2'\""
 		  } else if ($0 ~ /^SSH_KEY/){
 			print "SSH_KEY=\"~/.ssh/bismark_nb\""
 		  } else { 
 			print 
 		  } 
 		}
-		' box/conf/box.conf)\" > ~/box.conf
+		' device/conf/dev.conf)\" > ~/conf/dev.conf
 	"
 	echo "done"
 
 	echo -n "Configuring cronjobs..."
 	ssh root@$1 "
-		echo \"*/1 * * * * root /root/probe\" > /etc/cron.d/bismark
+		echo \"*/1 * * * * root /root/scripts/probe\" > /etc/cron.d/bismark
 	"
 	echo "done"
 
