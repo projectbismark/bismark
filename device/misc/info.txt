@@ -1,0 +1,9 @@
+# Linksys WRT54GL
+
+system image: http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/openwrt-wrt54g-squashfs.bin
+help: http://wiki.openwrt.org/oldwiki/openwrtdocs/hardware/linksys/wrt54gl
+
+# NoxBox
+
+system image: http://noxrepo.org/current_noxbox.img.bz2
+help: http://noxrepo.org/manual/noxbox.html
