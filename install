@@ -25,7 +25,8 @@ fi
 
 # Custom port
 if [ $3 ]; then
-	OPT="-i ~/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $3"
+	SSHOPT="-i $HOME/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $3"
+	SCPOPT="-i $HOME/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P $3"
 fi
 
 # Device specific options selection
@@ -66,49 +67,51 @@ if [ $suffix == ls ] && nc -z $1 23 ; then
 	echo "done"
 fi
 
-echo -n "Adding SSH public and host keys..."
-ssh $OPT root@$1 " 
-	mkdir -p .ssh 
-	echo \"$(cat $SERVER_PUB_KEY $DEVHOST_PUB_KEY)\" > $auth_keys
-"
-ssh $OPT root@$1 "echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts"
-echo "done"
+if [ ! $3 ]; then
+	echo -n "Adding SSH public and host keys..."
+	ssh root@$1 " 
+		mkdir -p .ssh 
+		echo \"$(cat $SERVER_PUB_KEY $DEVHOST_PUB_KEY)\" > $auth_keys
+	" 2>/dev/null
+	ssh root@$1 "echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts" 2>/dev/null
+	echo "done"
 
-echo "Copying SSH key pair:"
-scp $OPT ${DEVICE_SSH_KEY}_$suffix{,.pub}  root@$1:~/.ssh 
+	echo "Copying SSH key pair:"
+	scp ${DEVICE_SSH_KEY}_$suffix{,.pub} root@$1:~/.ssh 2>/dev/null 
+fi
 
 echo "Copying files:"
-(cd device; tar -cf - conf/* scripts/* | ssh $OPT root@$1 'tar -xvf -')
+(cd device; tar -cf - conf/* scripts/* | ssh $SSHOPT root@$1 'tar -xvf -' 2>/dev/null)
 
 echo -n "Setting device id and software version..."
-ssh $OPT root@$1 "echo $2 > ID ; echo $VERSION > VERSION"
+ssh $SSHOPT root@$1 "echo $2 > ID ; echo $VERSION > VERSION" 2>/dev/null
 echo "done"
 
 if [ $suffix == ls ]; then
 	echo "Installing netcat package:"
 	wget -O /tmp/netcat.ipk "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/netcat_0.7.1-1_mipsel.ipk"
-	scp $OPT /tmp/netcat.ipk root@$1:/tmp
-	ssh $OPT root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk"
+	scp $SCPOPT /tmp/netcat.ipk root@$1:/tmp 2>/dev/null
+	ssh $SSHOPT root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk" 2>/dev/null
 
 	echo -n "Configuring cronjobs..."
-	ssh $OPT root@$1 "echo \"*/1 * * * * /root/scripts/probe\" > $crontab"
+	ssh $SSHOPT root@$1 "echo \"*/1 * * * * /root/scripts/probe\" > $crontab" 2>/dev/null
 	echo "done"
 
 	echo -n "Starting crond daemon..."
-	ssh $OPT root@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start"
+	ssh $SSHOPT root@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start" 2>/dev/null
 	echo done
 fi
 
 if [ $suffix == nb ]; then
 	echo -n "Configuring cronjobs..."
-	ssh $OPT root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab"
+	ssh $SSHOPT root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab" 2>/dev/null
 	echo "done"
 
 	echo "Setting root password:"
-	ssh $OPT root@$1 "{ $PASS $PASS } | passwd"	
+	ssh $SSHOPT root@$1 "{ $PASS $PASS } | passwd" 2>/dev/null
 
 	echo "Persisting changes to flash memory:" 
-	ssh $OPT root@$1 "/noxbox/bin/persist_changes"
+	ssh $SSHOPT root@$1 "/noxbox/bin/persist_changes" 2>/dev/null
 fi
 
 echo "Installation completed"
