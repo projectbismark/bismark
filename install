@@ -14,13 +14,18 @@ VERSION=$(svn info | awk '/^Rev/{ print $2 ; exit }')
 # Command line check
 if [ ! $2 ]; then
 	cat <<-end
-		usage: $(basename $0) <address> <dev_id>"
+		usage: $(basename $0) <address> <dev_id> [port]"
 		
 		Device ids:
 		       LSx = Linksys WRT54GL (OpenWRT Kamikaze 8.09.1)
 		       NBx = NoxBox (Debian Lenny 5.0.4)
 	end
 	exit
+fi
+
+# Custom port
+if [ $3 ]; then
+	OPT="-i ~/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $3"
 fi
 
 # Device specific options selection
@@ -62,48 +67,48 @@ if [ $suffix == ls ] && nc -z $1 23 ; then
 fi
 
 echo -n "Adding SSH public and host keys..."
-ssh root@$1 " 
+ssh $OPT root@$1 " 
 	mkdir -p .ssh 
 	echo \"$(cat $SERVER_PUB_KEY $DEVHOST_PUB_KEY)\" > $auth_keys
 "
-ssh root@$1 "echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts"
+ssh $OPT root@$1 "echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts"
 echo "done"
 
 echo "Copying SSH key pair:"
-scp ${DEVICE_SSH_KEY}_$suffix{,.pub}  root@$1:~/.ssh 
+scp $OPT ${DEVICE_SSH_KEY}_$suffix{,.pub}  root@$1:~/.ssh 
 
 echo "Copying files:"
-(cd device; tar -cf - conf/* scripts/* | ssh root@$1 'tar -xvf -')
+(cd device; tar -cf - conf/* scripts/* | ssh $OPT root@$1 'tar -xvf -')
 
 echo -n "Setting device id and software version..."
-ssh root@$1 "echo $2 > ID ; echo $VERSION > VERSION"
+ssh $OPT root@$1 "echo $2 > ID ; echo $VERSION > VERSION"
 echo "done"
 
 if [ $suffix == ls ]; then
 	echo "Installing netcat package:"
 	wget -O /tmp/netcat.ipk "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/netcat_0.7.1-1_mipsel.ipk"
-	scp /tmp/netcat.ipk root@$1:/tmp
-	ssh root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk"
+	scp $OPT /tmp/netcat.ipk root@$1:/tmp
+	ssh $OPT root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk"
 
 	echo -n "Configuring cronjobs..."
-	ssh root@$1 "echo \"*/1 * * * * /root/scripts/probe\" > $crontab"
+	ssh $OPT root@$1 "echo \"*/1 * * * * /root/scripts/probe\" > $crontab"
 	echo "done"
 
 	echo -n "Starting crond daemon..."
-	ssh root@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start"
+	ssh $OPT root@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start"
 	echo done
 fi
 
 if [ $suffix == nb ]; then
 	echo -n "Configuring cronjobs..."
-	ssh root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab"
+	ssh $OPT root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab"
 	echo "done"
 
 	echo "Setting root password:"
-	ssh root@$1 "{ $PASS $PASS } | passwd"	
+	ssh $OPT root@$1 "{ $PASS $PASS } | passwd"	
 
 	echo "Persisting changes to flash memory:" 
-	ssh root@$1 "/noxbox/bin/persist_changes"
+	ssh $OPT root@$1 "/noxbox/bin/persist_changes"
 fi
 
 echo "Installation completed"

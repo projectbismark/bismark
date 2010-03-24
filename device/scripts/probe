@@ -60,21 +60,24 @@ pong)
 ;;
 update)
 	# Software update
-	echo "$(date) - Updating $value" >> /tmp/update.log
+	echo "$(date) - Updating $value" > /tmp/update.log
 	case $value in
 	all)
-		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar --exclude=dev.conf -cf - conf/* scripts/*' | tar -xvf - 2>> /tmp/update.log
-	;;
-	scripts)
-		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar -cf - scripts/*' | tar -xvf - 2>> /tmp/update.log
-	;;
-	conf)
-		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar --exclude=dev.conf -cf - conf/* ' | tar -xvf - 2>> /tmp/update.log
+		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar -cf - conf/* scripts/*' | tar -xvf - >> /tmp/update.log
+		ssh -i $SSH_KEY $USER@$SERVER 'svn info bismark | awk "/^Rev/{ print \$2 ; exit }"' > ~/VERSION
 	;;
 	*)
-		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar --exclude=dev.conf -cf - '$value | tar -xvf - 2>> /tmp/update.log
+		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar -cf - '$value | tar -xvf - >> /tmp/update.log
 	;;
 	esac
 	echo "$(date) - Update completed" >> /tmp/update.log
+	cat /tmp/update.log | nc $NC_OPTS $SERVER $((PROBE_PORT+1))
+;;
+info)
+	# Info reply
+	sleep 1
+	nc $NC_OPTS $SERVER $((PROBE_PORT+1)) <<-end
+		Version: $(cat ~/VERSION)
+	end
 ;;
 esac

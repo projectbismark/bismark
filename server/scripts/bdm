@@ -30,7 +30,7 @@ function help()
 	
 	    list     [update]             List available devices and tunnels
 	
-	    swupdate <dev_id> <all|scripts|conf|<file>>   Update software on <dev_id> 
+	    swupdate <dev_id> all|<file>  Update software on <dev_id> 
 	
 	Options:
 	
@@ -98,6 +98,7 @@ function parse()
 	;;
 	swupdate)
 		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help swupdate; }
+		[ $3 ] || { echo -e "Missing parameter: all|<file>\n"; help swupdate; }
 		swupdate $2 $3
 	;;
 	*)
@@ -119,7 +120,7 @@ function probe_reply()
 	read ip
 	ip=$(echo $ip | awk -F'[\\[\\]]' '{print $4}')
 	# Read probe packet
-	read id cmd
+	IFS=$' ' read id cmd
 	# Timeout
 	[ $id ] || return 1
 
@@ -136,7 +137,7 @@ function probe_reply()
 		echo $2 $3 
 		return 0
 	else
-		echo -e "\nDevice $id ($ip) [$cmd] -> pong" > /dev/stderr
+		echo -n "[$id]" > /dev/stderr
 		echo pong
 		return 2
 	fi
@@ -305,16 +306,22 @@ function wait_tunnel()
 
 # Update device software
 # $1 = dev id
-# $2 = file to update (all|scripts|conf|<file>)
+# $2 = file to update (all|<file>)
 function swupdate(){
+	echo "Updating $2 on $1"
 	listen $1 update $2 || { echo -e "\nDevice $1 not found"; return 1; }
+	echo "Waiting for update log:"
+	nc -w5 -q1 -nlu -p $((PROBE_PORT+1)) </dev/null
 }
 
 # Show dev info
 # $1 = dev id
 function info()
 {
-	echo "command not implemented"
+	echo "Obtaining information from $1"
+	listen $1 info || { echo -e "\nDevice $1 not found"; return 2; }
+	echo "$1 info:"
+	nc -w5 -q1 -nlu -p $((PROBE_PORT+1)) </dev/null
 }
 
 # List active devices and tunnels
@@ -331,7 +338,7 @@ function list()
 	echo -e "\nDevices:"
 	echo -e "ID\tIP\t\tLAST PROBE"
 	IFS=$'\n' 
-	for dev in $(query 'SELECT * FROM devices;'); do
+	for dev in $(query 'SELECT * FROM devices ORDER BY id;'); do
 		IFS=$'|' read id ip ts <<< "$dev"
 		printf "%s\t%s\t%s\n" $id $ip $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
@@ -340,7 +347,7 @@ function list()
 	echo -e "\nTunnels:"
 	echo -e "ID\tPORT\tSTART TIME"
 	IFS=$'\n' 
-	for dev in $(query 'SELECT * FROM tunnels;'); do
+	for dev in $(query 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
 		check_tunnel $id $port && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
