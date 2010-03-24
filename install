@@ -79,17 +79,26 @@ echo -n "Setting device id and software version..."
 ssh root@$1 "echo $2 > ID ; echo $VERSION > VERSION"
 echo "done"
 
-echo -n "Configuring cronjobs..."
-ssh root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab"
-echo "done"
-
 if [ $suffix == ls ]; then
+	echo "Installing netcat package:"
+	wget -O /tmp/netcat.ipk "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/netcat_0.7.1-1_mipsel.ipk"
+	scp /tmp/netcat.ipk root@$1:/tmp
+	ssh root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk"
+
+	echo -n "Configuring cronjobs..."
+	ssh root@$1 "echo \"*/1 * * * * /root/scripts/probe\" > $crontab"
+	echo "done"
+
 	echo -n "Starting crond daemon..."
 	ssh root@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start"
 	echo done
 fi
 
 if [ $suffix == nb ]; then
+	echo -n "Configuring cronjobs..."
+	ssh root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab"
+	echo "done"
+
 	echo "Setting root password:"
 	ssh root@$1 "{ $PASS $PASS } | passwd"	
 
