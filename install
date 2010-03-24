@@ -35,14 +35,12 @@ LS)
 	echo "Installing Bismark on Lynksys WRT54GL router ($1 $2)..."
 	echo "-- if requested insert \"$ROOT_PASS\" password --"
 	suffix="ls"
-	crontab="/etc/crontabs/root"
 	auth_keys="/etc/dropbear/authorized_keys"
 ;;
 NB)
 	echo "Installing Bismark on NoxBox router ($1 $2)..."
 	echo "-- if requested insert \"n0xb0xr0x\" password --"
 	suffix="nb"
-	crontab="/etc/cron.d/bismark"
 	auth_keys="~/.ssh/authorized_keys"
 ;;
 *)
@@ -77,6 +75,7 @@ if [ ! $3 ]; then
 	echo "done"
 
 	echo "Copying SSH key pair:"
+	chmod 600 ${DEVICE_SSH_KEY}_$suffix
 	scp ${DEVICE_SSH_KEY}_$suffix{,.pub} root@$1:~/.ssh 2>/dev/null 
 fi
 
@@ -87,15 +86,17 @@ echo -n "Setting device id and software version..."
 ssh $SSHOPT root@$1 "echo $2 > ID ; echo $VERSION > VERSION" 2>/dev/null
 echo "done"
 
-if [ $suffix == ls ]; then
-	echo "Installing netcat package:"
-	wget -O /tmp/netcat.ipk "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/netcat_0.7.1-1_mipsel.ipk"
-	scp $SCPOPT /tmp/netcat.ipk root@$1:/tmp 2>/dev/null
-	ssh $SSHOPT root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk" 2>/dev/null
+echo -n "Configuring cronjobs..."
+ssh $SSHOPT root@$1 "crontab conf/crontab" 2>/dev/null
+echo "done"
 
-	echo -n "Configuring cronjobs..."
-	ssh $SSHOPT root@$1 "echo \"*/1 * * * * /root/scripts/probe\" > $crontab" 2>/dev/null
-	echo "done"
+if [ $suffix == ls ]; then
+	if [ $(ssh $SSHOPT root@$1 'opkg list_installed | grep -c netcat' 2>/dev/null) -eq 0 ]; then
+		echo "Installing netcat package:"
+		wget -O /tmp/netcat.ipk "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/netcat_0.7.1-1_mipsel.ipk"
+		scp $SCPOPT /tmp/netcat.ipk root@$1:/tmp 2>/dev/null
+		ssh $SSHOPT root@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk" 2>/dev/null
+	fi
 
 	echo -n "Starting crond daemon..."
 	ssh $SSHOPT root@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start" 2>/dev/null
@@ -103,10 +104,6 @@ if [ $suffix == ls ]; then
 fi
 
 if [ $suffix == nb ]; then
-	echo -n "Configuring cronjobs..."
-	ssh $SSHOPT root@$1 "echo \"*/1 * * * * root /root/scripts/probe\" > $crontab" 2>/dev/null
-	echo "done"
-
 	echo "Setting root password:"
 	ssh $SSHOPT root@$1 "{ $PASS $PASS } | passwd" 2>/dev/null
 

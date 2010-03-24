@@ -5,7 +5,8 @@
 # Currently implements:
 # - Bismark server heartbeat
 # - on-demand SSH tunnel
-# - light SSH tunnel shutdown
+# - software update
+# - information query
 #
 # author: walter.dedonato@unina.it
 
@@ -22,37 +23,19 @@ msg () {
 # OS depending options
 if [ -e /etc/openwrt_version ]; then
 	NC_OPTS="-nuc"
-	SSH_OPTS="-y -N"
 else
 	NC_OPTS="-q1 -nu"
-	SSH_OPTS="-N"
 fi
 
 # Send probe and store reply
 msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
-
-# If unable to probe the server open a tunnel for 15 minutes each 30 minutes
-[ -e /tmp/server_last ] || echo `date +%s` > /tmp/server_last
-if [ ! -s /tmp/reply ] && [ $(( `date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
-    if [ -e /tmp/tunnel ]; then
-        echo "stop $(cat /tmp/tunnel)" > /tmp/reply
-        rm /tmp/tunnel
-    else
-        RANDOM=$(( `date +%s` % 32767 ))
-        port=$(( RANDOM % 5000 + 5000 ))
-        echo "fwd $port" > /tmp/reply
-        ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bin/sqlite3 -list $BDM_DB "INSERT INTO tunnels VALUES(\"'$DEVID'\",'$port','$(date +%s)');"'
-        echo $port > /tmp/tunnel
-    fi
-    echo `date +%s` > /tmp/server_last
-fi
 
 # Parse reply
 read cmd value < /tmp/reply
 case $cmd in 
 fwd)
 	# on-demand SSH tunnel
-	ssh $SSH_OPTS -i $SSH_KEY -R $value:127.0.0.1:22 $USER@$SERVER &
+	ssh -N -i $SSH_KEY -R $value:127.0.0.1:22 $USER@$SERVER &
 ;;
 pong)
 	# Server heartbeat
