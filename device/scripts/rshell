@@ -12,15 +12,16 @@
 # Work only if last timestamp is more than 15 minutes old
 if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
     if [ -e /tmp/tunnel ]; then
-	kill $(ps a | awk "/ssh.*-R $(cat /tmp/tunnel):127/{print \$1}" | head -1)
-        rm /tmp/tunnel
+        port=$(cat /tmp/tunnel)
+        pid=$(ps ax | awk "/ssh.*-R $port:127/{print \$1}" | head -1)
+        kill -9 $pid
+        ps $pid >/dev/null && rm /tmp/tunnel
     else
         RANDOM=$(( `date +%s` % 32767 ))
         port=$(( RANDOM % 5000 + 5000 ))
         ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bin/sqlite3 -list $BDM_DB "INSERT INTO tunnels VALUES(\"'$DEVID'\",'$port','$(date +%s)');"'
-	ssh -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER &
         echo $port > /tmp/tunnel
+        ssh -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER 
     fi
-    echo `date +%s` > /tmp/server_last
 fi
 

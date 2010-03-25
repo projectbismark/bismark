@@ -122,7 +122,7 @@ function probe_reply()
 	# Read probe packet
 	IFS=$' ' read id cmd
 	# Timeout
-	[ $id ] || return 1
+	[ $cmd ] || return 1
 
 	# Update database
 	if [ $(query "SELECT id FROM devices WHERE id='$id';") ]; then

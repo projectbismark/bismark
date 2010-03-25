@@ -7,6 +7,7 @@
 # - on-demand SSH tunnel
 # - software update
 # - information query
+# - UDP proxy fallback
 #
 # author: walter.dedonato@unina.it
 
@@ -28,8 +29,28 @@ else
 	PF=on
 fi
 
+# Check faults count
+count=0
+if [ -e /tmp/faults ]; then
+    count=$(cat /tmp/faults)
+    if [ $count -gt 10 ]; then
+        proxy=on
+    fi
+fi
+
 # Send probe and store reply
-msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
+if [ $proxy ]; then
+    msg | nc $NC_OPTS $PROXY 53 > /tmp/reply
+else
+    msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
+fi
+
+# Refresh faults count
+if [ -s /tmp/reply ]; then
+    [ $count -gt 50 ] && echo 0 > /tmp/faults
+else
+    echo $((++count)) > /tmp/faults
+fi
 
 # Parse reply
 read cmd value < /tmp/reply
@@ -66,3 +87,4 @@ info)
 	end
 ;;
 esac
+
