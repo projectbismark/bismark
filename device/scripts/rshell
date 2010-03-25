@@ -9,7 +9,7 @@
 
 [ -e /tmp/server_last ] || echo `date +%s` > /tmp/server_last
 
-# Work only if last timestamp is 15 minutes or more old
+# Work only if last timestamp is more than 15 minutes old
 if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
     if [ -e /tmp/tunnel ]; then
 	kill $(ps a | awk "/ssh.*-R $(cat /tmp/tunnel):127/{print \$1}" | head -1)

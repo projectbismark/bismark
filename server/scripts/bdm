@@ -249,11 +249,13 @@ function start_tunnel()
 # $* = optional shell command
 function console()
 {
-	start_tunnel $1
-	case $? in
-	0) new=1 ;;
-	2) return 1;;
-	esac
+	if [ ! $FWD_PORT ]; then 
+		start_tunnel $1
+		case $? in
+		0) new=1 ;;
+		2) return 1;;
+		esac
+	fi
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
 	ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
@@ -278,7 +280,7 @@ function stop_tunnel()
 		echo "Unable to close tunnel"
 	else
 		echo "Tunnel closed"
-		query "DELETE FROM tunnels WHERE id='$1';"
+		query "DELETE FROM tunnels WHERE id='$1' AND port='$FWD_PORT';"
 	fi
 }
 
@@ -309,7 +311,20 @@ function wait_tunnel()
 # $2 = file to update (all|<file>)
 function swupdate(){
 	echo "Updating $2 on $1"
+
+	# Update version number
+	svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }" > ~/bismark/device/VERSION
+	ver=$(cat ~/bismark/device/VERSION)
+
+	# Create update package
+	if [ ! -e ~/bismark/device/dev-$ver.tgz ]; then
+		echo "Creating package version $ver:"
+		(cd ~/bismark/device ; rm dev-*.tgz; tar -czvf dev-$ver.tgz VERSION conf/* scripts/*)
+	fi
+
+	# Wait for probe packet
 	listen $1 update $2 || { echo -e "\nDevice $1 not found"; return 1; }
+
 	echo "Waiting for update log:"
 	nc -w5 -q1 -nlu -p $((PROBE_PORT+1)) </dev/null
 }

@@ -43,18 +43,17 @@ pong)
 ;;
 update)
 	# Software update
-	echo "$(date) - Updating $value" > /tmp/update.log
 	case $value in
 	all)
-		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar -cf - conf/* scripts/*' | tar -xvf - >> /tmp/update.log
-		ssh -i $SSH_KEY $USER@$SERVER 'svn info bismark | awk "/^Rev/{ print \$2 ; exit }"' > ~/VERSION
+		scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
+		tar -C /root -xzf /tmp/dev.tgz
+		rm /tmp/dev.tgz
 	;;
 	*)
-		ssh -i $SSH_KEY $USER@$SERVER 'cd bismark/device; tar -cf - '$value | tar -xvf - >> /tmp/update.log
+		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$value $value
 	;;
 	esac
-	echo "$(date) - Update completed" >> /tmp/update.log
-	cat /tmp/update.log | nc $NC_OPTS $SERVER $((PROBE_PORT+1))
+	find /root | nc $NC_OPTS $SERVER $((PROBE_PORT+1))
 ;;
 info)
 	# Info reply
