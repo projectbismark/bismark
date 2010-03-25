@@ -325,8 +325,8 @@ function swupdate(){
 	# Wait for probe packet
 	listen $1 update $2 || { echo -e "\nDevice $1 not found"; return 1; }
 
-	echo "Waiting for update log:"
-	nc -w5 -q1 -nlu -p $((PROBE_PORT+1)) </dev/null
+	echo "Device files:"
+	nc -w8 -q1 -nlu -p $((PROBE_PORT+1)) </dev/null
 }
 
 # Show dev info

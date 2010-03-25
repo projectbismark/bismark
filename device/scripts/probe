@@ -25,6 +25,7 @@ if [ -e /etc/openwrt_version ]; then
 	NC_OPTS="-nuc"
 else
 	NC_OPTS="-q1 -nu"
+	PF=on
 fi
 
 # Send probe and store reply
@@ -48,6 +49,8 @@ update)
 		scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
 		tar -C /root -xzf /tmp/dev.tgz
 		rm /tmp/dev.tgz
+		crontab conf/crontab
+		[ $PF ] && /noxbox/bin/persist_changes
 	;;
 	*)
 		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$value $value
