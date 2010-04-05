@@ -14,6 +14,7 @@
 # Load configuration file
 . ~/conf/dev.conf
 
+
 # Probe message generator
 msg () {
 	echo "$DEVID ping"
@@ -24,8 +25,10 @@ msg () {
 # OS depending options
 if [ -e /etc/openwrt_version ]; then
 	NC_OPTS="-nuc"
+	KEEP_ALIVE="-K 120"
 else
 	NC_OPTS="-q1 -nu"
+	KEEP_ALIVE="-o ServerAliveInterval=120"
 	PF=on
 fi
 
@@ -56,7 +59,7 @@ read cmd value < /tmp/reply
 case $cmd in 
 fwd)
 	# on-demand SSH tunnel
-	ssh -N -i $SSH_KEY -R $value:127.0.0.1:22 $USER@$SERVER &
+	ssh $KEEP_ALIVE -N -i $SSH_KEY -R $value:127.0.0.1:22 $USER@$SERVER &
 ;;
 pong)
 	# Server heartbeat

@@ -221,7 +221,7 @@ function check_tunnel()
 	if (check_fwd_port $FWD_PORT); then
 		return 0
 	else
-		query "DELETE FROM tunnels WHERE id='$1';"
+		query "DELETE FROM tunnels WHERE id='$1' AND port='$FWD_PORT';"
 		return 2
 	fi
 }
