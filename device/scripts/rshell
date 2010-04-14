@@ -9,26 +9,27 @@
 
 # OS depending options
 if [ -e /etc/openwrt_version ]; then
-	KEEP_ALIVE="-K 120"
+	KEEP_ALIVE="-K 60"
 else
-	KEEP_ALIVE="-o ServerAliveInterval=120"
+	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
 fi
 
 [ -e /tmp/server_last ] || echo `date +%s` > /tmp/server_last
 
-# Work only if last timestamp is more than 15 minutes old
+# Close pre-existing recovery tunnel
+if [ -e /tmp/tunnel ]; then
+    port=$(cat /tmp/tunnel)
+    pid=$(ps ax | awk "/ssh.*-R $port:127/{print \$1}" | head -1)
+    kill -9 $pid
+    ps $pid >/dev/null && rm /tmp/tunnel
+fi 
+
+# Start new tunnel only if last timestamp is more than 15 minutes old
 if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
-    if [ -e /tmp/tunnel ]; then
-        port=$(cat /tmp/tunnel)
-        pid=$(ps ax | awk "/ssh.*-R $port:127/{print \$1}" | head -1)
-        kill -9 $pid
-        ps $pid >/dev/null && rm /tmp/tunnel
-    else
-        RANDOM=$(( `date +%s` % 32767 ))
-        port=$(( RANDOM % 5000 + 5000 ))
-        ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bin/sqlite3 -list $BDM_DB "INSERT INTO tunnels VALUES(\"'$DEVID'\",'$port','$(date +%s)');"'
-        echo $port > /tmp/tunnel
-        ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER 
-    fi
+    RANDOM=$(( `date +%s` % 32767 ))
+    port=$(( RANDOM % 5000 + 5000 ))
+    ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bin/sqlite3 -list $BDM_DB "INSERT INTO tunnels VALUES(\"'$DEVID'\",'$port','$(date +%s)');"'
+    echo $port > /tmp/tunnel
+    ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER 
 fi
 
