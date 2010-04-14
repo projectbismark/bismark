@@ -3,6 +3,8 @@
 #
 # author: walter.dedonato@unina.it
 
+PATH="$HOME/bin:/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/bin"
+
 # Load configuration file
 . ~/etc/bdm.conf
 
@@ -218,10 +220,10 @@ function check_tunnel()
 		get_fwd_port $1 || return 1
 	fi
 	
-	if (check_fwd_port $FWD_PORT); then
+	if check_fwd_port $FWD_PORT; then
 		return 0
 	else
-		query "DELETE FROM tunnels WHERE id='$1' AND port='$FWD_PORT';"
+		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
 		return 2
 	fi
 }
@@ -280,7 +282,7 @@ function stop_tunnel()
 		echo "Unable to close tunnel"
 	else
 		echo "Tunnel closed"
-		query "DELETE FROM tunnels WHERE id='$1' AND port='$FWD_PORT';"
+		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
 	fi
 }
 
