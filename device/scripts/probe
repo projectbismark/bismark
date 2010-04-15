@@ -83,12 +83,12 @@ update)
 		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$value $value
 	;;
 	esac
-	find /root | nc $NC_OPTS $SERVER $((PROBE_PORT+10000))
+	find /root | nc $NC_OPTS $SERVER $((PROBE_PORT+5301))
 ;;
 info)
 	# Info reply
 	sleep 1
-	nc $NC_OPTS $SERVER $((PROBE_PORT+10000)) <<-end
+	nc $NC_OPTS $SERVER $((PROBE_PORT+5301)) <<-end
 		Version: $(cat ~/VERSION)
 	end
 ;;

@@ -340,7 +340,7 @@ function info()
 	echo "Obtaining information from $1"
 	listen $1 info || { echo -e "\nDevice $1 not found"; return 2; }
 	echo "$1 info:"
-	nc -w5 -q1 -nlu -p $((PROBE_PORT+10000)) </dev/null
+	nc -w5 -q1 -nlu -p $((PROBE_PORT+1)) </dev/null
 }
 
 # List active devices and tunnels
