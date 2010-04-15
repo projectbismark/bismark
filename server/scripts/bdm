@@ -122,20 +122,22 @@ function probe_reply()
 	read ip
 	ip=$(echo $ip | awk -F'[\\[\\]]' '{print $4}')
 	# Read probe packet
-	IFS=$' ' read id cmd
+	IFS=$' ' read id cmd param
 	# Timeout
 	[ $cmd ] || return 1
 
 	# Update database
-	if [ $(query "SELECT id FROM devices WHERE id='$id';") ]; then
-		query "UPDATE devices SET ip='$ip',ts='$(date +%s)' WHERE id='$id';"
-	else
-		query "INSERT INTO devices VALUES('$id','$ip','$(date +%s)');"
+	if [ $cmd == ping ]; then
+		if [ $(query "SELECT id FROM devices WHERE id='$id';") ]; then
+			query "UPDATE devices SET ip='$ip',ts=$(date +%s),version='$param' WHERE id='$id';"
+		else
+			query "INSERT INTO devices VALUES('$id','$ip',$(date +%s),'$param');"
+		fi
 	fi
 
 	# If dev_id matches
 	if [ $id == $1 ]; then
-		echo -e "\nDevice $id ($ip) [$cmd] -> $2 $3" > /dev/stderr
+		echo -e "\nDevice $id ($ip) [$cmd $param] -> $2 $3" > /dev/stderr
 		echo $2 $3 
 		return 0
 	else
@@ -353,11 +355,11 @@ function list()
 
 	# Dump devices table
 	echo -e "\nDevices:"
-	echo -e "ID\tIP\t\tLAST PROBE"
+	echo -e "ID\tIP\t\tVERSION\tLAST PROBE"
 	IFS=$'\n' 
 	for dev in $(query 'SELECT * FROM devices ORDER BY id;'); do
-		IFS=$'|' read id ip ts <<< "$dev"
-		printf "%s\t%s\t%s\n" $id $ip $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+		IFS=$'|' read id ip ts ver <<< "$dev"
+		printf "%s\t%s\t%s\t%s\n" $id $ip $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 
 	# Dump tunnels table

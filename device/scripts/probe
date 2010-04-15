@@ -14,10 +14,9 @@
 # Load configuration file
 . ~/conf/dev.conf
 
-
 # Probe message generator
 msg () {
-	echo "$DEVID ping"
+	echo "$DEVID ping $VERSION"
 	sleep 3
 	return 0
 }
@@ -33,15 +32,19 @@ else
 fi
 
 # Check faults count
-count=0
+faults=0
 if [ -e /tmp/faults ]; then
-    count=$(cat /tmp/faults)
-    [ $count -gt 20 ] && proxy=on
-    [ $count -gt 40 ] && echo 0 > /tmp/faults
+    faults=$(cat /tmp/faults)
+    if [ $faults -ge 20 ]; then
+	[ -e /tmp/proxy ] && proxy=$(cat /tmp/proxy) || proxy=0
+	echo $(( (proxy + 1) % 2 )) > /tmp/proxy
+    	echo 0 > /tmp/faults
+	faults=0
+    fi
 fi
 
 # Send probe and store reply
-if [ $proxy ]; then
+if [ $(cat /tmp/proxy) -eq 1 ]; then
     msg | nc $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply
 else
     msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
@@ -51,7 +54,7 @@ fi
 if [ "`cat /tmp/reply`" ]; then
     echo 0 > /tmp/faults
 else
-    echo $((++count)) > /tmp/faults
+    echo $((++faults)) > /tmp/faults
 fi
 
 # Parse reply
