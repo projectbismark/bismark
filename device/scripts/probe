@@ -31,23 +31,24 @@ else
 	PF=on
 fi
 
+# Create status files
+[ -e /tmp/faults ] || echo 0 > /tmp/faults
+[ -e /tmp/proxy ] || echo 0 > /tmp/proxy
+
 # Check faults count
-faults=0
-if [ -e /tmp/faults ]; then
-    faults=$(cat /tmp/faults)
-    if [ $faults -ge 20 ]; then
-	[ -e /tmp/proxy ] && proxy=$(cat /tmp/proxy) || proxy=0
+faults=$(cat /tmp/faults)
+if [ $faults -ge 20 ]; then
+	proxy=$(cat /tmp/proxy)
 	echo $(( (proxy + 1) % 2 )) > /tmp/proxy
-    	echo 0 > /tmp/faults
+	echo 0 > /tmp/faults
 	faults=0
-    fi
 fi
 
 # Send probe and store reply
 if [ $(cat /tmp/proxy) -eq 1 ]; then
-    msg | nc $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply
+	msg | nc $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply
 else
-    msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
+	msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
 fi
 
 # Refresh faults count
