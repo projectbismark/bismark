@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <measurements version="1.0">
 	<info dev_id="" user_id=""/>
-	<measurement param="" srcip="" dstip="" timestamp="" avg="" std="" min="" max="" />
+	<measurement param="" tool="" srcip="" dstip="" timestamp="" avg="" std="" min="" max="" />
 	<traceroute srcip="" dstip="" timestamp="" hops="">
 		<hop id="" ip="" rtt="" />
 	</traceroute>
