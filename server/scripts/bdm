@@ -245,7 +245,7 @@ function start_tunnel()
  	wait_tunnel $FWD_PORT || return 3
 
 	# Add tunnel to db
-	query "INSERT INTO tunnels VALUES('$1','$FWD_PORT','$(date +%s)');"
+	query "INSERT INTO tunnels VALUES('$1',$FWD_PORT,$(date +%s));"
 }
 
 # Connect to the SSH server on the dev
@@ -376,7 +376,7 @@ function list()
 
 # Check DB
 if [ ! -e $BDM_DB ]; then
-	query "CREATE TABLE devices(id, ip, ts);"
+	query "CREATE TABLE devices(id, ip, ts, version);"
 	query "CREATE TABLE tunnels(id, port, ts);"
 fi
 
