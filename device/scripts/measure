@@ -1,0 +1,34 @@
+#!/bin/sh
+# Executes a measurement cycle
+# 
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Globals
+xml_file="/tmp/measure_$(date +%s).xml"
+
+# Get destination ip
+# $1 = tool
+function get_dest()
+{
+	dest="143.225.229.126"
+}
+
+# XML file header
+cat > $xml_file <<end
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<measurements version="1.0">
+	<info dev_id=$DEVID user_id=$USERID />
+end
+
+# RTT measurement using PING
+src=$(cat /tmp/ip)
+get_dest PNG
+bping $dest | mstats RTT PING $src $dest >> $xml_file
+
+# XML file footer
+cat >> $xml_file <<end
+</measurements>
+end

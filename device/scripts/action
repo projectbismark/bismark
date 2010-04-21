@@ -1,0 +1,68 @@
+#!/bin/sh
+# Device actions script
+# Provides:
+# - on-demand SSH tunnel
+# - server heartbeat
+# - software update
+# - information query
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Help screen
+[ $1 ] || { echo "$(basename $0) <command> [value]" ; exit ; }
+
+# OS depending options
+if [ -e /etc/openwrt_version ]; then
+	NC_OPTS="-nuc"
+	KEEP_ALIVE="-K 120"
+	WIF="wl0"
+else
+	NC_OPTS="-q1 -nu"
+	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
+	PF=on
+	WIF="ath0"
+fi
+
+# Perform action
+case $1 in
+fwd)
+        # on-demand SSH tunnel
+        ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER &
+;;
+pong)
+        # Server heartbeat
+        date +%s > /tmp/server_last
+	echo $2 > /tmp/ip
+;;
+update)
+        # Software update
+        case $2 in
+        all)
+                scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
+                tar -C /root -xzf /tmp/dev.tgz
+                rm /tmp/dev.tgz
+                crontab conf/crontab
+                [ $PF ] && /noxbox/bin/persist_changes
+        ;;
+        *)
+                scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$value $value
+        ;;
+        esac
+        find /root | nc $NC_OPTS $SERVER $REPLY_PORT
+;;
+info)
+        # Info reply
+        sleep 1
+        nc $NC_OPTS $SERVER $REPLY_PORT <<-end
+                Version: $(cat ~/VERSION)
+		User ID: $(cat ~/USER)
+		Channel: $(iwlist $WIF channel | awk -F: '/Current/{ print $2 }')
+		ESSID: $(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
+        end
+;;
+esac
+
+

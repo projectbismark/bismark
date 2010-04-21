@@ -14,7 +14,7 @@ VERSION=$(svn info | awk '/^Rev/{ print $2 ; exit }')
 # Command line check
 if [ ! $2 ]; then
 	cat <<-end
-		usage: $(basename $0) <address> <dev_id> [port]"
+		usage: $(basename $0) <address> <dev_id> <usr_id> [port]"
 		
 		Device ids:
 		       LSx = Linksys WRT54GL (OpenWRT Kamikaze 8.09.1)
@@ -24,21 +24,21 @@ if [ ! $2 ]; then
 fi
 
 # Custom port
-if [ $3 ]; then
-	SSHOPT="-i $HOME/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $3"
-	SCPOPT="-i $HOME/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P $3"
+if [ $4 ]; then
+	SSHOPT="-i $HOME/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $4"
+	SCPOPT="-i $HOME/bismark/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P $4"
 fi
 
 # Device specific options selection
 case ${2:0:2} in
 LS)
-	echo "Installing Bismark on Lynksys WRT54GL router ($1 $2)..."
+	echo "Installing Bismark on Lynksys WRT54GL router ($1 $2 - UID $3)..."
 	echo "-- if requested insert \"$ROOT_PASS\" password --"
 	suffix="ls"
 	auth_keys="/etc/dropbear/authorized_keys"
 ;;
 NB)
-	echo "Installing Bismark on NoxBox router ($1 $2)..."
+	echo "Installing Bismark on NoxBox router ($1 $2 - UID $3)..."
 	echo "-- if requested insert \"n0xb0xr0x\" password --"
 	suffix="nb"
 	auth_keys="~/.ssh/authorized_keys"
@@ -65,7 +65,7 @@ if [ $suffix == ls ] && nc -z $1 23 ; then
 	echo "done"
 fi
 
-if [ ! $3 ]; then
+if [ ! $4 ]; then
 	echo -n "Adding SSH public and host keys..."
 	ssh root@$1 " 
 		mkdir -p .ssh 
@@ -82,8 +82,8 @@ fi
 echo "Copying files:"
 (cd device; tar -cf - conf/* scripts/* | ssh $SSHOPT root@$1 'tar -xvf -' 2>/dev/null)
 
-echo -n "Setting device id and software version..."
-ssh $SSHOPT root@$1 "echo $2 > ID ; echo $VERSION > VERSION" 2>/dev/null
+echo -n "Setting device id, user id and software version..."
+ssh $SSHOPT root@$1 "echo $2 > ID ; echo $3 > USER ; echo $VERSION > VERSION" 2>/dev/null
 echo "done"
 
 echo -n "Configuring cronjobs..."

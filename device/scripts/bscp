@@ -1,5 +1,5 @@
 #!/bin/sh
-# Script to easily copy files to the bismark server
+# Transfers files to the bismark server
 #
 # author: walter.dedonato@unina.it
 

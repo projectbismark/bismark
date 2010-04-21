@@ -1,12 +1,9 @@
 #!/bin/sh
 # Send UDP probes to Bismark server and
-# acts depending on the answer
+# call action script depending on the answer
 #
-# Currently implements:
-# - Bismark server heartbeat
-# - on-demand SSH tunnel
-# - software update
-# - information query
+# Provides:
+# - device heartbeat
 # - UDP proxy fallback
 #
 # author: walter.dedonato@unina.it
@@ -24,11 +21,8 @@ msg () {
 # OS depending options
 if [ -e /etc/openwrt_version ]; then
 	NC_OPTS="-nuc"
-	KEEP_ALIVE="-K 120"
 else
 	NC_OPTS="-q1 -nu"
-	KEEP_ALIVE="-o ServerAliveInterval=120"
-	PF=on
 fi
 
 # Create status files
@@ -60,37 +54,5 @@ fi
 
 # Parse reply
 read cmd value < /tmp/reply
-case $cmd in 
-fwd)
-	# on-demand SSH tunnel
-	ssh $KEEP_ALIVE -N -i $SSH_KEY -R $value:127.0.0.1:22 $USER@$SERVER &
-;;
-pong)
-	# Server heartbeat
-	date +%s > /tmp/server_last
-;;
-update)
-	# Software update
-	case $value in
-	all)
-		scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
-		tar -C /root -xzf /tmp/dev.tgz
-		rm /tmp/dev.tgz
-		crontab conf/crontab
-		[ $PF ] && /noxbox/bin/persist_changes
-	;;
-	*)
-		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$value $value
-	;;
-	esac
-	find /root | nc $NC_OPTS $SERVER $((PROBE_PORT+5301))
-;;
-info)
-	# Info reply
-	sleep 1
-	nc $NC_OPTS $SERVER $((PROBE_PORT+5301)) <<-end
-		Version: $(cat ~/VERSION)
-	end
-;;
-esac
+[ $cmd ] && action $cmd $value
 

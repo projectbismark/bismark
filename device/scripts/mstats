@@ -1,0 +1,36 @@
+#!/bin/sh
+# Calculates statistics from stdin samples and outputs XML measure
+# Needs $src and $dst IP to be defined
+#
+# author: walter.dedonato@unina.it
+
+[ $4 ] || { echo "usage: samples_generator | $(basename $0) <param> <tool> <src_ip> <dst_ip>" ; exit ; }
+
+sort -n | awk '
+BEGIN {	n = sum = qsum = 0 }
+{ 
+	sum += $1
+	qsum += $1 ^ 2
+	data[++n] = $1 
+}
+END {
+	# Mean - Std - Min - Max
+	avg = sum/n
+	std = sqrt((n*qsum - sum^2) / (n * (n - 1)))
+	min = data[1]
+	max = data[n]
+
+	# Median
+	if (n % 2 == 0)	median = (data[n/2] + data[n/2 + 1]) / 2
+	else		median = data[(n + 1) / 2]
+
+	# IQR
+	n1 = 0.25 * (n - 1) + 1; k1 = int(n1); d1 = n1 - k1
+	n3 = 0.75 * (n - 1) + 1; k3 = int(n3); d3 = n3 - k3
+	q1 = data[k1] + d1 * (data[k1 + 1] - data[k1])
+	q3 = data[k3] + d3 * (data[k3 + 1] - data[k3])
+	iqr = q3 - q1
+
+	# XML output
+	print "\t<measurement param='$1' tool='$2' srcip='$3' dstip='$4' timestamp='$(date +%s)' avg=" avg " std=" std " min=" min " max=" max " median=" median " iqr=" iqr " />"
+}'

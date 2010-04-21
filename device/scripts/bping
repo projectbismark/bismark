@@ -1,0 +1,13 @@
+#!/bin/sh
+# Bismark ping wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/bping.conf
+
+# Help screen
+[ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit ; }
+
+ping -c $COUNT -i $INTERVAL -W $TIMEOUT -s $PSIZE  $1 | awk -W interactive -F"=|ms" '/ttl/{ print $4 }'   
+	
