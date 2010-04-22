@@ -19,11 +19,13 @@ if [ -e /etc/openwrt_version ]; then
 	NC_OPTS="-nuc"
 	KEEP_ALIVE="-K 120"
 	WIF="wl0"
+	DIFF="awk -F- '/^-[a-zA-Z]/{ print \$2 }'"
 else
 	NC_OPTS="-q1 -nu"
 	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
 	PF=on
 	WIF="ath0"
+	DIFF="awk -F\< '/^</{ print \$2 }'"
 fi
 
 # Perform action
@@ -44,9 +46,9 @@ update)
 		# Get new package
 		scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
 		# Remove old files
-		(cd /root ; find * -path "*/*") > /tmp/old
-		tar -tzf /tmp/dev.tgz > /tmp/new
-		rm $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }')
+		(cd /root ; find * -path "*/*" | sort) > /tmp/old
+		tar -tzf /tmp/dev.tgz | sort > /tmp/new
+		rm -f $(diff /tmp/old /tmp/new | $DIFF)
 		rm /tmp/old /tmp/new
 		# Extract new package
 		tar -C /root -xzf /tmp/dev.tgz

@@ -317,6 +317,7 @@ function swupdate(){
 	echo "Updating $2 on $1"
 
 	# Update version number
+	svn update ~/bismark
 	svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }" > ~/bismark/device/VERSION
 	ver=$(cat ~/bismark/device/VERSION)
 
@@ -354,6 +355,7 @@ function list()
 	fi
 
 	# Dump devices table
+	echo "Latest version: $(svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }")"
 	echo -e "\nDevices:"
 	echo -e "ID\tIP\t\tVERSION\tLAST PROBE"
 	IFS=$'\n' 
