@@ -41,14 +41,23 @@ update)
 	# Software update
 	case $2 in
 	all)
+		# Get new package
 		scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
+		# Remove old files
+		(cd /root ; find * -path "*/*") > /tmp/old
+		tar -tzf /tmp/dev.tgz > /tmp/new
+		rm $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }')
+		rm /tmp/old /tmp/new
+		# Extract new package
 		tar -C /root -xzf /tmp/dev.tgz
 		rm /tmp/dev.tgz
+		# Apply changes
 		crontab conf/crontab
 		[ $PF ] && /noxbox/bin/persist_changes
 	;;
 	*)
-		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$value $value
+		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$2 /root/$2
+		[ $PF ] && /noxbox/bin/persist_files /root/$2	
 	;;
 	esac
 	find /root | nc $NC_OPTS $SERVER $REPLY_PORT
