@@ -15,18 +15,21 @@
 [ $1 ] || { echo "$(basename $0) <command> [value]" ; exit ; }
 
 # OS depending options
-if [ -e /etc/openwrt_version ]; then
+case $DEVID in
+LS*)
 	NC_OPTS="-nuc"
 	KEEP_ALIVE="-K 120"
 	WIF="wl0"
-	DIFF="awk -F- '/^-[a-zA-Z]/{ print \$2 }'"
-else
+	alias filter="awk -F- '/^-[a-zA-Z]/{ print \$2 }'"
+;;
+NB*)
 	NC_OPTS="-q1 -nu"
 	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
-	PF=on
 	WIF="ath0"
-	DIFF="awk -F\< '/^</{ print \$2 }'"
-fi
+	alias filter="awk -F\< '/^</{ print \$2 }'"
+	NB=true
+;;
+esac
 
 # Perform action
 case $1 in
@@ -48,18 +51,18 @@ update)
 		# Remove old files
 		(cd /root ; find * -path "*/*" | sort) > /tmp/old
 		tar -tzf /tmp/dev.tgz | sort > /tmp/new
-		rm -f $(diff /tmp/old /tmp/new | $DIFF)
+		rm -f $(diff /tmp/old /tmp/new | filter)
 		rm /tmp/old /tmp/new
 		# Extract new package
 		tar -C /root -xzf /tmp/dev.tgz
 		rm /tmp/dev.tgz
 		# Apply changes
 		crontab conf/crontab
-		[ $PF ] && /noxbox/bin/persist_changes
+		[ $NB ] && /noxbox/bin/persist_changes
 	;;
 	*)
 		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$2 /root/$2
-		[ $PF ] && /noxbox/bin/persist_files /root/$2	
+		[ $NB ] && /noxbox/bin/persist_files /root/$2	
 	;;
 	esac
 	find /root | nc $NC_OPTS $SERVER $REPLY_PORT
@@ -73,6 +76,25 @@ info)
 		Channel: $(iwlist $WIF channel | awk -F: '/Current/{ print $2 }')
 		ESSID: $(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
 	end
+;;
+config)
+	# Push configuration
+	IFS=$'&'
+	for param in $2; do
+		option=${param%=*}
+        	value=${param#*=}
+		case $option in
+		channel) 
+			echo changing channel $value
+		;;
+		essid)
+			echo changing essid to $value
+		;;
+		passphrase)
+			echo changing passphrase to $value
+		;;
+		esac
+	done
 ;;
 esac
 
