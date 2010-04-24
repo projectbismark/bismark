@@ -3,8 +3,6 @@
 #
 # author: walter.dedonato@unina.it
 
-PATH="$HOME/bin:/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/bin"
-
 # Load configuration file
 . ~/etc/bdm.conf
 
@@ -15,24 +13,27 @@ query(){ sqlite3 -list $BDM_DB "$1"; }
 # $1 = command
 function help() 
 {
-	awk "/^ *$1/{ print }" <<-end
+	grep -A1 "^ *$1" <<-end
 	Syntax:
 
 	    $(basename $0) [options] <command>
 	
 	Commands:
 	
-	    tunnel   <dev_id> <on|off>    Open/Close a tunnel to <dev_id> using SSH port forwarding
+	    tunnel   <dev_id> <on|off>        Open/Close a tunnel to <dev_id> using SSH port forwarding
 	
-	    console  <dev_id>             Open a console on <dev_id> over the SSH tunnel
+	    console  <dev_id>                 Open a console on <dev_id> over the SSH tunnel
 	
-	    exec     <dev_id> <command>   Execute a shell command on <dev_id>
+	    exec     <dev_id> <command>       Execute a shell command on <dev_id>
 	
-	    info     <dev_id>             Print some information about <dev_id>
+	    info     <dev_id>                 Print some information about <dev_id>
 	
-	    list     [update]             List available devices and tunnels
+	    list     [update]                 List available devices and tunnels
 	
-	    swupdate <dev_id> all|<file>  Update software on <dev_id> 
+	    swupdate <dev_id> [rebuild]       Update software on <dev_id> (use ALL to update every device)
+
+	    config   <dev_id> <option=value>  Change <dev_id> configuration options
+	             [[option=value] ...]     Supported options: channel, ssid, wpa_psk
 	
 	Options:
 	
@@ -75,33 +76,42 @@ function parse()
 	# Parse commands
 	case $1 in
 	tunnel)
-		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help tunnel; }
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help tunnel; }
 		[ $3 ] || { echo -e "Missing parameter: on|off\n"; help tunnel; }
+		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help tunnel; }
 		[ $3 == "on" ] && start_tunnel $2
 		[ $3 == "off" ] && stop_tunnel $2 $4
 	;;
 	console)
-		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help console; }
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help console; }
+		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help console; }
 		echo "Connecting to $2"
 		console $2
 	;;
 	exec)
-		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help exec; }
-		[ $3 ] || { echo -e "Missing parameter: command\n"; help exec; }
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help exec; }
+		[ $3 ] || { echo -e "Missing parameter: <command>\n"; help exec; }
+		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help exec; }
 		echo "Executing \"${p#* * }\" on $2"
 		console $2 ${p#* * }
 	;;
 	info)
-		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help info; }
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help info; }
+		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help info; }
 		info $2
 	;;
 	list)	
 		list $2
 	;;
 	swupdate)
-		[ $2 ] || { echo -e "Missing parameter: dev_id\n"; help swupdate; }
-		[ $3 ] || { echo -e "Missing parameter: all|<file>\n"; help swupdate; }
-		swupdate $2 $3
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help swupdate; }
+		swupdate $2 $3 
+	;;
+	config)
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }
+		[ $3 ] || { echo -e "Missing parameter: <option>=<value>\n"; help config; }
+		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help config; }
+		$* 
 	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
@@ -135,11 +145,15 @@ function probe_reply()
 		fi
 	fi
 
-	# If dev_id matches
+	# Check dev_id
 	if [ $id == $1 ]; then
 		echo -e "\nDevice $id ($ip) [$cmd $param] -> $2 $3" > /dev/stderr
-		echo $2 $3 
+		echo $2 "$3" 
 		return 0
+	elif [ $1 == ALL ]; then
+		echo -n "{$id}" > /dev/stderr
+		echo $2 "$3"
+		return 3
 	else
 		echo -n "[$id]" > /dev/stderr
 		echo pong $ip
@@ -153,12 +167,12 @@ function probe_reply()
 # $3 = reply value
 function listen()
 {
-	[ "$1" == "UPDATE"  ] && echo -n "Listening to probe packets" || echo -n "Waiting for probe packet from device $1"
+	[ "$1" == "UPDATE"  ] && echo -n "Listening to probe packets" || echo -n "Waiting for probe packet from $1"
 	
 	time=0
 	[ -e /tmp/.bp ] || mkfifo /tmp/.bp
 	while [ true ]; do
-		nc -v -w1 -q0 -nlu -p $PROBE_PORT </tmp/.bp 2>&1 | probe_reply $1 $2 $3 >/tmp/.bp
+		nc -v -w1 -q0 -nlu -p $PROBE_PORT </tmp/.bp 2>&1 | probe_reply $1 $2 "$3" >/tmp/.bp
 
 		[ $? -eq 0 ] && return 0
 		[ $((time++)) -eq $PROBE_TIMEOUT ] && { return 1; }
@@ -312,9 +326,9 @@ function wait_tunnel()
 
 # Update device software
 # $1 = dev id
-# $2 = file to update (all|<file>)
+# $2 = rebuild
 function swupdate(){
-	echo "Updating $2 on $1"
+	echo "Updating $1"
 
 	# Update version number
 	svn update ~/bismark
@@ -322,16 +336,18 @@ function swupdate(){
 	ver=$(cat ~/bismark/device/VERSION)
 
 	# Create update package
+	[ $2 ] && rm -f ~/bismark/device/dev-$ver.tgz
 	if [ ! -e ~/bismark/device/dev-$ver.tgz ]; then
 		echo "Creating package version $ver:"
 		(cd ~/bismark/device ; rm dev-*.tgz; tar -czvf dev-$ver.tgz VERSION conf/* scripts/*)
 	fi
 
 	# Wait for probe packet
-	listen $1 update $2 || { echo -e "\nDevice $1 not found"; return 1; }
+	[ $1 == ALL ] && all=all
+	listen $1 update $all || { echo -e "\nDevice $1 not found"; return 1; }
 
-	echo "Device files:"
-	nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
+	# Receive feedback message
+	[ $1 != ALL ] && nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
 }
 
 # Show dev info
@@ -339,9 +355,26 @@ function swupdate(){
 function info()
 {
 	echo "Obtaining information from $1"
-	listen $1 info || { echo -e "\nDevice $1 not found"; return 2; }
-	echo "$1 info:"
-	nc -w5 -q1 -nlu -p $REPLY_PORT </dev/null
+	if check_tunnel $1; then
+		console $1 "~/scripts/action" info local
+	else
+		listen $1 info || { echo -e "\nDevice $1 not found"; return 2; }
+		echo "$1 info:"
+		nc -w5 -q1 -nlu -p $REPLY_PORT </dev/null
+        fi
+
+}
+
+# Push configuration
+# $1 = dev id
+# $* = options
+function config()
+{
+	id=$1
+	shift
+	params=$(echo $* | tr ' ' '&')
+	listen $id config $params || { echo -e "\nDevice $1 not found"; return 2; }
+	nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
 }
 
 # List active devices and tunnels

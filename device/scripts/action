@@ -5,12 +5,13 @@
 # - server heartbeat
 # - software update
 # - information query
+# - configuration push
 #
 # author: walter.dedonato@unina.it
 
 # Import configuration and functions
 . ~/conf/dev.conf
-. ~/bin/functions
+. ~/scripts/functions
 
 # Help screen
 [ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }
@@ -34,85 +35,82 @@ esac
 
 # Perform action
 case $1 in
-fwd)
-	# on-demand SSH tunnel
+fwd)	# on-demand SSH tunnel
 	ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER &
 ;;
-pong)
-	# Server heartbeat
+pong)	# Server heartbeat
 	date +%s > /tmp/server_last
 	echo $2 > /tmp/ip
 ;;
-update)
-	# Software update
-	case $2 in
-	all)
-		# Get new package
-		scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
-		# Remove old files
-		(cd /root ; find * -path "*/*" | sort) > /tmp/old
-		tar -tzf /tmp/dev.tgz | sort > /tmp/new
-		rm -f $(diff /tmp/old /tmp/new | filter)
-		rm /tmp/old /tmp/new
-		# Extract new package
-		tar -C /root -xzf /tmp/dev.tgz
-		rm /tmp/dev.tgz
-		# Apply changes
-		crontab conf/crontab
-		[ $NB ] && /noxbox/bin/persist_changes
-	;;
-	*)
-		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$2 /root/$2
-		[ $NB ] && /noxbox/bin/persist_files /root/$2	
-	;;
-	esac
-	find /root | nc $NC_OPTS $SERVER $REPLY_PORT
+update)	# Software update
+	# Get new package
+	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
+	# Remove old files
+	(cd /root ; find * -path "*/*" | sort) > /tmp/old
+	tar -tzf /tmp/dev.tgz | sort > /tmp/new
+	rm -f $(diff /tmp/old /tmp/new | filter)
+	# Extract new package
+	tar -C /root -xzf /tmp/dev.tgz
+	rm /tmp/dev.tgz
+	# Apply changes
+	crontab conf/crontab
+	[ $NB ] && /noxbox/bin/persist_changes
+	# Send diff
+	[ $2 != all ] && { echo "Files diff:"; diff /tmp/old /tmp/new ; } | nc $NC_OPTS $SERVER $REPLY_PORT
+	rm /tmp/old /tmp/new
 ;;
-info)
-	# Info reply
-	nc $NC_OPTS $SERVER $REPLY_PORT <<-end
+info)	# Info reply
+	[ $2 ] && cmd=cat || cmd="nc $NC_OPTS $SERVER $REPLY_PORT"
+	$cmd <<-end
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)
 		Channel: $(iwlist $WIF channel | awk -F: '/Current/{ print $2 }')
 		ESSID: $(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
 	end
 ;;
-config)
-	# Push configuration
+config)	# Get current configuration
+	case $DEVID in
+	LS*) 
+		channel=$(uci get wireless.wl0.channel)
+		ssid=$(uci get wireless.@wifi-iface[0].ssid)
+		wpa_psk=$(uci get wireless.@wifi-iface[0].key)
+	;;
+	NB*) 
+		channel=$(awk -F= '/^channel=/{ print $2 }' /etc/hostapd/hostapd.conf)
+		ssid=$(awk -F= '/^ssid=/{ print $2 }' /etc/hostapd/hostapd.conf)
+		wpa_psk=$(awk -F\" '{ print $2 }' /etc/hostapd/wpa_psk)
+	;;
+	esac
+
+	# Parse new configuration
 	IFS=$'&'
 	for param in $2; do
-		option=${param%=*}
-        	value=${param#*=}
-		case $option in
-		channel) 
-			case $DEVID in
-			LS*) echo LS ;;
-			NB*) 
-				mod_conf /etc/hostapd/hostapd.conf channel $value
-				iwconfig $WIF channel $value
-			;;
-			esac
-		;;
-		ssid)
-			case $DEVID in
-			LS*) echo LS ;;
-			NB*) 
-				mod_conf /etc/hostapd/hostapd.conf ssid $value
-				iwconfig $WIF essid $value
-			;;
-			esac
-		;;
-		passphrase)
-			case $DEVID in
-			LS*) echo LS ;;
-			NB*) 
-				echo "00:00:00:00:00:00\"$value" > /etc/hostapd/wpa_psk
-				/etc/init.d/hostapd restart
-			;;
-			esac
-		;;
-		esac
+		local ${param%=*}=${param#*=}
 	done
+
+	# Push new configuration
+	case $DEVID in
+	LS*) 
+		uci set wireless.wl0.channel=$channel
+		uci set wireless.@wifi-iface[0].ssid=$ssid
+		uci set wireless.@wifi-iface[0].key=$wpa_psk
+		uci commit wireless && wifi
+	;;
+	NB*) 
+		mod_conf /etc/hostapd/hostapd.conf channel $channel
+		mod_conf /etc/hostapd/hostapd.conf ssid $ssid
+		echo "00:00:00:00:00:00\"$wpa_psk" > /etc/hostapd/wpa_psk
+		/etc/init.d/hostapd restart
+		iwconfig $WIF channel $channel
+		persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
+	;;
+	esac
+
+	nc $NC_OPTS $SERVER $REPLY_PORT <<-end
+		ESSID: $ssid
+		Channel: $channel
+		WPA_PSK: ${wpa_psk:0:7}...
+	end
 ;;
 esac
 

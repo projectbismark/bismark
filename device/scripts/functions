@@ -7,7 +7,7 @@
 # $1 = configuration file
 # $2 = option
 # $3 = value
-function mod_conf()
+mod_conf ()
 {
 ed $1 <<-end
 	/^$2=/
