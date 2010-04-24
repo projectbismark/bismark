@@ -1,0 +1,18 @@
+#!/bin/sh
+# Ausiliary functions library
+#
+# author: walter.dedonato@unina.it
+
+# Modifies configuration files option
+# $1 = configuration file
+# $2 = option
+# $3 = value
+function mod_conf()
+{
+ed $1 <<-end
+	/^$2=/
+	.s/=.*/=$3/
+	w
+	q
+end
+}

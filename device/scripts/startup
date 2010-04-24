@@ -1,0 +1,16 @@
+#!/bin/sh
+# Device startup script
+#
+# author walter.dedonato@unina.it
+
+# Load configuration
+. ~/conf/dev.conf
+
+case $DEVID in
+LS*)
+	echo startup
+;;
+NB*)
+	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
+;;
+esac

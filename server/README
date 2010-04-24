@@ -1,0 +1,17 @@
+# Bismark server quick reference
+
+# Local environment paths
+~/bin			# Local binaries
+~/etc			# Local configuration files
+~/lib			# Local libraries
+~/share			# Local shared files (needed for manpages)
+~/var			# Local data files
+
+# Bismark paths
+~/bismark/server	# Server scripts, configuration files and keys
+~/bismark/device	# Devices related scripts, configuration files and keys 
+~/tools			# Measurement tools source trees and packages
+
+# Bismark commands
+bdm			# Main script to manage bismark devices
+bcron			# Simplified crond replacement

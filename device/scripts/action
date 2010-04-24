@@ -8,11 +8,12 @@
 #
 # author: walter.dedonato@unina.it
 
-# Load configuration file
+# Import configuration and functions
 . ~/conf/dev.conf
+. ~/bin/functions
 
 # Help screen
-[ $1 ] || { echo "$(basename $0) <command> [value]" ; exit ; }
+[ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }
 
 # OS depending options
 case $DEVID in
@@ -69,7 +70,6 @@ update)
 ;;
 info)
 	# Info reply
-	sleep 1
 	nc $NC_OPTS $SERVER $REPLY_PORT <<-end
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)
@@ -85,13 +85,31 @@ config)
         	value=${param#*=}
 		case $option in
 		channel) 
-			echo changing channel $value
+			case $DEVID in
+			LS*) echo LS ;;
+			NB*) 
+				mod_conf /etc/hostapd/hostapd.conf channel $value
+				iwconfig $WIF channel $value
+			;;
+			esac
 		;;
-		essid)
-			echo changing essid to $value
+		ssid)
+			case $DEVID in
+			LS*) echo LS ;;
+			NB*) 
+				mod_conf /etc/hostapd/hostapd.conf ssid $value
+				iwconfig $WIF essid $value
+			;;
+			esac
 		;;
 		passphrase)
-			echo changing passphrase to $value
+			case $DEVID in
+			LS*) echo LS ;;
+			NB*) 
+				echo "00:00:00:00:00:00\"$value" > /etc/hostapd/wpa_psk
+				/etc/init.d/hostapd restart
+			;;
+			esac
 		;;
 		esac
 	done
