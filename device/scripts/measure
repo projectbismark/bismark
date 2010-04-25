@@ -11,7 +11,7 @@ xml_file="/tmp/measure_$(date +%s).xml"
 
 # Get destination ip
 # $1 = tool
-function get_dest()
+get_dest()
 {
 	dest="143.225.229.126"
 }

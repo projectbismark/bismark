@@ -3,11 +3,14 @@
 #
 # author: walter.dedonato@unina.it
 
-# Load configuration file
+# Load configuration files
+. ~/conf/dev.conf
 . ~/conf/bping.conf
 
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit ; }
 
-ping -c $COUNT -i $INTERVAL -W $TIMEOUT -s $PSIZE  $1 | awk -W interactive -F"=|ms" '/ttl/{ print $4 }'   
-	
+case $DEVID in
+NB*) ping -c $COUNT -i $INTERVAL -W $TIMEOUT -s $PSIZE  $1 | awk -W interactive -F"=|ms" '/ttl/{ print $4 }' ;;
+LS*) ping -c $COUNT -W $TIMEOUT -s $PSIZE  $1 | awk -F"=|ms" '/ttl/{ print $4 }' ;;
+esac
