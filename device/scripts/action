@@ -16,6 +16,16 @@
 # Help screen
 [ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }
 
+# Output command
+output ()
+{
+	if [ $REMOTE ]; then
+		nc $NC_OPTS $SERVER $REPLY_PORT		
+	else
+		cat
+	fi
+}
+
 # OS depending options
 case $DEVID in
 LS*)
@@ -56,12 +66,11 @@ update)	# Software update
 	crontab conf/crontab
 	[ $NB ] && /noxbox/bin/persist_changes
 	# Send diff
-	[ $2 != all ] && { echo "Files diff:"; diff /tmp/old /tmp/new ; } | nc $NC_OPTS $SERVER $REPLY_PORT
+	[ $2 ] || { echo "Files diff:"; diff /tmp/old /tmp/new ; } | output 
 	rm /tmp/old /tmp/new
 ;;
 info)	# Info reply
-	[ $2 ] && cmd=cat || cmd="nc $NC_OPTS $SERVER $REPLY_PORT"
-	$cmd <<-end
+	output <<-end
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)
 		Channel: $(iwlist $WIF channel | awk -F: '/Current/{ print $2 }')

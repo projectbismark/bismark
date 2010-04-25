@@ -54,5 +54,5 @@ fi
 
 # Parse reply
 read cmd value < /tmp/reply
-[ $cmd ] && action $cmd $value
+[ $cmd ] && REMOTE=on action $cmd $value
 

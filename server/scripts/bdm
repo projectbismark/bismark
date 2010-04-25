@@ -339,7 +339,7 @@ function swupdate(){
 	[ $2 ] && rm -f ~/bismark/device/dev-$ver.tgz
 	if [ ! -e ~/bismark/device/dev-$ver.tgz ]; then
 		echo "Creating package version $ver:"
-		(cd ~/bismark/device ; rm dev-*.tgz; tar -czvf dev-$ver.tgz VERSION conf/* scripts/*)
+		(cd ~/bismark/device ; rm -f dev-*.tgz; tar -czvf dev-$ver.tgz VERSION conf/* scripts/*)
 	fi
 
 	# Wait for probe packet
