@@ -115,7 +115,8 @@ config)	# Get current configuration
 	;;
 	esac
 
-	nc $NC_OPTS $SERVER $REPLY_PORT <<-end
+	# Configuration resume
+	output <<-end
 		ESSID: $ssid
 		Channel: $channel
 		WPA_PSK: ${wpa_psk:0:7}...
