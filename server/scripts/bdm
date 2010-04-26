@@ -342,12 +342,15 @@ function swupdate(){
 		(cd ~/bismark/device ; rm -f dev-*.tgz; tar -czvf dev-$ver.tgz VERSION conf/* scripts/*)
 	fi
 
-	# Wait for probe packet
-	[ $1 == ALL ] && all=all
-	listen $1 update $all || { echo -e "\nDevice $1 not found"; return 1; }
-
-	# Receive feedback message
-	[ $1 != ALL ] && nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
+	# Start update script
+	if check_tunnel $1; then
+		console $1 "~/scripts/action" update
+	else
+		# Wait for probe packet
+		listen $1 update || { echo -e "\nDevice $1 not found"; return 1; }
+		# Receive feedback message
+		[ $1 != ALL ] && nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
+	fi
 }
 
 # Show dev info
@@ -356,7 +359,7 @@ function info()
 {
 	echo "Obtaining information from $1"
 	if check_tunnel $1; then
-		console $1 "~/scripts/action" info local
+		console $1 "~/scripts/action" info
 	else
 		listen $1 info || { echo -e "\nDevice $1 not found"; return 2; }
 		echo "$1 info:"

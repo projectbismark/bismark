@@ -32,5 +32,5 @@ END {
 	iqr = q3 - q1
 
 	# XML output
-	print "\t<measurement param='$1' tool='$2' srcip='$3' dstip='$4' timestamp='$(date +%s)' avg=" avg " std=" std " min=" min " max=" max " median=" median " iqr=" iqr " />"
+	print "\t<measurement param='$1' tool='$2' srcip='$3' dstip='$4' timestamp='$(date +%s)' avg=" avg " std=" std " min=" min " max=" max " med=" median " iqr=" iqr " />"
 }'

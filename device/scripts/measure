@@ -13,20 +13,29 @@ xml_file="/tmp/measure_$(date +%s).xml"
 # $1 = tool
 get_dest()
 {
-	dest="143.225.229.126"
+	dst="143.225.229.126"
 }
 
 # XML file header
 cat > $xml_file <<end
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <measurements version="1.0">
-	<info dev_id=$DEVID user_id=$USERID />
+	<info deviceid=$DEVID userid=$USERID />
 end
 
 # RTT measurement using PING
 src=$(cat /tmp/ip)
 get_dest PNG
-bping $dest | mstats RTT PING $src $dest >> $xml_file
+bping $dst | mstats RTT PING $src $dst >> $xml_file
+
+# Traceroute 
+get_dest TR
+hops=$(btr $dst)
+cat >> $xml_file <<end
+	<traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$(echo "$hops" | wc -l)>
+$(echo "$hops" | awk '{ print "\t\t" $0 }')
+	</traceroute>
+end
 
 # XML file footer
 cat >> $xml_file <<end

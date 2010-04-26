@@ -66,15 +66,20 @@ update)	# Software update
 	crontab conf/crontab
 	[ $NB ] && /noxbox/bin/persist_changes
 	# Send diff
-	[ $2 ] || { echo "Files diff:"; diff /tmp/old /tmp/new ; } | output 
+	{ echo "Files diff:"; diff /tmp/old /tmp/new ; } | output 
 	rm /tmp/old /tmp/new
 ;;
 info)	# Info reply
+	case $DEVID in
+	LS*) wifi_channel=$(iwlist $WIF channel | awk '/Current/{ print $2 }') ;;
+	NB*) wifi_channel=$(iwlist $WIF channel | awk -F'[\(\)]' '/Current/{ print $2 }') ;;
+	esac
+	wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
 	output <<-end
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)
-		Channel: $(iwlist $WIF channel | awk -F: '/Current/{ print $2 }')
-		ESSID: $(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
+		Wifi $wifi_channel 
+		Wifi Essid: $wifi_essid
 	end
 ;;
 config)	# Get current configuration
@@ -83,18 +88,21 @@ config)	# Get current configuration
 		channel=$(uci get wireless.wl0.channel)
 		ssid=$(uci get wireless.@wifi-iface[0].ssid)
 		wpa_psk=$(uci get wireless.@wifi-iface[0].key)
+		dec=local
 	;;
-	NB*) 
+	NB*)
+		grep -q ^channel= /etc/hostapd/hostapd.conf || echo channel=1 >> /etc/hostapd/hostapd.conf
 		channel=$(awk -F= '/^channel=/{ print $2 }' /etc/hostapd/hostapd.conf)
 		ssid=$(awk -F= '/^ssid=/{ print $2 }' /etc/hostapd/hostapd.conf)
 		wpa_psk=$(awk -F\" '{ print $2 }' /etc/hostapd/wpa_psk)
+		dec=declare
 	;;
 	esac
 
 	# Parse new configuration
 	IFS=$'&'
 	for param in $2; do
-		local ${param%=*}=${param#*=}
+		$dec ${param%=*}=${param#*=}
 	done
 
 	# Push new configuration
