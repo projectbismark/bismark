@@ -1,10 +1,10 @@
 #!/bin/sh
 # Send UDP probes to Bismark server and
 # call action script depending on the answer
-#
 # Provides:
 # - device heartbeat
 # - UDP proxy fallback
+# - startup script during boot
 #
 # author: walter.dedonato@unina.it
 
@@ -18,12 +18,14 @@ msg () {
 	return 0
 }
 
+# Launch startup script during boot
+[ -e /tmp/faults ] || startup
+
 # OS depending options
-if [ -e /etc/openwrt_version ]; then
-	NC_OPTS="-nuc"
-else
-	NC_OPTS="-q1 -nu"
-fi
+case $DEVID in
+LS*) NC_OPTS="-nuc" ;;
+NB*) NC_OPTS="-q1 -nu" ;;
+esac
 
 # Create status files
 [ -e /tmp/faults ] || echo 0 > /tmp/faults

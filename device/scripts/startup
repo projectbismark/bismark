@@ -7,9 +7,6 @@
 . ~/conf/dev.conf
 
 case $DEVID in
-LS*)
-	uci set wireless.wl0.disabled=0
-;;
 NB*)
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
 ;;
