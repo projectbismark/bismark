@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
-sys.path.append('~/usr/share/python-support/python-mysqldb/')
+#sys.path.append('~/usr/share/python-support/python-mysqldb/')
 import subprocess as sub
 import gzip as gz
 import time
@@ -49,7 +49,13 @@ def form_insert_cmd(table,fids,vals):
     cmd += nval + ","
   cmd = cmd[0:len(cmd)-1]
   #cmd += 
-  print cmd
+  return cmd
+
+def get_id_from_table(table,did,ts):
+  cmd = 'SELECT id from ' + table + ' where '
+  cmd += 'deviceid = "' + did + '" and timestamp = ' + ts
+  res = sql.run_data_cmd(cmd)
+  return res[0][0]
 
 def write_block_v1_0(data,tables,log):
   if 'info' not in data:
@@ -65,13 +71,21 @@ def write_block_v1_0(data,tables,log):
         vals = []
         if tab != 'hop':
           fids,vals = get_measurement_params(fids,vals,data['info'][0])
+        else:
+          did = data['info']['deviceid']
+          ts = data['traceroute']['timestamp']
+          tid = get_id_from_table
+          idtuple = {"tid":tid}
+          fids,vals = get_measurement_params(fids,vals,idtuple)
+        
         fids,vals = get_measurement_params(fids,vals,data[tab][i])
         cmd = form_insert_cmd(table,fids,vals)
-        res = sql.run_sql_cmd(cmd)
+        res = sql.run_insert_cmd(cmd)
         cnt = 0
         while ((res == 0) and (cnt < 5)):
-          time.sleep(10)   
-          res = sql.run_sql_cmd(cmd)
+          print "res ", res
+          time.sleep(5)   
+          res = sql.run_insert_cmd(cmd)
           cnt += 1
         if res == 0:
           log.write('Could not ' + cmd + '\n')
@@ -130,10 +144,10 @@ def parsefile(file,tables,log):
 
 def move_file(file,dir):
   cmd = ['gzip',file]
-  #sub.Popen(cmd).communicate()
+  sub.Popen(cmd).communicate()
   zfile = file + '.gz'
   cmd = ['mv',zfile,dir]
-  #sub.Popen(cmd).communicate()
+  sub.Popen(cmd).communicate()
 
 if __name__ == '__main__':
   HOME = os.environ['HOME'] + '/'
@@ -144,9 +158,15 @@ if __name__ == '__main__':
 
   log = gz.open(HOME+LOG_DIR+'insert.log.gz','ab')
   files = os.listdir(HOME+MEASURE_FILE_DIR)
+  fcnt = 0
   for file in files:
-    if 'measure_' in file:
+    if '.xml' in file:
+      print file
+      fcnt += 1
       parsefile(HOME+MEASURE_FILE_DIR+file,tables,log)
       log.write('Done ' + file + '\n')
       move_file(HOME+MEASURE_FILE_DIR+file,HOME+ARCHIVE_DIR)
+      if fcnt < -1:
+        sys.exit()
   log.close()
+

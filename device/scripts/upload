@@ -8,5 +8,5 @@
 
 # Copy files using scp
 scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data
-rm /tmp/*.xml
+rm /tmp/measure/*.xml
 

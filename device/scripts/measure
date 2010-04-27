@@ -17,7 +17,7 @@ target()
 	dst=$(awk '
 		/\[.*\]/{ if (s == 1) { s=0 } }
 		/\['$2'\]/{ s=1 }
-		(s == 1) && /^[a-z0-9]/ && /\t'$1'/{ print $1 }
+		(s == 1) && /^[a-z0-9]/ && /'$1'/{ print $1 }
 	' ~/conf/targets.conf | head -1)
 }
 

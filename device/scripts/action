@@ -32,13 +32,11 @@ LS*)
 	NC_OPTS="-nuc"
 	KEEP_ALIVE="-K 120"
 	WIF="wl0"
-	alias filter="awk -F- '/^-[a-zA-Z]/{ print \$2 }'"
 ;;
 NB*)
 	NC_OPTS="-q1 -nu"
 	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
 	WIF="ath0"
-	alias filter="awk -F\< '/^</{ print \$2 }'"
 	NB=true
 ;;
 esac
@@ -53,14 +51,24 @@ pong)	# Server heartbeat
 	echo $2 > /tmp/ip
 ;;
 update)	# Software update
+	cd ~
 	# Get new package
 	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
 	# Remove old files
-	(cd /root ; find * -path "*/*" | sort) > /tmp/old
+	find * -path "*/*" | sort > /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
-	rm -f $(diff /tmp/old /tmp/new | filter)
+	case $DEVID in
+	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print \$2 }') ;;
+	NB*) 
+		files=$(diff /tmp/old /tmp/new | awk '/^</{ print $2 }')
+		rm -f $files
+		remountrw
+		rm -f $(echo "$files" | awk '/^</{ print "/ro/root/" $2 }')
+		remountro
+	;;
+	esac
 	# Extract new package
-	tar -C /root -xzf /tmp/dev.tgz
+	tar -xzf /tmp/dev.tgz
 	rm /tmp/dev.tgz
 	# Apply changes
 	crontab conf/crontab
