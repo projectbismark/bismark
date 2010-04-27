@@ -55,7 +55,7 @@ def get_id_from_table(table,did,ts):
   cmd = 'SELECT id from ' + table + ' where '
   cmd += 'deviceid = "' + did + '" and timestamp = ' + ts
   res = sql.run_data_cmd(cmd)
-  return res[0][0]
+  return str(res[0][0])
 
 def write_block_v1_0(data,tables,log):
   if 'info' not in data:
@@ -72,9 +72,9 @@ def write_block_v1_0(data,tables,log):
         if tab != 'hop':
           fids,vals = get_measurement_params(fids,vals,data['info'][0])
         else:
-          did = data['info']['deviceid']
-          ts = data['traceroute']['timestamp']
-          tid = get_id_from_table
+          did = data['info'][0]['deviceid']
+          ts = data['traceroute'][0]['timestamp']
+          tid = get_id_from_table(tables['traceroute'],did,ts)
           idtuple = {"tid":tid}
           fids,vals = get_measurement_params(fids,vals,idtuple)
         
