@@ -7,6 +7,6 @@
 . ~/conf/dev.conf
 
 # Copy files using scp
-scp -i $SSH_KEY /tmp/*.xml $USER@$SERVER:~/var/data
+scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data
 rm /tmp/*.xml
 

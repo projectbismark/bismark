@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+import os
+import sys
+sys.path.append('~/usr/share/python-support/python-mysqldb/')
+import subprocess as sub
+import gzip as gz
+import time
+import sql
 
 def get_fields(line):
   skey = ''
@@ -33,20 +40,21 @@ def modify_val(fid,val):
 def form_insert_cmd(table,fids,vals):
   cmd = 'INSERT into ' + table + '('
   for fid in fids:
-    cmd += '"' + fid + '"' + ","
+    cmd += fid + ","
   cmd = cmd[0:len(cmd)-1]
-  cmd += ') VALUES('
+  cmd += ') SELECT '
   for val in vals:
     ind = vals.index(val)
     nval = modify_val(fids[ind],val)
     cmd += nval + ","
   cmd = cmd[0:len(cmd)-1]
-  cmd += ')'
+  #cmd += 
   print cmd
 
-def write_block_v1_0(data,tables):
+def write_block_v1_0(data,tables,log):
   if 'info' not in data:
     log.write('Error: No info field')
+    return
 
   for tab in tables:
     if tab in data:
@@ -58,9 +66,17 @@ def write_block_v1_0(data,tables):
         if tab != 'hop':
           fids,vals = get_measurement_params(fids,vals,data['info'][0])
         fids,vals = get_measurement_params(fids,vals,data[tab][i])
-        form_insert_cmd(table,fids,vals)
+        cmd = form_insert_cmd(table,fids,vals)
+        res = sql.run_sql_cmd(cmd)
+        cnt = 0
+        while ((res == 0) and (cnt < 5)):
+          time.sleep(10)   
+          res = sql.run_sql_cmd(cmd)
+          cnt += 1
+        if res == 0:
+          log.write('Could not ' + cmd + '\n')
 
-def parse_block_v1_0(block,version,tables):
+def parse_block_v1_0(block,version,tables,log):
   data = {}
   for line in block:
     fields = get_fields(line)
@@ -81,13 +97,14 @@ def parse_block_v1_0(block,version,tables):
       #print name,":", val, ",",
     #print ''
     data[head].append(tuple)
-  write_block_v1_0(data,tables)
+  return data
 
-def parse_block(block,version,tables):
+def parse_block(block,version,tables,log):
   if version == '1.0':
-    data = parse_block_v1_0(block,version,tables)
+    data = parse_block_v1_0(block,version,tables,log)
+    write_block_v1_0(data,tables,log)
 
-def parsefile(file,tables):
+def parsefile(file,tables,log):
   start_block = '<measurements'
   end_block = '</measurements'
   fp = open(file)
@@ -105,12 +122,31 @@ def parsefile(file,tables):
 
     if state == 1:
       if end_block in line:
-        parse_block(block,version,tables)
+        parse_block(block,version,tables,log)
         state = 0
         block = []
         continue
       block.append(line)
+
+def move_file(file,dir):
+  cmd = ['gzip',file]
+  #sub.Popen(cmd).communicate()
+  zfile = file + '.gz'
+  cmd = ['mv',zfile,dir]
+  #sub.Popen(cmd).communicate()
+
 if __name__ == '__main__':
-  file = 'measurements_test.xml'
+  HOME = os.environ['HOME'] + '/'
+  MEASURE_FILE_DIR = 'var/data/'
+  LOG_DIR = 'var/log/'
+  ARCHIVE_DIR = 'var/data/old'
   tables = {'measurement':'MEASUREMENTS','traceroute':'TRACEROUTES','hop':'TRACEROUTE_HOPS'}
-  parsefile(file,tables)
+
+  log = gz.open(HOME+LOG_DIR+'insert.log.gz','ab')
+  files = os.listdir(HOME+MEASURE_FILE_DIR)
+  for file in files:
+    if 'measure_' in file:
+      parsefile(HOME+MEASURE_FILE_DIR+file,tables,log)
+      log.write('Done ' + file + '\n')
+      move_file(HOME+MEASURE_FILE_DIR+file,HOME+ARCHIVE_DIR)
+  log.close()

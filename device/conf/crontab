@@ -1,4 +1,4 @@
 */1  * * * * /root/scripts/probe
 */15 * * * * /root/scripts/rshell
 */5  * * * * ~/scripts/measure
-*  */1 * * * ~/scripts/upload
+4  */1 * * * ~/scripts/upload
