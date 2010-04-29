@@ -11,7 +11,8 @@
 ~/bismark/server	# Server scripts, configuration files and keys
 ~/bismark/device	# Devices related scripts, configuration files and keys 
 ~/tools			# Measurement tools source trees and packages
+~/var/data		# XML measurements data storage
+~/var/bdm.db		# Devices tracking SQlite database
 
 # Bismark commands
 bdm			# Main script to manage bismark devices
-bcron			# Simplified crond replacement
