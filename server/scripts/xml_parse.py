@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import sys
-#sys.path.append('~/usr/share/python-support/python-mysqldb/')
 import subprocess as sub
 import gzip as gz
 import time

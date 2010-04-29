@@ -1,3 +1,4 @@
 # Bismark server crontab
-# m h  dom mon dow   command
-*/5 * * * * /home/bismark/bin/bdm list update >/dev/null 2>/dev/null
+# m  h  dom mon dow   command
+*/5  *   *   *   *    ~/bin/bdm list update >/dev/null 2>/dev/null
+10  */2  *   *   *    ~/bin/xml_parse.py >var/log/last_parse.log 2>/dev/null
