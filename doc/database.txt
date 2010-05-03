@@ -1,0 +1,143 @@
+Table: Client
+user_id     // user unique identifier
+name        // full name
+address     // full address
+phone       // phone number
+sla_id      // SLA unique identifier (same of ISP table)
+
+Table: ISP
+sla_id      // SLA unique identifier
+ISP         // unique ISP identifier
+sla         // SLA name
+ds_speed    // SLA downstream speed
+us_speed    // SLA upstream speed
+
+Table: Device
+device_id   // unique device identifier composed by some letters and a progressive number (e.g. LS1 for Lynksys)
+type        // device or router
+os          // operating system version string
+version     // bismark software version
+user_id     // user unique identifier (same of User table)
+
+Table: Measurements
+m_id        // measurement unique identifier
+device_id   // device unique identifier (same of Box table)
+user_id     // user unique identifier (same of User table)
+src_ip      // source ip address (should be the public one in case of NAT)
+dst_ip      // destination ip address
+time        // measurement timestamp (should be corrected to be synchronized with server clock)
+param       // measured parameter (e.g. RTT, TCP/UDP bitrate, TCP/UDP packet rate, packet loss, jitter, ...)
+avg         // average measured value
+std         // standard deviation
+min         // min measured value
+max         // max measured value
+
+Table: Traceroutes
+t_id        // traceroute unique identifier
+device_id   // device unique identifier (same of Box table)
+user_id     // user unique identifier (same of User table)
+src_ip      // source ip address (should be the public one in case of NAT)
+dst_ip      // destination ip address
+hops        // hop distance from source to destination
+time        // measurement timestamp (should be corrected to be synchronized with server clock)
+
+Table: Traceroute-hops
+t_id        // traceroute unique identifier
+hop         // hop count
+ip          // router ip address
+rtt         // round trip time
+
+###################################################################
+
+mysql> show tables;
++------------------------+
+| Tables_in_bismark_test |
++------------------------+
+| CLIENT                 |
+| DEVICE                 |
+| ISP                    |
+| MEASUREMENTS           |
+| TRACEROUTES            |
+| TRACEROUTE_HOPS        |
++------------------------+
+6 rows in set (0.00 sec)
+
+mysql> describe CLIENT;
++---------+--------------+------+-----+---------+----------------+
+| Field   | Type         | Null | Key | Default | Extra          |
++---------+--------------+------+-----+---------+----------------+
+| userid  | int(11)      | NO   | PRI | NULL    | auto_increment |
+| name    | varchar(100) | YES  |     | NULL    |                |
+| address | varchar(300) | YES  |     | NULL    |                |
+| phone   | varchar(20)  | YES  |     | NULL    |                |
+| slaid   | int(11)      | YES  |     | NULL    |                |
++---------+--------------+------+-----+---------+----------------+
+5 rows in set (0.00 sec)
+
+mysql> desc DEVICE;
++----------+-------------+------+-----+---------+----------------+
+| Field    | Type        | Null | Key | Default | Extra          |
++----------+-------------+------+-----+---------+----------------+
+| deviceid | int(11)     | NO   | PRI | NULL    | auto_increment |
+| macid    | varchar(20) | YES  |     | NULL    |                |
+| type     | varchar(20) | YES  |     | NULL    |                |
+| os       | varchar(10) | YES  |     | NULL    |                |
+| version  | varchar(10) | YES  |     | NULL    |                |
+| userid   | int(11)     | YES  |     | NULL    |                |
++----------+-------------+------+-----+---------+----------------+
+6 rows in set (0.00 sec)
+
+mysql> desc ISP;
++-------+-------------+------+-----+---------+----------------+
+| Field | Type        | Null | Key | Default | Extra          |
++-------+-------------+------+-----+---------+----------------+
+| slaid | int(11)     | NO   | PRI | NULL    | auto_increment |
+| isp   | varchar(30) | YES  |     | NULL    |                |
+| sla   | varchar(50) | YES  |     | NULL    |                |
+| dl    | int(11)     | YES  |     | NULL    |                |
+| ul    | int(11)     | YES  |     | NULL    |                |
++-------+-------------+------+-----+---------+----------------+
+5 rows in set (0.00 sec)
+
+mysql> desc MEASUREMENTS;
++-----------+-------------+------+-----+---------+----------------+
+| Field     | Type        | Null | Key | Default | Extra          |
++-----------+-------------+------+-----+---------+----------------+
+| mid       | int(11)     | NO   | PRI | NULL    | auto_increment |
+| deviceid  | int(11)     | YES  |     | NULL    |                |
+| userid    | int(11)     | YES  |     | NULL    |                |
+| srcip     | bigint(20)  | YES  |     | NULL    |                |
+| dstip     | bigint(20)  | YES  |     | NULL    |                |
+| timestamp | bigint(20)  | YES  |     | NULL    |                |
+| param     | varchar(20) | YES  |     | NULL    |                |
+| avg       | double      | YES  |     | NULL    |                |
+| std       | double      | YES  |     | NULL    |                |
+| min       | double      | YES  |     | NULL    |                |
+| max       | double      | YES  |     | NULL    |                |
++-----------+-------------+------+-----+---------+----------------+
+11 rows in set (0.00 sec)
+
+mysql> desc TRACEROUTES;
++-----------+------------+------+-----+---------+----------------+
+| Field     | Type       | Null | Key | Default | Extra          |
++-----------+------------+------+-----+---------+----------------+
+| tid       | int(11)    | NO   | PRI | NULL    | auto_increment |
+| deviceid  | int(11)    | YES  |     | NULL    |                |
+| userid    | int(11)    | YES  |     | NULL    |                |
+| srcip     | bigint(20) | YES  |     | NULL    |                |
+| dstip     | bigint(20) | YES  |     | NULL    |                |
+| timestamp | bigint(20) | YES  |     | NULL    |                |
+| hops      | bigint(20) | YES  |     | NULL    |                |
++-----------+------------+------+-----+---------+----------------+
+7 rows in set (0.00 sec)
+
+mysql> desc TRACEROUTE_HOPS;
++-------+------------+------+-----+---------+-------+
+| Field | Type       | Null | Key | Default | Extra |
++-------+------------+------+-----+---------+-------+
+| tid   | int(11)    | YES  |     | NULL    |       |
+| hopid | int(11)    | YES  |     | NULL    |       |
+| ip    | bigint(20) | YES  |     | NULL    |       |
+| rtt   | double     | YES  |     | NULL    |       |
++-------+------------+------+-----+---------+-------+
+4 rows in set (0.00 sec)

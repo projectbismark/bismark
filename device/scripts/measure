@@ -52,6 +52,12 @@ if [ $((count % 6)) -eq 0 ]; then
 	end
 fi
 
+# Downstream bitrate using wget
+if [ $((count % 4)) -eq 0 ]; then
+	target FTPDL Bismark
+	bwget $dst dw | mstats BITRATE WGET $dst $src >> $xml_file
+fi
+
 # XML file footer
 cat >> $xml_file <<-end
 	</measurements>
