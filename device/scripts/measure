@@ -27,7 +27,7 @@ mkdir -p /tmp/measure
 
 # Get and update count
 count=$(cat /tmp/measure/counter)
-echo $((count + 1)) > /tmp/measure/counter
+echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 
 # XML file header
 cat > $xml_file <<-end
@@ -55,7 +55,9 @@ fi
 # Downstream bitrate using wget
 if [ $((count % 4)) -eq 0 ]; then
 	target FTPDL Bismark
-	bwget $dst dw | mstats BITRATE WGET $dst $src >> $xml_file
+	dst_host=$(echo $dst | awk -F/ '{ print $3 }')
+	dst_ip=$(nslookup $dst_host | tail -1 | awk '{ print $3 }')
+	bwget $dst dw | mstats BITRATE WGET $dst_ip $src >> $xml_file
 fi
 
 # XML file footer
