@@ -34,7 +34,9 @@ function help()
 
 	    config   <dev_id> <option=value>  Change <dev_id> configuration options
 	             [[option=value] ...]     Supported options: channel, ssid, wpa_psk
-	
+
+	    setuser  <dev_id> <username>      Set the SSH username for <dev_id>
+
 	Options:
 	
 	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
@@ -113,6 +115,11 @@ function parse()
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help config; }
 		$* 
 	;;
+	setuser)
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help set; }
+		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help config; }
+		setuser $2 $3
+	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
 		help
@@ -141,7 +148,7 @@ function probe_reply()
 		if [ $(query "SELECT id FROM devices WHERE id='$id' LIMIT 1;") ]; then
 			query "UPDATE devices SET ip='$ip',ts=$(date +%s),version='$param' WHERE id='$id';"
 		else
-			query "INSERT INTO devices VALUES('$id','$ip',$(date +%s),'$param');"
+			query "INSERT INTO devices (id, ip, ts, version) VALUES('$id','$ip',$(date +%s),'$param');"
 		fi
 	fi
 
@@ -276,6 +283,7 @@ function console()
 	fi
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
+	SSH_USER=$(query "SELECT user FROM devices WHERE id='$1'")
 	ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
 
 	[ $new ] && stop_tunnel $1
@@ -393,11 +401,11 @@ function list()
 	# Dump devices table
 	echo "Latest version: $(svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }")"
 	echo -e "\nDevices:"
-	echo -e "ID\tIP\t\tVERSION\tLAST PROBE"
+	echo -e "ID\tIP\t\tUSER\tVERSION\tLAST PROBE"
 	IFS=$'\n' 
-	for dev in $(query 'SELECT * FROM devices ORDER BY id;'); do
-		IFS=$'|' read id ip ts ver <<< "$dev"
-		printf "%s\t%s\t%s\t%s\n" $id $ip $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+	for dev in $(query 'SELECT id,ip,user,version,ts FROM devices ORDER BY id;'); do
+		IFS=$'|' read id ip user ver ts <<< "$dev"
+		printf "%s\t%s\t%s\t%s\t%s\n" $id $ip $user $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 
 	# Dump tunnels table
@@ -410,12 +418,36 @@ function list()
 	done
 }
 
+# Set device SSH username
+# $1 = dev id
+# $2 = username
+function setuser()
+{
+	echo -n "Setting $1 SSH user to $2..."
+	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
+		query "UPDATE devices SET user='$2' WHERE id='$id';"
+	else
+		query "INSERT INTO devices (id, user) VALUES('$id','$2');"
+	fi
+	echo done
+}
+
 ## Main ##
 
 # Check DB
 if [ ! -e $BDM_DB ]; then
-	query "CREATE TABLE devices(id, ip, ts, version);"
-	query "CREATE TABLE tunnels(id, port, ts);"
+	query "CREATE TABLE devices(
+		id      TEXT PRIMARY KEY,
+		version INTEGER, 
+		user    TEXT, 
+		ip      TEXT, 
+		ts      INTEGER
+	       );"
+	query "CREATE TABLE tunnels(
+		id      TEXT,
+		port    INTEGER, 
+		ts      INTEGER
+	       );"
 fi
 
 # Parse command-line
