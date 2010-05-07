@@ -4,20 +4,38 @@
 # author: walter.dedonato@unina.it
 
 DEVHOST_PUB_KEY=~/.ssh/id_rsa.pub
-SERVER_PUB_KEY="server/keys/bismark_srv.pub"
-SERVER_HOST_KEY="device/keys/known_hosts"
-DEVICE_SSH_KEY="device/keys/bismark"
+SVN_DIR=$(find ~ -mindepth 1 -maxdepth 2 -type d -name bismark)
+SERVER_PUB_KEY="$SVN_DIR/server/keys/bismark_srv.pub"
+SERVER_HOST_KEY="$SVN_DIR/device/keys/known_hosts"
+DEVICE_SSH_KEY="$SVN_DIR/device/keys/bismark"
 ROOT_PASS=$(md5sum <<< bismark | cut -d" " -f1)
 PASS="sleep 1; echo $ROOT_PASS;"
-SVN_DIR=$(find ~ -mindepth 1 -maxdepth 2 -type d -name bismark)
 VERSION=$(svn info $SVN_DIR | awk '/^Rev/{ print $2 ; exit }')
 SSH_OPT="-i $SVN_DIR/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SCP_OPT=$SSH_OPT
 
+# Parse options
+while getopts 'kp:' flag; do
+	case $flag in
+	p)
+		SSH_OPT+=" -p $OPTARG"
+		SCP_OPT+=" -P $OPTARG"
+	;;
+	k)
+		KEYS="on"
+	;;
+	*)
+		echo "Unknown option: $flag $OPTARG"
+		help
+	;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
 # Command line check
 if [ ! $2 ]; then
 	cat <<-end
-		usage: $(basename $0) [options] <address> <dev_id> <usr_id>"
+		usage: $(basename $0) [options] <address> <dev_id>"
 	
 		Options:
 		       -p <port>      set SSH port number
@@ -31,42 +49,26 @@ if [ ! $2 ]; then
 	exit
 fi
 
-# Parse options
-while getopts 'l:o:p:t:' flag; do
-	case $flag in
-	p)
-		SSH_OPT+=" -p $4"
-		SCP_OPT+=" -P $4"
-	;;
-	k)
-		KEYS="on"
-	;;
-	*)
-		echo "Unknown option: $flag $OPTARG"
-		help
-	;;
-	esac
-done
-shift $(( OPTIND - 1 ))
-
 # Device specific options selection
 case ${2:0:2} in
 LS)
-	echo "Installing Bismark on Lynksys WRT54GL router ($1 $2 - UID $3)..."
+	echo "Installing Bismark on Lynksys WRT54GL router ($1 $2)..."
 	echo "-- if requested insert \"$ROOT_PASS\" password --"
 	suffix="ls"
 	auth_keys="/etc/dropbear/authorized_keys"
 	user=root
 ;;
 NB)
-	echo "Installing Bismark on NoxBox router ($1 $2 - UID $3)..."
+	echo "Installing Bismark on NoxBox router ($1 $2)..."
 	echo "-- if requested insert \"n0xb0xr0x\" password --"
 	suffix="nb"
 	auth_keys="~/.ssh/authorized_keys"
 	user=root
 ;;
 WS)
-	echo "Installing Bismark on Workstation ($1 $2 - UID $3)..."
+	echo "Installing Bismark on Workstation ($1 $2)..."
+	echo -n "Insert SSH user name: "
+	read user
 	echo "-- if requested insert password --"
 	suffix="ws"
 	auth_keys="~/.ssh/authorized_keys"
@@ -77,10 +79,24 @@ WS)
 ;;
 esac
 
-if [ ! $user ]; then
-	echo -n "Insert SSH user name: "
-	read user
-fi
+## Functions  ##
+
+# Install linksys packages
+# $* = packages list
+function linksys_pkg ()
+{
+	REPOSITORY="http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/"
+	INSTALLED=$(ssh $SSH_OPT $user@$1 'opkg list_installed')
+
+	for pkg in $*; do 
+		echo $INSTALLED | grep -q $pkg && continue
+		echo "Installing $pkg package:"
+		wget -O /tmp/$pkg "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/$pkg"
+		scp $SCP_OPT /tmp/netcat.ipk $user@$1:/tmp
+		ssh $SSH_OPT $user@$1 "opkg install /tmp/$pkg ; rm /tmp/$pkg"
+		echo done
+	done
+}
 
 ## Installation ##
 
@@ -100,14 +116,14 @@ if [ $suffix == ls ] && nc -z $1 23 ; then
 	echo "done"
 fi
 
-# Generic First-time public key auth config
+# Generic public key auth config
 if [ $KEYS ]; then
 	echo -n "Adding SSH public and host keys..."
-	ssh $user@$1 " 
+	ssh $SSH_OPT $user@$1 " 
 		mkdir -p .ssh 
 		echo \"$(cat $SERVER_PUB_KEY $DEVHOST_PUB_KEY)\" > $auth_keys
+		echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts
 	" 2>/dev/null
-	ssh $SSH_OPT $user@$1 "echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts" 2>/dev/null
 	echo "done"
 
 	echo "Copying SSH key pair:"
@@ -116,10 +132,10 @@ if [ $KEYS ]; then
 fi
 
 echo "Copying files:"
-(cd device; tar -cf - conf/* scripts/* | ssh $SSH_OPT $user@$1 'tar -xvf -' 2>/dev/null)
+(cd $SVN_DIR/device; tar -cf - conf/* scripts/* | ssh $SSH_OPT $user@$1 'tar -xvf -' 2>/dev/null)
 
 echo -n "Setting device id, user id and software version..."
-ssh $SSH_OPT $user@$1 "echo $2 > ID ; echo $3 > USER ; echo $VERSION > VERSION" 2>/dev/null
+ssh $SSH_OPT $user@$1 "echo $2 > ID ; [ -e USER ] || echo 0 > USER ; echo $VERSION > VERSION" 2>/dev/null
 echo "done"
 
 echo -n "Configuring cronjobs..."
@@ -128,12 +144,7 @@ echo "done"
 
 # Lynksys only
 if [ $suffix == ls ]; then
-	if [ $(ssh $SSH_OPT $user@$1 'opkg list_installed | grep -c netcat' 2>/dev/null) -eq 0 ]; then
-		echo "Installing netcat package:"
-		wget -O /tmp/netcat.ipk "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/netcat_0.7.1-1_mipsel.ipk"
-		scp $SCP_OPT /tmp/netcat.ipk $user@$1:/tmp 2>/dev/null
-		ssh $SSH_OPT $user@$1 "opkg install /tmp/netcat.ipk ; rm /tmp/netcat.ipk" 2>/dev/null
-	fi
+	lynksis_pkg "netcat_0.7.1-1_mipsel.ipk" "wget-nossl_1.11.4-1_mipsel.ipk" "iperf_2.0.4-1_mipsel.ipk"
 
 	echo -n "Starting crond daemon..."
 	ssh $SSH_OPT $user@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start" 2>/dev/null
@@ -145,8 +156,20 @@ if [ $suffix == nb ]; then
 	echo "Setting root password:"
 	ssh $SSH_OPT $user@$1 "{ $PASS $PASS } | passwd" 2>/dev/null
 
+	echo -n "Setting fstab..."
+	ssh $SSH_OPT $user@$1 'echo /dev/hda2 /mnt ext2 rw,user,noatime 0 0 > /etc/fstab' 2>/dev/null
+	echo done
+
 	echo "Persisting changes to flash memory:" 
 	ssh $SSH_OPT $user@$1 "/noxbox/bin/persist_changes" 2>/dev/null
+fi
+
+# All but Workstations
+if [ $suffix != "ws" ]; then
+	echo "Configuring wireless:"
+	WPA_PSK=$(md5sum <<< $2 | cut -f 1)
+	ssh $SSH_OPT $user@$1 'scripts/action config "ssid='$2'&wpa_psk='$WPA_PSK'&channel=1"'
+	echo done
 fi
 
 echo "Installation completed"
