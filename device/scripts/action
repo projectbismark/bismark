@@ -39,6 +39,10 @@ NB*)
 	WIF="ath0"
 	NB=true
 ;;
+WS*)
+	NC_OPTS="-q1 -nu"
+	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
+;;
 esac
 
 # Perform action
@@ -54,6 +58,7 @@ update)	# Software update
 	cd ~
 	# Get new package
 	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
+
 	# Remove old files
 	find * -path "*/*" | sort > /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
@@ -66,23 +71,29 @@ update)	# Software update
 		rm -f $(echo "$files" | awk '/^</{ print "/ro/root/" $2 }')
 		remountro
 	;;
+	WS*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }') ;;
 	esac
+
 	# Extract new package
 	tar -xzf /tmp/dev.tgz
 	rm /tmp/dev.tgz
+
 	# Apply changes
 	crontab conf/crontab
 	[ $NB ] && /noxbox/bin/persist_changes
+
 	# Send diff
 	{ echo "Files diff:"; diff /tmp/old /tmp/new ; } | output 
 	rm /tmp/old /tmp/new
 ;;
 info)	# Info reply
-	case $DEVID in
-	LS*) wifi_channel=$(iwlist $WIF channel | awk '/Current/{ print $2 }') ;;
-	NB*) wifi_channel=$(iwlist $WIF channel | awk -F'[\(\)]' '/Current/{ print $2 }') ;;
-	esac
-	wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
+	if [ $WIF ]; then	
+		case $DEVID in
+		LS*) wifi_channel=$(iwlist $WIF channel | awk '/Current/{ print $2 }') ;;
+		NB*) wifi_channel=$(iwlist $WIF channel | awk -F'[\(\)]' '/Current/{ print $2 }') ;;
+		esac
+		wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
+	fi
 	output <<-end
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)

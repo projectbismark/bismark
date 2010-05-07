@@ -24,7 +24,7 @@ msg () {
 # OS depending options
 case $DEVID in
 LS*) NC_OPTS="-nuc" ;;
-NB*) NC_OPTS="-q1 -nu" ;;
+NB*|WS*) NC_OPTS="-q1 -nu" ;;
 esac
 
 # Create status files
