@@ -117,7 +117,7 @@ function parse()
 	;;
 	setuser)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help set; }
-		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help config; }
+		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help set; }
 		setuser $2 $3
 	;;
 	*)

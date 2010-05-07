@@ -1,5 +1,5 @@
 #!/bin/sh
-# Bismark traceroute wrapper
+# Bismark wget wrapper
 #
 # author: walter.dedonato@unina.it
 

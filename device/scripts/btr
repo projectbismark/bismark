@@ -12,4 +12,5 @@
 case $DEVID in
 NB*) traceroute -n -T -q1 $1 | awk '! /trace/{ print "<hop id="$1" ip="$2" rtt="$3" />" }' ;;
 LS*) tcptraceroute -n -q1 $1 | awk '{ rtt=$3 } ; /\[.*\]/{ rtt=$4 } ; { print "<hop id="$1" ip="$2" rtt="rtt" />" }' ;;
+WS*) traceroute -n -p 53 -q1 $1 | awk '! /trace/{ print "<hop id="$1" ip="$2" rtt="$3" />" }' ;;
 esac
