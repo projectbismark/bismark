@@ -55,8 +55,7 @@ fi
 # Downstream bitrate using wget
 if [ $((count % 4)) -eq 0 ]; then
 	target FTPDL Bismark
-	dst_host=$(echo $dst | awk -F/ '{ print $3 }')
-	dst_ip=$(nslookup $dst_host | tail -1 | awk '{ print $3 }')
+	dst_ip=$(echo $dst | awk -F/ '{ print $3 }')
 	bwget $dst dw | mstats BITRATE WGET $dst_ip $src >> $xml_file
 fi
 
