@@ -64,7 +64,7 @@ update)	# Software update
 	find * -path "*/*" | sort > /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
 	case $DEVID in
-	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print \$2 }') ;;
+	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }') ;;
 	NB*) 
 		files=$(diff /tmp/old /tmp/new | awk '/^</{ print $2 }')
 		rm -f $files
