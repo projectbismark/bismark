@@ -18,8 +18,7 @@ fi
 
 # Close pre-existing recovery tunnel
 if [ -e /tmp/tunnel ]; then
-    port=$(cat /tmp/tunnel)
-    pid=$(ps ax | awk "/ssh.*-R $port:127/{print \$1}" | head -1)
+    pid=$(cat /tmp/tunnel)
     kill -9 $pid
     ps $pid >/dev/null && rm /tmp/tunnel
 fi 
@@ -29,7 +28,7 @@ if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
     RANDOM=$(( `date +%s` % 32767 ))
     port=$(( RANDOM % 5000 + 5000 ))
     ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bin/sqlite3 -list $BDM_DB "INSERT INTO tunnels VALUES(\"'$DEVID'\",'$port','$(date +%s)');"'
-    echo $port > /tmp/tunnel
-    ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER 
+    ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER &
+    echo $! > /tmp/tunnel
 fi
 

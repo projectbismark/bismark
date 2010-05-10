@@ -340,7 +340,7 @@ function swupdate(){
 
 	# Update version number
 	svn update ~/bismark
-	svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }" > ~/bismark/device/VERSION
+	svn info ~/bismark | awk '/^Rev/{ print $2 ; exit }' > ~/bismark/device/VERSION
 	VERSION=$(cat ~/bismark/device/VERSION)
 
 	# Create update package
