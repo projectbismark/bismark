@@ -157,7 +157,7 @@ function probe_reply()
 		echo -e "\nDevice $id ($ip) [$cmd $param] -> $2 $3" > /dev/stderr
 		echo $2 "$3" 
 		return 0
-	elif [ $1 == ALL -a $param -lt $VERSION ]; then
+	elif [ $1 == ALL ] && [ $param -lt $VERSION ]; then
 		echo -n "{$id}" > /dev/stderr
 		echo $2 "$3"
 		return 3
