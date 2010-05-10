@@ -157,7 +157,7 @@ function probe_reply()
 		echo -e "\nDevice $id ($ip) [$cmd $param] -> $2 $3" > /dev/stderr
 		echo $2 "$3" 
 		return 0
-	elif [ $1 == ALL ]; then
+	elif [ $1 == ALL -a $param -lt $VERSION ]; then
 		echo -n "{$id}" > /dev/stderr
 		echo $2 "$3"
 		return 3
@@ -341,13 +341,13 @@ function swupdate(){
 	# Update version number
 	svn update ~/bismark
 	svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }" > ~/bismark/device/VERSION
-	ver=$(cat ~/bismark/device/VERSION)
+	VERSION=$(cat ~/bismark/device/VERSION)
 
 	# Create update package
-	[ $2 ] && rm -f ~/bismark/device/dev-$ver.tgz
-	if [ ! -e ~/bismark/device/dev-$ver.tgz ]; then
-		echo "Creating package version $ver:"
-		(cd ~/bismark/device ; rm -f dev-*.tgz; tar -czvf dev-$ver.tgz VERSION conf/* scripts/*)
+	[ $2 ] && rm -f ~/bismark/device/dev-$VERSION.tgz
+	if [ ! -e ~/bismark/device/dev-$VERSION.tgz ]; then
+		echo "Creating package version $VERSION:"
+		(cd ~/bismark/device ; rm -f dev-*.tgz; tar -czvf dev-$VERSION.tgz VERSION conf/* scripts/*)
 	fi
 
 	# Start update script
@@ -355,7 +355,7 @@ function swupdate(){
 		console $1 "~/scripts/action" update
 	else
 		# Wait for probe packet
-		listen $1 update || { echo -e "\nDevice $1 not found"; return 1; }
+		listen $1 update || { [ $1 == ALL ] && echo done || { echo -e "\nDevice $1 not found"; return 1; } ; }
 		# Receive feedback message
 		[ $1 != ALL ] && nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
 	fi
@@ -399,7 +399,7 @@ function list()
 	fi
 
 	# Dump devices table
-	echo "Latest version: $(svn info ~/bismark | awk "/^Rev/{ print \$2 ; exit }")"
+	echo "Latest version: $VERSION"
 	echo -e "\nDevices:"
 	echo -e "ID\tIP\t\tUSER\tVERSION\tLAST PROBE"
 	IFS=$'\n' 
