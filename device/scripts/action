@@ -92,7 +92,7 @@ update)	# Software update
 	LS*)
 		pkgs=$(grep ^LS ~/conf/packages.conf | cut -f2)
 		for pkg in $pkgs; do
-			opkg list_installed | grep -q ${pkg%%_*} || opkg install $pkg
+			opkg list_installed | grep -q ${pkg%%_*} || opkg install ${pkg%%_*} 
 		done
 	;;
 	esac
