@@ -56,7 +56,8 @@ pong)	# Server heartbeat
 ;;
 update)	# Software update
 	cd ~
-	# Get new package
+
+	# Get new bismark package
 	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-*.tgz /tmp/dev.tgz
 
 	# Remove old files
@@ -85,6 +86,16 @@ update)	# Software update
 	# Send diff
 	{ echo "Files diff:"; diff /tmp/old /tmp/new ; } | output 
 	rm /tmp/old /tmp/new
+
+	# Check installed packages
+	case $DEVID in
+	LS*)
+		pkgs=$(grep ^LS ~/conf/packages.conf | cut -f2)
+		for pkg in $pkgs; do
+			opkg list_installed | grep -q ${pkg%%_*} || opkg install $pkg
+		done
+	;;
+	esac
 ;;
 info)	# Info reply
 	if [ $WIF ]; then	

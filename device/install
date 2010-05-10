@@ -144,7 +144,7 @@ echo "done"
 
 # Lynksys only
 if [ $suffix == ls ]; then
-	lynksis_pkg "netcat_0.7.1-1_mipsel.ipk" "wget-nossl_1.11.4-1_mipsel.ipk" "iperf_2.0.4-1_mipsel.ipk"
+	lynksis_pkg $(grep ^LS ~/conf/packages.conf | cut -f2) 
 
 	echo -n "Starting crond daemon..."
 	ssh $SSH_OPT $user@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start" 2>/dev/null
