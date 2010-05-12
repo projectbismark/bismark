@@ -425,9 +425,9 @@ function setuser()
 {
 	echo -n "Setting $1 SSH user to $2..."
 	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
-		query "UPDATE devices SET user='$2' WHERE id='$id';"
+		query "UPDATE devices SET user='$2' WHERE id='$1';"
 	else
-		query "INSERT INTO devices (id, user) VALUES('$id','$2');"
+		query "INSERT INTO devices (id, user) VALUES('$1','$2');"
 	fi
 	echo done
 }

@@ -7,6 +7,13 @@
 . ~/conf/dev.conf
 
 # Copy files using scp
-scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data
-rm /tmp/measure/*.xml
+scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
 
+# Syncronize clock
+if [ ${DEVID:0:2} == WS ]; then
+	if [ $(id -u) -eq 0 ]; then
+		ntpdate pool.ntp.org
+	else
+		sudo ntpdate pool.ntp.org
+	fi
+fi

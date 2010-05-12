@@ -29,6 +29,9 @@ mkdir -p /tmp/measure
 count=$(cat /tmp/measure/counter)
 echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 
+# Get source IP
+src=$(cat /tmp/ip)
+
 # XML file header
 cat > $xml_file <<-end
 	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -37,7 +40,6 @@ cat > $xml_file <<-end
 end
 
 # RTT measurement using PING
-src=$(cat /tmp/ip)
 target PING Bismark
 bping $dst | mstats RTT PING $src $dst >> $xml_file
 
@@ -45,18 +47,21 @@ bping $dst | mstats RTT PING $src $dst >> $xml_file
 if [ $((count % 6)) -eq 0 ]; then
 	target TR Bismark
 	hops=$(btr $dst)
-	cat >> $xml_file <<-end
-	        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$(echo "$hops" | wc -l)>
-		$(echo "$hops" | awk '{ print "                " $0 }')
-	        </traceroute>
-	end
+	hops_cnt=$(echo "$hops" | wc -l)
+	if [ $hops_cnt -gt 1 ]; then
+		cat >> $xml_file <<-end
+		        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
+			$(echo "$hops" | awk '{ print "                " $0 }')
+		        </traceroute>
+		end
+	fi
 fi
 
 # Downstream bitrate using wget
 if [ $((count % 4)) -eq 0 ]; then
 	target FTPDL Bismark
 	dst_ip=$(echo $dst | awk -F/ '{ print $3 }')
-	bwget $dst dw | mstats BITRATE WGET $dst_ip $src >> $xml_file
+	bwget $dst dw | mstats BITRATE WGET $dst_ip $src | grep -v nan >> $xml_file
 fi
 
 # XML file footer
