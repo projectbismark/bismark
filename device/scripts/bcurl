@@ -1,0 +1,36 @@
+#!/bin/sh
+# Bismark curl wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Help screen
+[ $3 ] || { echo "usage: $(basename $0) <url> <up|dw> <duration>" ; exit ; }
+
+# Set duration value
+min=$(( $3 / 60 ))
+sec=$(( $3 % 60 ))
+
+# Select direction
+case $2 in
+up)  
+	length=$(( $3 * 12000000 * 3 )) # Three times the size of a 100Mbps transfer
+	chunk_size=1460
+	chunks=$(( length / chunk_size ))
+
+	awk 'BEGIN{ 
+		for(i=0; i<('$chunk_size'/10); i++) str = str "dummyload_"; 
+		for(i=0; i<'$chunks'; i++) printf "%s", str; 
+	}' |\
+	curl -X PUT -H "Expect:" -H "Content-length: $length" -T - $1 --stderr - |\
+	gawk -v "RS=[\r\n]" '(NR > 3){ 
+		print $12 ; 
+		if ($10 == "0:'$(printf "%02d\n" $min)':'$(printf "%02d\n" $sec)'") exit 
+	}'
+;;
+dw) ;;
+esac
+
+
