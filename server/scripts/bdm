@@ -343,12 +343,35 @@ function swupdate(){
 	svn info ~/bismark | awk '/^Rev/{ print $2 ; exit }' > ~/bismark/device/VERSION
 	VERSION=$(cat ~/bismark/device/VERSION)
 
-	# Create update package
-	[ $2 ] && rm -f ~/bismark/device/dev-$VERSION.tgz
-	if [ ! -e ~/bismark/device/dev-$VERSION.tgz ]; then
-		echo "Creating package version $VERSION:"
-		(cd ~/bismark/device ; rm -f dev-*.tgz; tar -czvf dev-$VERSION.tgz VERSION conf/* scripts/*)
-	fi
+	# Create last release packages
+	[ $2 ] && rm -f ~/bismark/device/dev-*.tgz
+	for type in $DEV_TYPES; do
+		if [ ! -e ~/bismark/device/dev-$type-$VERSION.tgz ]; then
+			echo "Creating $type package version $VERSION:"
+
+			# Clean & create package tree
+			rm -f ~/bismark/device/dev-$type-*.tgz
+			rm -rf /tmp/pkg/$type
+			mkdir -p /tmp/pkg/$type
+			mkdir /tmp/pkg/$type/{conf,scripts,bin,lib}
+
+			# Copy files
+			(
+			 cd ~/bismark/device
+			 cp VERSION /tmp/pkg/$type
+			 cp conf/* /tmp/pkg/$type/conf
+			 cp scripts/* /tmp/pkg/$type/scripts
+			 [ -e bin/$type ] && cp bin/$type/* /tmp/pkg/$type/bin
+			 [ -e lib/$type ] && cp lib/$type/* /tmp/pkg/$type/lib
+			)
+
+			# Create tgz archive
+			(
+			 cd /tmp/pkg/$type
+			 tar -czvf ~/bismark/device/dev-$type-$VERSION.tgz *
+			)
+		fi
+	done
 
 	# Start update script
 	if check_tunnel $1; then
@@ -399,23 +422,33 @@ function list()
 	fi
 
 	# Dump devices table
-	echo "Latest version: $VERSION"
-	echo -e "\nDevices:"
-	echo -e "ID\tIP\t\tUSER\tVERSION\tLAST PROBE"
+	echo -e "${BLUE}Latest version: ${WHITE}$VERSION"
+	echo -e "${BLUE}\nDevices:"
+	echo -e "${WHITE}ID\tIP\t\tUSER\tVERSION\tLAST PROBE"
 	IFS=$'\n' 
 	for dev in $(query 'SELECT id,ip,user,version,ts FROM devices ORDER BY id;'); do
 		IFS=$'|' read id ip user ver ts <<< "$dev"
+		off_time=$(( $(date +%s) - $ts ))
+		if [ $off_time -lt 300 ]; then
+			echo -ne $GREEN
+		elif [ $off_time -lt 900 ]; then
+			echo -ne $YELLOW
+		else
+			echo -ne $RED
+		fi
 		printf "%s\t%s\t%s\t%s\t%s\n" $id $ip $user $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 
 	# Dump tunnels table
-	echo -e "\nTunnels:"
-	echo -e "ID\tPORT\tSTART TIME"
+	echo -e "${BLUE}\nTunnels:"
+	echo -e "${WHITE}ID\tPORT\tSTART TIME"
+	echo -ne $GREEN
 	IFS=$'\n' 
 	for dev in $(query 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
 		check_tunnel $id $port && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
+	echo -ne $NO_COLOR
 }
 
 # Set device SSH username

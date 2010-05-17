@@ -131,8 +131,9 @@ if [ $KEYS ]; then
 	scp $SCP_OPT ${DEVICE_SSH_KEY}_$suffix{,.pub} $user@$1:~/.ssh 2>/dev/null 
 fi
 
-echo "Copying files:"
-(cd $SVN_DIR/device; tar -cf - conf/* scripts/* | ssh $SSH_OPT $user@$1 'tar -xvf -' 2>/dev/null)
+echo "Copying & installing last version package:"
+scp $SCP_OPT $SVN_DIR/device/dev-${2:0:2}-*.tgz $user@$1:/tmp/dev.tgz
+ssh $SSH_OPT $user@$1 'tar -xvf /tmp/dev.tgz ; rm /tmp/dev.tgz' 2>/dev/null
 
 echo -n "Setting device id, user id and software version..."
 ssh $SSH_OPT $user@$1 "echo $2 > ID ; [ -e USER ] || echo 0 > USER ; echo $VERSION > VERSION" 2>/dev/null
