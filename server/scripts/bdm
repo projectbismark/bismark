@@ -359,10 +359,10 @@ function swupdate(){
 			(
 			 cd ~/bismark/device
 			 cp VERSION /tmp/pkg/$type
-			 cp conf/* /tmp/pkg/$type/conf
-			 cp scripts/* /tmp/pkg/$type/scripts
-			 [ -e bin/$type ] && cp bin/$type/* /tmp/pkg/$type/bin
-			 [ -e lib/$type ] && cp lib/$type/* /tmp/pkg/$type/lib
+			 cp -d conf/* /tmp/pkg/$type/conf
+			 cp -d scripts/* /tmp/pkg/$type/scripts
+			 [ -e bin/$type ] && cp -d bin/$type/* /tmp/pkg/$type/bin
+			 [ -e lib/$type ] && cp -d lib/$type/* /tmp/pkg/$type/lib
 			)
 
 			# Create tgz archive
@@ -375,6 +375,7 @@ function swupdate(){
 
 	# Start update script
 	if check_tunnel $1; then
+		echo "Executing update:"
 		console $1 "~/scripts/action" update
 	else
 		# Wait for probe packet
