@@ -7,10 +7,20 @@
 . ~/conf/dev.conf
 
 # Help screen
-[ $1 ] || { echo "usage: $(basename $0) <file1> [...]" ; exit ; }
+[ $2 ] || { echo "usage: $(basename $0) <up|dw> <file1> [...]" ; exit ; }
 
 # Copy files using scp
-for file in $*; do
-	scp -i $SSH_KEY $file $USER@$SERVER:~/bismark/device/$file
-done
-
+case $1 in
+up)
+	shift
+	for file in $*; do
+		scp -i $SSH_KEY $file $USER@$SERVER:~/bismark/device/$file
+	done
+;;
+dw)
+	shift
+	for file in $*; do
+		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$file $file
+	done
+;;
+esac
