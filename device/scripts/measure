@@ -58,10 +58,17 @@ if [ $((count % 6)) -eq 0 ]; then
 fi
 
 # Downstream bitrate using wget and FTP
+#if [ $((count % 4)) -eq 0 ]; then
+#	target FTPDL Bismark
+#	dst_ip=$(echo $dst | awk -F'[/:]' '{ print $4 }')
+#	bwget "$dst" dw | mstats BITRATE WGET $dst_ip $src | grep -v nan >> $xml_file
+#fi
+
+# Upstream bitrate using curl and HTTP
 if [ $((count % 4)) -eq 0 ]; then
-	target FTPDL Bismark
-	dst_ip=$(echo $dst | awk -F'[/:]' '{ print $4 }')
-	bwget "$dst" dw | mstats BITRATE WGET $dst_ip $src | grep -v nan >> $xml_file
+    target HTTPDL Bismark
+    dst_ip=$(echo $dst | awk -F'[/:]' '{ print $4 }')
+    bcurl "$dst" dw $HTTP_DURATION | mstats BITRATE CURL $dst_ip $src | grep -v nan >> $xml_file
 fi
 
 # Upstream bitrate using curl and HTTP
