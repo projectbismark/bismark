@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Device startup script
 #
 # author walter.dedonato@unina.it

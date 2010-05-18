@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Calculates statistics from stdin samples and outputs XML measure
 # Needs $src and $dst IP to be defined
 #

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Bismark curl wrapper (output in Kbps)
 #
 # author: walter.dedonato@unina.it
@@ -10,18 +10,16 @@
 [ $3 ] || { echo "usage: $(basename $0) <url> <up|dw> <duration>" ; exit ; }
 
 # Bitrate parser (kbps)
+# $1 = duration
 parse_kbps () {
 	gawk -v "RS=[\r\n]" '(NR > 4){ 
 		if ($12 ~ /k/) print $12 * 8;
 		else if ($12 ~ /M/) print $12 * 1000 * 8;
 		else print ($12 / 1000) * 8; 
-		if ($10 == "0:'$(printf "%02d\n" $min)':'$(printf "%02d\n" $sec)'") exit 
+		split($10, t, ":");
+		if ((t[1]*3600 + t[2]*60 + t[3]) >= '$1') exit 
 	}'
 }
-
-# Set duration value
-min=$(( $3 / 60 ))
-sec=$(( $3 % 60 ))
 
 # Select direction
 case $2 in
@@ -34,10 +32,10 @@ up)
 		for(i=0; i<('$chunk_size'/10); i++) str = str "dummyload_"; 
 		for(i=0; i<'$chunks'; i++) printf "%s", str; 
 	}' |\
-	curl -X PUT -H "Expect:" -H "Content-length: $length" -T - $1 --stderr - | parse_kbps
+	curl -X PUT -H "Expect:" -H "Content-length: $length" -T - $1 --stderr - | parse_kbps $3
 ;;
 dw)
-	curl "$1?duration=$3" --stderr - | parse_kbps 
+	curl "$1?duration=$3" --stderr - | parse_kbps $3
 ;;
 esac
 

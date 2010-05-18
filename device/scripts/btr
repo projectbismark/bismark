@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Bismark traceroute wrapper
 #
 # author: walter.dedonato@unina.it

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Starts a recovery shell if unable to probe the server 
 # open a tunnel for 15 minutes each 30 minutes 
 #

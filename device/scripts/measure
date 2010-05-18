@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Executes a measurement cycle
 # 
 # author: walter.dedonato@unina.it

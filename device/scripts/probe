@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Send UDP probes to Bismark server and
 # call action script depending on the answer
 # Provides:

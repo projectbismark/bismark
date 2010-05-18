@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Transfers files to the bismark server
 #
 # author: walter.dedonato@unina.it
