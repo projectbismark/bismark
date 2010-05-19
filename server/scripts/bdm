@@ -37,6 +37,8 @@ function help()
 
 	    setuser  <dev_id> <username>      Set the SSH username for <dev_id>
 
+	    copy     <file> <dev_id>          Copy file to <dev_id> /tmp directory
+
 	Options:
 	
 	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
@@ -119,6 +121,11 @@ function parse()
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help set; }
 		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help set; }
 		setuser $2 $3
+	;;
+	copy)
+		[ $2 ] || { echo -e "Missing parameter: <file>\n"; help copy; }
+		[ $3 ] || { echo -e "Missing parameter: <dev_id>\n"; help copy; }
+		copy $2 $3
 	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
@@ -465,6 +472,24 @@ function setuser()
 	fi
 	echo done
 }
+
+# Copy file to device /tmp directory
+# $1 = file
+# $2 = dev id
+function copy()
+{
+	if [ ! $FWD_PORT ]; then 
+		start_tunnel $2
+		case $? in
+		0) new=1 ;;
+		2) return 1;;
+		esac
+	fi
+
+	SSH_USER=$(query "SELECT user FROM devices WHERE id='$2'")
+	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp  
+}
+
 
 ## Main ##
 
