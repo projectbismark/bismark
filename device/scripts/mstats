@@ -1,14 +1,13 @@
 #!/bin/bash
 # Calculates statistics from stdin samples and outputs XML measure
-# Needs $src and $dst IP to be defined
 #
 # author: walter.dedonato@unina.it
 
 [ $4 ] || { echo "usage: samples_generator | $(basename $0) <param> <tool> <src_ip> <dst_ip>" ; exit ; }
 
-sort -n | awk '
+sort -n | gawk '
 BEGIN {	n = sum = qsum = 0 }
-{ 
+($1 > 0){ 
 	sum += $1
 	qsum += $1 ^ 2
 	data[++n] = $1 

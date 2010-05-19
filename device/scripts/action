@@ -151,7 +151,7 @@ config)	# Get current configuration
 		echo "00:00:00:00:00:00\"$wpa_psk" > /etc/hostapd/wpa_psk
 		/etc/init.d/hostapd restart
 		iwconfig $WIF channel $channel
-		persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
+		/noxbox/bin/persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
 	;;
 	esac
 
