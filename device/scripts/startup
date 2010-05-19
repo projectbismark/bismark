@@ -10,4 +10,11 @@ case $DEVID in
 NB*)
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
 ;;
+LS*)
+	mkdir /tmp/bin /tmp/lib
+	ln -s /tmp/bin bin
+	ln -s /tmp/lib lib
+	sleep 10
+	action update
+;;
 esac

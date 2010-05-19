@@ -5,7 +5,7 @@
 
 [ $4 ] || { echo "usage: samples_generator | $(basename $0) <param> <tool> <src_ip> <dst_ip>" ; exit ; }
 
-sort -n | gawk '
+sort -n | awk '
 BEGIN {	n = sum = qsum = 0 }
 ($1 > 0){ 
 	sum += $1

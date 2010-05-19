@@ -82,18 +82,20 @@ esac
 ## Functions  ##
 
 # Install linksys packages
+# $1 = device address
 # $* = packages list
-function linksys_pkg ()
+function linksys_pkg()
 {
+	ip=$1 ; shift
 	REPOSITORY="http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/"
-	INSTALLED=$(ssh $SSH_OPT $user@$1 'opkg list_installed')
+	INSTALLED=$(ssh $SSH_OPT $user@$ip 'opkg list_installed')
 
 	for pkg in $*; do 
-		echo $INSTALLED | grep -q $pkg && continue
+		echo "$INSTALLED" | grep -q $pkg && continue
 		echo "Installing $pkg package:"
 		wget -O /tmp/$pkg "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/$pkg"
-		scp $SCP_OPT /tmp/netcat.ipk $user@$1:/tmp
-		ssh $SSH_OPT $user@$1 "opkg install /tmp/$pkg ; rm /tmp/$pkg"
+		scp $SCP_OPT /tmp/$pkg $user@$ip:/tmp
+		ssh $SSH_OPT $user@$ip "opkg install /tmp/$pkg ; rm /tmp/$pkg"
 		echo done
 	done
 }
@@ -131,9 +133,18 @@ if [ $KEYS ]; then
 	scp $SCP_OPT ${DEVICE_SSH_KEY}_$suffix{,.pub} $user@$1:~/.ssh 2>/dev/null 
 fi
 
+# Lynksys only
+if [ $suffix == ls ]; then
+	ssh $SSH_OPT $user@$1 '
+		mkdir /tmp/bin /tmp/lib
+		ln -s /tmp/bin bin
+		ln -s /tmp/lib lib
+	'
+fi
+
 echo "Copying & installing last version package:"
 scp $SCP_OPT $SVN_DIR/device/dev-${2:0:2}-*.tgz $user@$1:/tmp/dev.tgz
-ssh $SSH_OPT $user@$1 'tar -xvf /tmp/dev.tgz ; rm /tmp/dev.tgz' 2>/dev/null
+ssh $SSH_OPT $user@$1 'tar -xzvf /tmp/dev.tgz ; rm /tmp/dev.tgz' 
 
 echo -n "Setting device id, user id and software version..."
 ssh $SSH_OPT $user@$1 "echo $2 > ID ; [ -e USER ] || echo 0 > USER ; echo $VERSION > VERSION" 2>/dev/null
@@ -145,7 +156,11 @@ echo "done"
 
 # Lynksys only
 if [ $suffix == ls ]; then
-	lynksis_pkg $(grep ^LS ~/conf/packages.conf | cut -f2) 
+	echo -n "Creating bash to ash wrapper..."
+	ssh $SSH_OPT $user@$1 'echo -e "#!/bin/sh\nash i\$*" > /bin/bash ; chmod +x /bin/bash' 2>/dev/null
+	echo done
+
+#	linksys_pkg $1 $(grep ^LS ~/conf/packages.conf | cut -f2) 
 
 	echo -n "Starting crond daemon..."
 	ssh $SSH_OPT $user@$1 "/etc/init.d/cron enable ; pgrep crond >/dev/null || /etc/init.d/cron start" 2>/dev/null
