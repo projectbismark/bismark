@@ -91,6 +91,7 @@ update)	# Software update
 	# Check installed packages
 	case $DEVID in
 	LS*)
+		opkg update
 		pkgs=$(grep ^LS ~/conf/packages.conf | cut -f2)
 		for pkg in $pkgs; do
 			opkg list_installed | grep -q $pkg || opkg install $pkg 
