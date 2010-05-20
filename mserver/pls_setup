@@ -1,0 +1,8 @@
+#!/bin/sh
+
+sudo yum install curl lighttpd php-cli-5.2.6-2.fc8.i386
+
+echo "cgi.fix_pathinfo = 1" >> /etc/php.ini
+
+# decommenta fcgi in lighttpd.conf
+
