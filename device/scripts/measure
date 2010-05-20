@@ -21,6 +21,10 @@ target()
 	' ~/conf/targets.conf | head -1)
 }
 
+# Check and set measure lock
+[ -e /tmp/mpid ] && exit
+echo on > /tmp/mpid
+
 # Create dirs and files
 mkdir -p /tmp/measure
 [ -e /tmp/measure/counter ] || echo 0 > /tmp/measure/counter
@@ -86,4 +90,7 @@ cat >> $xml_file <<-end
 end
 
 # Move file to measure folder
-mv $xml_file /tmp/measure
+mv $xml_file /tmp/measurie
+
+# Remove measure lock
+rm /tmp/mpid
