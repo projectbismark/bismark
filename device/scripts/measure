@@ -90,7 +90,7 @@ cat >> $xml_file <<-end
 end
 
 # Move file to measure folder
-mv $xml_file /tmp/measurie
+mv $xml_file /tmp/measure
 
 # Remove measure lock
 rm /tmp/mpid
