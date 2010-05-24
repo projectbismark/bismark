@@ -1,0 +1,114 @@
+#!/bin/bash
+# Bismark Devices Management Daemon
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/etc/bdm.conf
+
+# Aliases
+query(){ sqlite3 -list $BDM_DB "$1"; }
+
+# Help screen
+# $1 = command
+function help() 
+{
+	cat <<-end
+	Syntax:
+
+	    $(basename $0) [options]
+	
+	Options:
+	
+	    -c               Start a child probe handler
+	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
+	end
+	exit
+}
+
+
+## Main ##
+
+# Check directories
+mkdir -p ~/var/log/devices/
+
+# Check DB
+if [ ! -e $BDM_DB ]; then
+	query "CREATE TABLE devices(
+		id      TEXT PRIMARY KEY,
+		version INTEGER, 
+		user    TEXT, 
+		ip      TEXT, 
+		ts      INTEGER
+	       );"
+	query "CREATE TABLE tunnels(
+		id      TEXT,
+		port    INTEGER, 
+		ts      INTEGER
+	       );"
+	query "CREATE TABLE messages(
+		'from'    TEXT,
+		'to'      TEXT, 
+		msg     TEXT
+	       );"
+fi
+
+# Parse command-line
+CHILD=0
+while getopts 'l:c' flag; do
+	case $flag in
+	l)
+		PROBE_PORT=$OPTARG
+	;;
+	c)
+		CHILD=1
+	;;
+	*)
+		echo "Unknown option: $flag $OPTARG"
+		help
+	;;
+	esac
+done
+
+# Parent/Child 
+if [ $CHILD -eq 1 ]; then 
+	# Probe handler child
+	ip=$SOCAT_PEERADDR
+
+	# Read probe packet
+	IFS=$' ' read id cmd param
+
+	case $cmd in
+	ping)
+		# Update database
+		if [ $(query "SELECT id FROM devices WHERE id='$id';") ]; then
+			query "UPDATE devices SET ip='$ip',ts=$(date +%s),version='$param' WHERE id='$id';"
+		else
+			query "INSERT INTO devices (id, ip, ts, version) VALUES('$id','$ip',$(date +%s),'$param');"
+		fi
+
+		# Check messages
+		info=$(query "SELECT rowid,* FROM messages WHERE \"to\"='$id' LIMIT 1;")
+		if [ ${#info} -gt 0 ]; then
+			# Deliver message
+			IFS=$'|' read mid from to msg <<< "$info"
+			echo "$msg"
+			query "DELETE FROM messages WHERE rowid='$mid';"
+			echo "$(date +"%Y/%m/%d %H:%M:%S") - Delivered message from $from to $to: $msg" >> $BDMD_LOG_FILE
+		else
+			# Reply to ping
+			echo pong $ip
+		fi
+	;;
+	log)
+		# Store device log output
+		cat >> ~/var/log/devices/$id.log
+		query "INSERT INTO messages ('from', 'to', msg) VALUES('$id','BDM','$param');"
+	;;
+	esac
+else	
+	# Listen for incoming UDP probes	
+	echo "$(date +"%Y/%m/%d %H:%M:%S") - Listening to probe packets on port $PROBE_PORT" >> $BDMD_LOG_FILE
+	socat -d UDP-LISTEN:$PROBE_PORT,reuseaddr,fork "EXEC:bdmd -c,pty" 2>> $BDMD_LOG_FILE &
+fi
+
