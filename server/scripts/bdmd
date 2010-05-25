@@ -26,6 +26,25 @@ function help()
 	exit
 }
 
+# Wait for tunnel availability
+# $1 = dev id
+# $2 = port number
+function wait_tunnel()
+{
+	time=0
+	while [ true ]; do
+		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
+
+		if [ $port -ge 1 ]; then
+			query "INSERT INTO tunnels VALUES('$1',$2,$(date +%s));"
+			return 0
+		elif [ $((time++)) -eq $SSH_PORT_FWD_WAIT ]; then
+			return 1
+		fi
+
+		sleep 1
+	done
+}
 
 ## Main ##
 
@@ -95,6 +114,12 @@ if [ $CHILD -eq 1 ]; then
 			echo "$msg"
 			query "DELETE FROM messages WHERE rowid='$mid';"
 			echo "$(date +"%Y/%m/%d %H:%M:%S") - Delivered message from $from to $to: $msg" >> $BDMD_LOG_FILE
+
+			# Post actions
+			IFS=$' ' read rcmd value <<< "$msg"
+			case $rcmd in
+			fwd) wait_tunnel $id $value ;;
+			esac
 		else
 			# Reply to ping
 			echo pong $ip

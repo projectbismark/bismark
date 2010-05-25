@@ -28,9 +28,9 @@ function help()
 	
 	    info     <dev_id>                 Print some information about <dev_id>
 	
-	    list     [update]                 List available devices and tunnels
+	    list                              List available devices and tunnels
 	
-	    swupdate <dev_id> [rebuild]       Update software on <dev_id> (use ALL to update every device)
+	    upgrade  <dev_id> [rebuild]       Upgrade software on <dev_id> (ALL applies)
 
 	    config   <dev_id> <option=value>  Change <dev_id> configuration options
 	             [[option=value] ...]     Supported options: channel, ssid, wpa_psk
@@ -41,10 +41,9 @@ function help()
 
 	Options:
 	
-	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
 	    -o <ssh_opts>    Additional SSH options
 	    -p <fwd_port>    SSH tunnel port number (default: random)"
-	    -t <timeout>     Max seconds to wait for probe packets (default: $PROBE_TIMEOUT)
+	    -t <timeout>     Max seconds to wait for messages (default: $MSG_TIMEOUT)
 	end
 	exit
 }
@@ -55,11 +54,8 @@ function parse()
 	p=$*
 
 	# Parse options
-	while getopts 'l:o:p:t:' flag; do
+	while getopts 'o:p:t:' flag; do
 		case $flag in
-		l)
-			PROBE_PORT=$OPTARG
-		;;
 		o)
 			SSH_OPTIONS+=" -$OPTARG"
 		;;
@@ -67,7 +63,7 @@ function parse()
 			FWD_PORT=$OPTARG
 		;;
 		t)
-			PROBE_TIMEOUT=$OPTARG
+			MSG_TIMEOUT=$OPTARG
 		;;
 		*)
 			echo "Unknown option: $flag $OPTARG"
@@ -107,9 +103,9 @@ function parse()
 	list)	
 		list $2
 	;;
-	swupdate)
-		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help swupdate; }
-		swupdate $2 $3 
+	upgrade)
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help upgrade; }
+		upgrade $2 $3 
 	;;
 	config)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }
@@ -134,64 +130,60 @@ function parse()
 	esac
 }
 
-# Reply to probe packet
+# Send message 
 # $1 = dev id
-# $2 = reply command
-# $3 = reply value
-function probe_reply()
+# $2 = command
+# $3 = value
+function send_msg()
 {
-	# Discard first line
-	read 
-	# Read source ip 
-	read ip
-	ip=$(echo $ip | awk -F'[\\[\\]]' '{print $4}')
-	# Read probe packet
-	IFS=$' ' read id cmd param
-	# Timeout
-	[ $cmd ] || return 1
-
-	# Update database
-	if [ $cmd == ping ]; then
-		if [ $(query "SELECT id FROM devices WHERE id='$id' LIMIT 1;") ]; then
-			query "UPDATE devices SET ip='$ip',ts=$(date +%s),version='$param' WHERE id='$id';"
-		else
-			query "INSERT INTO devices (id, ip, ts, version) VALUES('$id','$ip',$(date +%s),'$param');"
-		fi
-	fi
-
-	# Check dev_id
-	if [ $id == $1 ]; then
-		echo -e "\nDevice $id ($ip) [$cmd $param] -> $2 $3" > /dev/stderr
-		echo $2 "$3" 
-		return 0
-	elif [ $1 == ALL ] && [ $param -lt $VERSION ]; then
-		echo -n "{$id}" > /dev/stderr
-		echo $2 "$3"
-		return 3
+	# Add message to queue
+	if [ $1 == ALL ]; then
+		# Broadcast
+		for dev in $(query "SELECT id FROM devices;"); do
+			query "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$dev','$2 $3');"
+		done
 	else
-		echo -n "[$id]" > /dev/stderr
-		echo pong $ip
-		return 2
+		# Unicast
+		query "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$1','$2 $3');"
+
+		# Wait for message delivery
+		time=0
+		while [ true ]; do
+			rowid=$(query "SELECT rowid FROM messages WHERE \"to\"='$1' AND msg='$2 $3';")
+			[ ${#rowid} -eq 0 ] && return 0
+			[ $((time++)) -eq $MSG_TIMEOUT ] && return 1
+			echo -n "."
+			sleep 1
+		done
 	fi
 }
 
-# Listen for incoming UDP probes
+# Receive message 
 # $1 = dev id
-# $2 = reply command
-# $3 = reply value
-function listen()
+function recv_msg()
 {
-	[ "$1" == "UPDATE"  ] && echo -n "Listening to probe packets" || echo -n "Waiting for probe packet from $1"
-	
+	# Wait for message 
 	time=0
-	[ -e /tmp/.bp ] || mkfifo /tmp/.bp
 	while [ true ]; do
-		nc -v -w1 -q0 -nlu -p $PROBE_PORT </tmp/.bp 2>&1 | probe_reply $1 $2 "$3" >/tmp/.bp
+		info=$(query "SELECT rowid,msg FROM messages WHERE \"from\"='$1';")
+		if [ ${#info} -gt 0 ]; then
+			IFS=$'|' read mid msg <<< "$info"
 
-		[ $? -eq 0 ] && return 0
-		[ $((time++)) -eq $PROBE_TIMEOUT ] && { return 1; }
+			echo "Message: $msg"
+			echo "Related log:"
+			awk '
+				BEGIN{ out=0 }
+				/^END/{ exit }
+				(out == 1){ print }
+				/^START '$msg'/{ out=1 }
+			' ~/var/log/devices/$id.log
 
+			query "DELETE FROM messages WHERE rowid='$mid';"
+			return 0
+		fi
+		[ $((time++)) -eq $MSG_TIMEOUT ] && return 1
 		echo -n "."
+		sleep 1
 	done
 }
 
@@ -269,7 +261,7 @@ function start_tunnel()
 	set_fwd_port
 
 	echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
-	listen $1 fwd $FWD_PORT || { echo -e "\nDevice $1 not found"; return 2; }
+	send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
  	wait_tunnel $FWD_PORT || return 3
 
 	# Add tunnel to db
@@ -342,8 +334,8 @@ function wait_tunnel()
 # Update device software
 # $1 = dev id
 # $2 = rebuild
-function swupdate(){
-	echo "Updating $1"
+function upgrade(){
+	echo "Upgrading $1"
 
 	# Update version number
 	svn update ~/bismark
@@ -380,15 +372,13 @@ function swupdate(){
 		fi
 	done
 
-	# Start update script
+	# Start upgrade script
 	if check_tunnel $1; then
-		echo "Executing update:"
+		echo "Executing upgrade:"
 		console $1 "~/scripts/action" update
 	else
 		# Wait for probe packet
-		listen $1 update || { [ $1 == ALL ] && echo done || { echo -e "\nDevice $1 not found"; return 1; } ; }
-		# Receive feedback message
-		[ $1 != ALL ] && nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
+		send_msg $1 update || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 failed"; return 1; } ; }
 	fi
 }
 
@@ -400,11 +390,10 @@ function info()
 	if check_tunnel $1; then
 		console $1 "~/scripts/action" info
 	else
-		listen $1 info || { echo -e "\nDevice $1 not found"; return 2; }
-		echo "$1 info:"
-		nc -w5 -q1 -nlu -p $REPLY_PORT </dev/null
+		send_msg $1 info || { echo -e "\nDelivery to $1 failed"; return 1; }
+		echo "Waiting for message from $1"
+		recv_msg $1 || { echo -e "\nNo messages from $1"; return 2; }
         fi
-
 }
 
 # Push configuration
@@ -415,20 +404,14 @@ function config()
 	id=$1
 	shift
 	params=$(echo $* | tr ' ' '&')
-	listen $id config $params || { echo -e "\nDevice $1 not found"; return 2; }
-	nc -w15 -q1 -nlu -p $REPLY_PORT </dev/null
+	send_msg $id config $params || { echo -e "\nDevice $id not found"; return 1; }
+	recv_msg $id || { echo -e "\nNo messages from $id"; return 2; }
 }
 
 # List active devices and tunnels
 # $1 = update flag
 function list()
 {
-	# Update list
-	if [ $1  ]; then
-		echo "Updating devices list..."
-		listen UPDATE
-	fi
-
 	# Dump devices table
 	echo -e "${BLUE}Latest version: ${WHITE}$VERSION"
 	echo -e "${BLUE}\nDevices:"
@@ -455,6 +438,17 @@ function list()
 	for dev in $(query 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
 		check_tunnel $id $port && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+	done
+	echo -ne $NO_COLOR
+
+	# Dump messages table
+	echo -e "${BLUE}\nPending Messages:"
+	echo -e "${WHITE}FROM\tTO\tMESSAGE"
+	echo -ne $MAGENTA
+	IFS=$'\n' 
+	for message in $(query 'SELECT * FROM messages ORDER BY "from","to";'); do
+		IFS=$'|' read from to msg <<< "$message"
+		printf "%s\t%s\t%s\n" $from $to $msg
 	done
 	echo -ne $NO_COLOR
 }
@@ -489,25 +483,6 @@ function copy()
 	SSH_USER=$(query "SELECT user FROM devices WHERE id='$2'")
 	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp  
 }
-
-
-## Main ##
-
-# Check DB
-if [ ! -e $BDM_DB ]; then
-	query "CREATE TABLE devices(
-		id      TEXT PRIMARY KEY,
-		version INTEGER, 
-		user    TEXT, 
-		ip      TEXT, 
-		ts      INTEGER
-	       );"
-	query "CREATE TABLE tunnels(
-		id      TEXT,
-		port    INTEGER, 
-		ts      INTEGER
-	       );"
-fi
 
 # Parse command-line
 parse $*
