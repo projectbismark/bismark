@@ -40,6 +40,9 @@ if [ $faults -ge 20 ]; then
 	faults=0
 fi
 
+# Random wait
+sleep $((RANDOM % 30))
+
 # Send probe and store reply
 if [ $(cat /tmp/proxy) -eq 1 ]; then
 	msg | nc $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply

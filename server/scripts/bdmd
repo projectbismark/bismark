@@ -96,6 +96,7 @@ if [ $CHILD -eq 1 ]; then
 
 	# Read probe packet
 	IFS=$' ' read id cmd param
+	echo "$(date +"%Y/%m/%d %H:%M:%S") - \"$cmd $param\" from $id [$ip]" >> $BDMD_LOG_FILE
 
 	case $cmd in
 	ping)
@@ -115,7 +116,7 @@ if [ $CHILD -eq 1 ]; then
 			query "DELETE FROM messages WHERE rowid='$mid';"
 			echo "$(date +"%Y/%m/%d %H:%M:%S") - Delivered message from $from to $to: $msg" >> $BDMD_LOG_FILE
 
-			# Post actions
+			# Post delivery actions
 			IFS=$' ' read rcmd value <<< "$msg"
 			case $rcmd in
 			fwd) wait_tunnel $id $value ;;
@@ -134,6 +135,6 @@ if [ $CHILD -eq 1 ]; then
 else	
 	# Listen for incoming UDP probes	
 	echo "$(date +"%Y/%m/%d %H:%M:%S") - Listening to probe packets on port $PROBE_PORT" >> $BDMD_LOG_FILE
-	socat -d UDP-LISTEN:$PROBE_PORT,reuseaddr,fork "EXEC:bdmd -c,pty" 2>> $BDMD_LOG_FILE &
+	socat -d UDP-LISTEN:$PROBE_PORT,bind=$SERVER_ADDR,reuseaddr,fork "EXEC:bdmd -c,pipes" 2>> $BDMD_LOG_FILE &
 fi
 
