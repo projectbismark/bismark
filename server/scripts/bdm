@@ -35,9 +35,13 @@ function help()
 	    config   <dev_id> <option=value>  Change <dev_id> configuration options
 	             [[option=value] ...]     Supported options: channel, ssid, wpa_psk
 
-	    setuser  <dev_id> <username>      Set the SSH username for <dev_id>
-
 	    copy     <file> <dev_id>          Copy file to <dev_id> /tmp directory
+
+	    For internal use only:
+
+	    setuser   <dev_id> <username>     Set the SSH username for <dev_id>
+
+	    settunnel <dev_id> <port>         Set the tunnel entry for <dev_id>
 
 	Options:
 	
@@ -114,9 +118,14 @@ function parse()
 		$* 
 	;;
 	setuser)
-		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help set; }
-		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help set; }
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help setuser; }
+		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help setuser; }
 		setuser $2 $3
+	;;
+	settunnel)
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help settunnel; }
+		[ $3 ] || { echo -e "Missing parameter: <port>\n"; help settunnel; }
+		settunnel $2 $3
 	;;
 	copy)
 		[ $2 ] || { echo -e "Missing parameter: <file>\n"; help copy; }
@@ -129,6 +138,8 @@ function parse()
 	;;
 	esac
 }
+
+## Utility functions ##
 
 # Send message 
 # $1 = dev id
@@ -233,7 +244,8 @@ function get_fwd_port()
 # $2 = port number
 # rv = 0 if tunnel is active
 # rv = 1 if tunnel is not in DB
-# rv = 2 if tunnel is expired
+# rv = 2 if tunnel is opening
+# rv = 3 if tunnel is expired
 function check_tunnel()
 {
 	if [ $2 ]; then
@@ -245,10 +257,34 @@ function check_tunnel()
 	if check_fwd_port $FWD_PORT; then
 		return 0
 	else
-		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
-		return 2
+		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT AND ts<$(date +%s);"
+		get_fwd_port $1 && return 2 || return 3
 	fi
 }
+
+# Wait for tunnel availability
+# $1 = port number
+function wait_tunnel()
+{
+	echo -n "\nWaiting for tunnel establishment"
+	time=0
+	while [ true ]; do 
+		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
+
+		if [ $port -ge 1 ]; then
+			echo -e "\nTunnel ready on 127.0.0.1:$1"
+			return 0
+		elif [ $((time++)) -eq $SSH_PORT_FWD_WAIT ]; then 
+			echo "Error: tunnel not found"
+			return 1
+		fi
+
+		echo -n "." 
+		sleep 1
+	done
+}
+
+## User command functions ##
 
 # Start new tunnel
 # $1 = dev id
@@ -307,28 +343,6 @@ function stop_tunnel()
 		echo "Tunnel closed"
 		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
 	fi
-}
-
-# Wait for tunnel availability
-# $1 = port number
-function wait_tunnel()
-{
-	echo -n "Waiting for tunnel establishment"
-	time=0
-	while [ true ]; do 
-		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
-
-		if [ $port -ge 1 ]; then
-			echo -e "\nTunnel ready on 127.0.0.1:$1"
-			return 0
-		elif [ $((time++)) -eq $SSH_PORT_FWD_WAIT ]; then 
-			echo "Error: tunnel not found"
-			return 1
-		fi
-
-		echo -n "." 
-		sleep 1
-	done
 }
 
 # Update device software
@@ -437,7 +451,15 @@ function list()
 	IFS=$'\n' 
 	for dev in $(query 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
-		check_tunnel $id $port && printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+		check_tunnel $id $port
+		if [ $? -eq 0 ]; then
+			echo -ne $GREEN
+		elif [ $? -eq 2 ]; then
+			echo -ne $YELLOW
+		else
+			echo -ne $RED
+		fi
+		printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 	echo -ne $NO_COLOR
 
@@ -451,20 +473,6 @@ function list()
 		printf "%s\t%s\t%s\n" $from $to $msg
 	done
 	echo -ne $NO_COLOR
-}
-
-# Set device SSH username
-# $1 = dev id
-# $2 = username
-function setuser()
-{
-	echo -n "Setting $1 SSH user to $2..."
-	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
-		query "UPDATE devices SET user='$2' WHERE id='$1';"
-	else
-		query "INSERT INTO devices (id, user) VALUES('$1','$2');"
-	fi
-	echo done
 }
 
 # Copy file to device /tmp directory
@@ -484,6 +492,34 @@ function copy()
 	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp  
 }
 
+## Internal commands ##
+
+# Set device SSH username
+# $1 = dev id
+# $2 = username
+function setuser()
+{
+	echo -n "Setting $1 SSH user to $2..."
+	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
+		query "UPDATE devices SET user='$2' WHERE id='$1';"
+	else
+		query "INSERT INTO devices (id, user) VALUES('$1','$2');"
+	fi
+	echo done
+}
+
+# Set device tunnel entry
+# $1 = dev id
+# $2 = port
+function settunnel()
+{
+	echo -n "Setting tunnel db entry for $1 on port $2..."
+	query "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
+	echo done
+}
+
+
+## Main ##
 # Parse command-line
 parse $*
 

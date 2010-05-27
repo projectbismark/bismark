@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bismark Devices Management Daemon
+# Bismark Devices Management Daemon wrapper
 #
 # author: walter.dedonato@unina.it
 
@@ -20,30 +20,10 @@ function help()
 	
 	Options:
 	
-	    -c               Start a child probe handler
 	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
+	    -h               Print help screen
 	end
 	exit
-}
-
-# Wait for tunnel availability
-# $1 = dev id
-# $2 = port number
-function wait_tunnel()
-{
-	time=0
-	while [ true ]; do
-		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
-
-		if [ $port -ge 1 ]; then
-			query "INSERT INTO tunnels VALUES('$1',$2,$(date +%s));"
-			return 0
-		elif [ $((time++)) -eq $SSH_PORT_FWD_WAIT ]; then
-			return 1
-		fi
-
-		sleep 1
-	done
 }
 
 ## Main ##
@@ -73,14 +53,13 @@ if [ ! -e $BDM_DB ]; then
 fi
 
 # Parse command-line
-CHILD=0
-while getopts 'l:c' flag; do
+while getopts 'l:h' flag; do
 	case $flag in
 	l)
 		PROBE_PORT=$OPTARG
 	;;
-	c)
-		CHILD=1
+	h)
+		help
 	;;
 	*)
 		echo "Unknown option: $flag $OPTARG"
@@ -89,52 +68,7 @@ while getopts 'l:c' flag; do
 	esac
 done
 
-# Parent/Child 
-if [ $CHILD -eq 1 ]; then 
-	# Probe handler child
-	ip=$SOCAT_PEERADDR
-
-	# Read probe packet
-	IFS=$' ' read id cmd param
-	echo "$(date +"%Y/%m/%d %H:%M:%S") - \"$cmd $param\" from $id [$ip]" >> $BDMD_LOG_FILE
-
-	case $cmd in
-	ping)
-		# Update database
-		if [ $(query "SELECT id FROM devices WHERE id='$id';") ]; then
-			query "UPDATE devices SET ip='$ip',ts=$(date +%s),version='$param' WHERE id='$id';"
-		else
-			query "INSERT INTO devices (id, ip, ts, version) VALUES('$id','$ip',$(date +%s),'$param');"
-		fi
-
-		# Check messages
-		info=$(query "SELECT rowid,* FROM messages WHERE \"to\"='$id' LIMIT 1;")
-		if [ ${#info} -gt 0 ]; then
-			# Deliver message
-			IFS=$'|' read mid from to msg <<< "$info"
-			echo "$msg"
-			query "DELETE FROM messages WHERE rowid='$mid';"
-			echo "$(date +"%Y/%m/%d %H:%M:%S") - Delivered message from $from to $to: $msg" >> $BDMD_LOG_FILE
-
-			# Post delivery actions
-			IFS=$' ' read rcmd value <<< "$msg"
-			case $rcmd in
-			fwd) wait_tunnel $id $value ;;
-			esac
-		else
-			# Reply to ping
-			echo pong $ip
-		fi
-	;;
-	log)
-		# Store device log output
-		cat >> ~/var/log/devices/$id.log
-		query "INSERT INTO messages ('from', 'to', msg) VALUES('$id','BDM','$param');"
-	;;
-	esac
-else	
-	# Listen for incoming UDP probes	
-	echo "$(date +"%Y/%m/%d %H:%M:%S") - Listening to probe packets on port $PROBE_PORT" >> $BDMD_LOG_FILE
-	socat -d UDP-LISTEN:$PROBE_PORT,bind=$SERVER_ADDR,reuseaddr,fork "EXEC:bdmd -c,pipes" 2>> $BDMD_LOG_FILE &
-fi
+# Listen for incoming UDP probes	
+echo "$(date +"%Y/%m/%d %H:%M:%S") - Listening to probe packets on port $PROBE_PORT" >> $BDMD_LOG_FILE
+bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE &
 
