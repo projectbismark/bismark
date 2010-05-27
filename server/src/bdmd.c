@@ -10,6 +10,7 @@
  */
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/time.h>
 #include <time.h>
@@ -48,7 +49,7 @@ typedef struct {
  * Constants
  */
 #define BDM_DB "/var/tmp/bismark/db/bdm.db"
-#define LOG_DIR "/var/tmp/bismark/log/devices/"
+#define LOG_DIR "/var/tmp/bismark/log/devices"
 
 #define MAX_NUM_THREAD 50
 #define MAX_UDP_PSIZE 1472
@@ -145,7 +146,7 @@ void *doit(void *param)
 	pthread_mutex_unlock(&mutex);
 
 	/* Get client IP address */
-	strncpy(ip, (const char *) inet_ntoa(tp->cad.sin_addr), 16);
+	strncpy(ip, inet_ntoa(tp->cad.sin_addr), 16);
 
 	/* Get timestamp */
 	ts = time(NULL);
@@ -162,6 +163,7 @@ void *doit(void *param)
 
 	/* Output log entry */
 	printf("%s - \"%s %s\" from %s [%s]\n", date, probe.cmd, probe.param, probe.id, ip);
+	fflush(stdout);
 
 	/* Open db */
 	if (sqlite3_open(BDM_DB, &db)) {
@@ -210,10 +212,13 @@ void *doit(void *param)
 
 			/* Output log entry */
 			printf("%s - Delivered message from %s to %s: %s\n", date, msg.from, msg.to, msg.msg);
+			fflush(stdout);
 
 			/* Remove message from db */
 			snprintf(query, MAX_QUERY_LEN, "DELETE FROM messages WHERE rowid='%s';", msg.mid);
 			do_query(db, query, 0);
+
+			/* Remove row */
 			free(row);
 		} else {
 			/* Set pong reply */
@@ -222,8 +227,8 @@ void *doit(void *param)
 		}
 	} else if (!strncmp(probe.cmd, "log", 3)) {
 		/* Log */
-		FILE *lfp;			/* Log file pointer */
-		char logfile[MAX_FILENAME_LEN];	/* Log file name */
+		FILE *lfp;				/* Log file pointer */
+		char logfile[MAX_FILENAME_LEN];		/* Log file name */
 		char *log = &tp->payload[i + 1];	/* Log data in current packet */
 
 		/* Append log to logfile */
@@ -237,16 +242,25 @@ void *doit(void *param)
 		do_query(db, query, 0);
 	}
 
-	/* Close db */
-	sqlite3_close(db);
-
 	/* Send reply to client */
 	if (reply) {
 		sendto(ssd, reply, strlen(reply), 0, (struct sockaddr*) &tp->cad, sizeof(tp->cad));
+
+		/* Post delivery actions */
+		if (!strncmp(reply, "fwd", 3)) {
+			reply[strlen(reply) - 1] = 0;
+			reply[3] = 0;
+			snprintf(query, MAX_QUERY_LEN, "INSERT INTO tunnels VALUES('%s',%s,%lu);", probe.id, &reply[4], ts + 15);
+			do_query(db, query, 0);
+		}
+
 		free(reply);
 	}
 	free(tp->payload);
 	free(tp);
+
+	/* Close db */
+	sqlite3_close(db);
 
 	/* Update threads counter */
 	pthread_mutex_lock(&mutex);
@@ -263,6 +277,8 @@ int main(int argc, char *argv[])
 {
 	unsigned short server_port; 	/* Server port number */
 	pthread_t hThr[MAX_NUM_THREAD]; /* Threads handlers */
+	time_t ts; 			/* Current timestamp */
+	char date[25]; 			/* Date string */
 	int i = 0;
 
 	/* Command-line check */
@@ -296,7 +312,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	printf("Bdmd listening on port %d\n", server_port);
+	/* Get timestamp */
+	ts = time(NULL);
+	strftime(date, sizeof(date), "%Y/%m/%d %H:%M:%S", localtime(&ts));
+
+	/* Output log entry */
+	printf("%s - Bdmd listening on port %d\n", date, server_port);
+	fflush(stdout);
 
 	/* Infinite loop */
 	while (1) {
