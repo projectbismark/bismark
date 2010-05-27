@@ -6,7 +6,7 @@
 # Load configuration
 . ~/conf/dev.conf
 
-case $DEVID in
+case $DEVICE_ID in
 NB*)
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
 ;;

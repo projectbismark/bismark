@@ -32,7 +32,7 @@ function help()
 	
 	    upgrade  <dev_id> [rebuild]       Upgrade software on <dev_id> (ALL applies)
 
-	    config   <dev_id> <option=value>  Change <dev_id> configuration options
+	    config   <dev_id> [option=value]  Show or Change <dev_id> configuration options
 	             [[option=value] ...]     Supported options: channel, ssid, wpa_psk
 
 	    copy     <file> <dev_id>          Copy file to <dev_id> /tmp directory
@@ -113,7 +113,6 @@ function parse()
 	;;
 	config)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }
-		[ $3 ] || { echo -e "Missing parameter: <option>=<value>\n"; help config; }
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help config; }
 		$* 
 	;;
@@ -266,7 +265,7 @@ function check_tunnel()
 # $1 = port number
 function wait_tunnel()
 {
-	echo -n "\nWaiting for tunnel establishment"
+	echo -en "\nWaiting for tunnel establishment"
 	time=0
 	while [ true ]; do 
 		port=$(netstat -lnt | grep -c "127.0.0.1:$1")
@@ -299,9 +298,6 @@ function start_tunnel()
 	echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
 	send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
  	wait_tunnel $FWD_PORT || return 3
-
-	# Add tunnel to db
-	query "INSERT INTO tunnels VALUES('$1',$FWD_PORT,$(date +%s));"
 }
 
 # Connect to the SSH server on the dev

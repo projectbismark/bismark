@@ -20,14 +20,14 @@
 output ()
 {
 	if [ $REMOTE ]; then
-		nc $NC_OPTS $SERVER $REPLY_PORT		
+		nc $NC_OPTS $SERVER $PROBE_PORT
 	else
-		cat
+		tail -n+2
 	fi
 }
 
 # OS depending options
-case $DEVID in
+case $DEVICE_ID in
 LS*)
 	NC_OPTS="-nuc"
 	KEEP_ALIVE="-K 120"
@@ -58,13 +58,13 @@ update)	# Software update
 	cd ~
 
 	# Get new bismark package
-	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-${DEVID:0:2}-*.tgz /tmp/dev.tgz
+	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-${DEVICE_ID:0:2}-*.tgz /tmp/dev.tgz
 
 	# Remove old scripts and configuration files
 	find * -path "conf/*" | sort > /tmp/old
 	find * -path "scripts/*" | sort >> /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
-	case $DEVID in
+	case $DEVICE_ID in
 	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }') ;;
 	NB*) 
 		files=$(diff /tmp/old /tmp/new | awk '/^</{ print $2 }')
@@ -85,11 +85,11 @@ update)	# Software update
 	[ $NB ] && /noxbox/bin/persist_changes
 
 	# Send diff
-	{ echo "Files diff:"; diff /tmp/old /tmp/new ; } | output 
+	{ echo "$DEVICE_ID log update"; diff /tmp/old /tmp/new ; } | output 
 	rm /tmp/old /tmp/new
 
 	# Check installed packages
-	case $DEVID in
+	case $DEVICE_ID in
 	LS*)
 		opkg update
 		pkgs=$(grep ^LS ~/conf/packages.conf | cut -f2)
@@ -101,13 +101,14 @@ update)	# Software update
 ;;
 info)	# Info reply
 	if [ $WIF ]; then	
-		case $DEVID in
+		case $DEVICE_ID in
 		LS*) wifi_channel=$(iwlist $WIF channel | awk '/Current/{ print $2 }') ;;
 		NB*) wifi_channel=$(iwlist $WIF channel | awk -F'[\(\)]' '/Current/{ print $2 }') ;;
 		esac
 		wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
 	fi
 	output <<-end
+		$DEVICE_ID log info
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)
 		Wifi $wifi_channel 
@@ -115,7 +116,7 @@ info)	# Info reply
 	end
 ;;
 config)	# Get current configuration
-	case $DEVID in
+	case $DEVICE_ID in
 	LS*) 
 		channel=$(uci get wireless.wl0.channel)
 		ssid=$(uci get wireless.@wifi-iface[0].ssid)
@@ -132,32 +133,35 @@ config)	# Get current configuration
 	esac
 	# awk -F= '! (/^#/ || /^\./) { print $1 }' ~/conf/dev.conf
 
-	# Parse new configuration
-	IFS=$'&'
-	for param in $2; do
-		$dec ${param%=*}=${param#*=}
-	done
+	if [ $2 ]; then
+		# Parse new configuration
+		IFS=$'&'
+		for param in $2; do
+			$dec ${param%=*}=${param#*=}
+		done
 
-	# Push new configuration
-	case $DEVID in
-	LS*) 
-		uci set wireless.wl0.channel=$channel
-		uci set wireless.@wifi-iface[0].ssid=$ssid
-		uci set wireless.@wifi-iface[0].key=$wpa_psk
-		uci commit wireless && wifi
-	;;
-	NB*) 
-		mod_conf /etc/hostapd/hostapd.conf channel $channel
-		mod_conf /etc/hostapd/hostapd.conf ssid $ssid
-		echo "00:00:00:00:00:00\"$wpa_psk" > /etc/hostapd/wpa_psk
-		/etc/init.d/hostapd restart
-		iwconfig $WIF channel $channel
-		/noxbox/bin/persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
-	;;
-	esac
+		# Push new configuration
+		case $DEVICE_ID in
+		LS*) 
+			uci set wireless.wl0.channel=$channel
+			uci set wireless.@wifi-iface[0].ssid=$ssid
+			uci set wireless.@wifi-iface[0].key=$wpa_psk
+			uci commit wireless && wifi
+		;;
+		NB*) 
+			mod_conf /etc/hostapd/hostapd.conf channel $channel
+			mod_conf /etc/hostapd/hostapd.conf ssid $ssid
+			echo "00:00:00:00:00:00\"$wpa_psk" > /etc/hostapd/wpa_psk
+			/etc/init.d/hostapd restart
+			iwconfig $WIF channel $channel
+			/noxbox/bin/persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
+		;;
+		esac
+	fi
 
 	# Configuration resume
 	output <<-end
+		$DEVICE_ID log config
 		ESSID: $ssid
 		Channel: $channel
 		WPA_PSK: ${wpa_psk:0:7}...

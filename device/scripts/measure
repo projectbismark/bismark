@@ -7,7 +7,7 @@
 . ~/conf/dev.conf
 
 # Globals
-xml_file="/tmp/${DEVID}_$(date +%s).xml"
+xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
 
 # Get target IP
 # $1 = tool
@@ -40,7 +40,7 @@ src=$(cat /tmp/ip)
 cat > $xml_file <<-end
 	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 	<measurements version="1.0">
-	        <info deviceid=$DEVID userid=$USERID />
+	        <info deviceid=$DEVICE_ID userid=$USER_ID />
 end
 
 # RTT measurement using PING
@@ -68,7 +68,7 @@ fi
 #	bwget "$dst" dw | mstats BITRATE WGET $dst_ip $src | grep -v nan >> $xml_file
 #fi
 
-if [ ${DEVID:0:2} != LS ]; then
+if [ ${DEVICE_ID:0:2} != LS ]; then
 	# Upstream bitrate using curl and HTTP
 	if [ $((count % 4)) -eq 0 ]; then
 		target HTTPDL Bismark

@@ -10,7 +10,7 @@
 scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
 
 # Syncronize clock
-if [ ${DEVID:0:2} == WS ]; then
+if [ ${DEVICE_ID:0:2} == WS ]; then
 	if [ $(id -u) -eq 0 ]; then
 		ntpdate pool.ntp.org
 	else

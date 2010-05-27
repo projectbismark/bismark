@@ -146,8 +146,8 @@ echo "Copying & installing last version package:"
 scp $SCP_OPT $SVN_DIR/device/dev-${2:0:2}-*.tgz $user@$1:/tmp/dev.tgz
 ssh $SSH_OPT $user@$1 'tar -xzvf /tmp/dev.tgz ; rm /tmp/dev.tgz' 
 
-echo -n "Setting device id, user id and software version..."
-ssh $SSH_OPT $user@$1 "echo $2 > ID ; [ -e USER ] || echo 0 > USER ; echo $VERSION > VERSION" 2>/dev/null
+echo -n "Setting device id..."
+ssh $SSH_OPT $user@$1 "echo DEVICE_ID=$2 > local.conf" 2>/dev/null
 echo "done"
 
 echo -n "Configuring cronjobs..."

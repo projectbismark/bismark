@@ -13,7 +13,7 @@
 
 # Probe message generator
 msg () {
-	echo "$DEVID ping $VERSION"
+	echo "$DEVICE_ID ping $VERSION"
 	sleep 3
 	return 0
 }
@@ -22,7 +22,7 @@ msg () {
 [ -e /tmp/faults ] || startup
 
 # OS depending options
-case $DEVID in
+case $DEVICE_ID in
 LS*) NC_OPTS="-nuc" ;;
 NB*|WS*) NC_OPTS="-q1 -nu" ;;
 esac

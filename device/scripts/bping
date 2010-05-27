@@ -13,7 +13,7 @@
 opts="$opts -c $PING_COUNT"
 opts="$opts -s $PING_PSIZE"
 opts="$opts -W $PING_TIMEOUT"
-[ ${DEVID:0:2} == LS ] || opts="$opts -i $PING_INTERVAL"
+[ ${DEVICE_ID:0:2} == LS ] || opts="$opts -i $PING_INTERVAL"
 
 # Execute ping
 ping $opts $1 | awk -F"=|ms" '/ttl/{ print $4 }'
