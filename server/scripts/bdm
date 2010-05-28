@@ -20,28 +20,30 @@ function help()
 	
 	Commands:
 	
-	    tunnel   <dev_id> <on|off>        Open/Close a tunnel to <dev_id> using SSH port forwarding
-	
-	    console  <dev_id>                 Open a console on <dev_id> over the SSH tunnel
-	
-	    exec     <dev_id> <command>       Execute a shell command on <dev_id>
-	
-	    info     <dev_id>                 Print some information about <dev_id>
-	
-	    list                              List available devices and tunnels
-	
-	    upgrade  <dev_id> [rebuild]       Upgrade software on <dev_id> (ALL applies)
+	    config   <dev_id> [[opt=value] ...]  Show or Change <dev_id> configuration options
 
-	    config   <dev_id> [option=value]  Show or Change <dev_id> configuration options
-	             [[option=value] ...]     Supported options: channel, ssid, wpa_psk
+	    console  <dev_id>                    Open a console on <dev_id> over the SSH tunnel
+	
+	    copy     <file> <dev_id>             Copy file to <dev_id> /tmp directory
 
-	    copy     <file> <dev_id>          Copy file to <dev_id> /tmp directory
+	    exec     <dev_id> <command>          Execute a shell command on <dev_id>
+	
+	    info     <dev_id>                    Print some information about <dev_id>
+	
+	    list                                 List available devices and tunnels
+	
+	    readmsg                              Read incoming messages
+
+	    tunnel   <dev_id> <on|off>           Open/Close a tunnel to <dev_id> using SSH port forwarding
+	
+	    upgrade  <dev_id> [rebuild]          Upgrade software on <dev_id> (ALL applies)
+
 
 	    For internal use only:
 
-	    setuser   <dev_id> <username>     Set the SSH username for <dev_id>
+	    settunnel <dev_id> <port>       Set the tunnel entry for <dev_id>
 
-	    settunnel <dev_id> <port>         Set the tunnel entry for <dev_id>
+	    setuser   <dev_id> <username>   Set the SSH username for <dev_id>
 
 	Options:
 	
@@ -105,7 +107,10 @@ function parse()
 		info $2
 	;;
 	list)	
-		list $2
+		list
+	;;
+	readmsg)
+		read_msg
 	;;
 	upgrade)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help upgrade; }
@@ -180,12 +185,12 @@ function recv_msg()
 			IFS=$'|' read mid msg <<< "$info"
 
 			echo "Message: $msg"
-			echo "Related log:"
+			echo "Content:"
 			awk '
-				BEGIN{ out=0 }
-				/^END/{ exit }
+				BEGIN{ out = 0 }
+				/^---/{ exit }
 				(out == 1){ print }
-				/^START '$msg'/{ out=1 }
+				/'$msg'/{ out=1 }
 			' ~/var/log/devices/$id.log
 
 			query "DELETE FROM messages WHERE rowid='$mid';"
@@ -208,8 +213,8 @@ function check_fwd_port()
 	fi
 }
 
-# Set a valid SSH forwarding port
-function set_fwd_port()
+# Generate a valid SSH forwarding port
+function gen_fwd_port()
 {
 	# Test requested port number availability
 	if [ $FWD_PORT ]; then
@@ -293,7 +298,7 @@ function start_tunnel()
 		echo "Tunnel listening on 127.0.0.1:$FWD_PORT" 
 		return 1
 	fi
-	set_fwd_port
+	gen_fwd_port
 
 	echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
 	send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
@@ -388,7 +393,8 @@ function upgrade(){
 		console $1 "~/scripts/action" update
 	else
 		# Wait for probe packet
-		send_msg $1 update $VERSION || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 failed"; return 1; } ; }
+		send_msg $1 update $VERSION || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 pending"; return 1; } ; }
+		recv_msg $1 || { echo -e "\nNo messages from $id"; return 2; } 
 	fi
 }
 
@@ -486,6 +492,31 @@ function copy()
 
 	SSH_USER=$(query "SELECT user FROM devices WHERE id='$2'")
 	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp  
+}
+
+# Read messages
+function read_msg()
+{
+	rows=$(query "SELECT rowid,* FROM messages WHERE \"to\"='BDM';")
+	if [ ${#rows} -gt 0 ]; then
+		IFS=$'\n'
+		for row in $rows; do
+			IFS=$'|' read mid from to msg <<< "$row"
+			echo "Message from $from: $msg"
+			echo "------------------------"
+			awk '
+				BEGIN{ out = 0 }
+				/^END - '$msg'/{ exit }
+				(out == 1){ print }
+				/'$msg'/{ out=1 }
+			' ~/var/log/devices/$from.log
+			echo "------------------------"
+
+			query "DELETE FROM messages WHERE rowid='$mid';"
+		done
+	else
+		echo "No incoming messages"
+	fi
 }
 
 ## Internal commands ##

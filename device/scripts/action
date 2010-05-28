@@ -5,7 +5,7 @@
 # - server heartbeat
 # - software update
 # - information query
-# - configuration push
+# - configuration query/push
 #
 # author: walter.dedonato@unina.it
 
@@ -20,7 +20,7 @@
 output ()
 {
 	if [ $REMOTE ]; then
-		nc $NC_OPTS $SERVER $PROBE_PORT
+		( echo "$DEVICE_ID log config $(date +%s)" ; cat ) | nc $NC_OPTS $SERVER $PROBE_PORT
 	else
 		tail -n+2
 	fi
@@ -88,7 +88,7 @@ update)	# Software update
 	[ $NB ] && /noxbox/bin/persist_changes
 
 	# Send diff
-	{ echo "$DEVICE_ID log update"; diff /tmp/old /tmp/new ; } | output 
+	diff /tmp/old /tmp/new | output 
 	rm /tmp/old /tmp/new
 
 	# Check installed packages
@@ -111,7 +111,6 @@ info)	# Info reply
 		wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
 	fi
 	output <<-end
-		$DEVICE_ID log info
 		Version: $(cat ~/VERSION)
 		User ID: $(cat ~/USER)
 		Wifi $wifi_channel 
@@ -164,7 +163,6 @@ config)	# Get current configuration
 
 	# Configuration resume
 	output <<-end
-		$DEVICE_ID log config
 		ESSID: $ssid
 		Channel: $channel
 		WPA_PSK: ${wpa_psk:0:7}...

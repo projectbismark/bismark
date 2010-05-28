@@ -16,7 +16,7 @@ function help()
 	cat <<-end
 	Syntax:
 
-	    $(basename $0) [options]
+	    $(basename $0) [options] <start|stop|restart|info>
 	
 	Options:
 	
@@ -67,8 +67,44 @@ while getopts 'l:h' flag; do
 	;;
 	esac
 done
+shift $(( OPTIND - 1 ))
 
-# Listen for incoming UDP probes	
-echo "$(date +"%Y/%m/%d %H:%M:%S") - Listening to probe packets on port $PROBE_PORT" >> $BDMD_LOG_FILE
-bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE &
+pid=$(pgrep bdmd.real)
+case $1 in
+start)
+	if [ $pid ]; then
+		echo "bdmd already running"
+	else
+		echo -n "Starting bdmd..."
+		bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE &
+		sleep 1
+		[ $(pgrep bdmd.real) ] && echo "done" || echo "error"
+	fi
+;;
+stop)
+	if [ $pid ]; then 
+		echo -n "Stopping bdmd..."
+		kill $(pgrep bdmd.real)
+		sleep 1
+		[ $(pgrep bdmd.real) ] && echo "error" || echo "done" 	
+	else
+		echo "bdmd not running"
+	fi
+;;
+restart)
+	$0 stop
+	$0 -l $PROBE_PORT start 
+;;
+info)
+	if [ $pid ]; then
+		port=$(sudo netstat -lanup | awk -F':| *' '/'$pid'\//{ print $5 }')
+		echo "bdmd listening on $port (pid $pid)"
+	else
+		echo "bdmd not running"
+	fi
+;;
+*)
+	help
+;;
+esac
 

@@ -161,10 +161,11 @@ void *doit(void *param)
 	for (tp->payload[i] = 0; tp->payload[i] != '\n'; i++);
 	tp->payload[i] = 0;
 
+#ifdef DEBUG
 	/* Output log entry */
 	printf("%s - \"%s %s\" from %s [%s]\n", date, probe.cmd, probe.param, probe.id, ip);
 	fflush(stdout);
-
+#endif
 	/* Open db */
 	if (sqlite3_open(BDM_DB, &db)) {
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
@@ -234,12 +235,16 @@ void *doit(void *param)
 		/* Append log to logfile */
 		snprintf(logfile, MAX_FILENAME_LEN, "%s/%s.log", LOG_DIR, probe.id);
 		lfp = fopen(logfile, "a");
-		fprintf(lfp, "%s - %s\n%s\n", date, probe.param, log);
+		fprintf(lfp, "%s - %s\n%s\nEND - %s\n", date, probe.param, log, probe.param);
 		fclose(lfp);
 
 		/* Send message to bdm client */
 		snprintf(query, MAX_QUERY_LEN, "INSERT INTO messages ('from', 'to', msg) VALUES('%s','BDM','%s');", probe.id, probe.param);
 		do_query(db, query, 0);
+
+		/* Output log entry */
+		printf("%s - Received log from %s: %s\n", date, probe.id, probe.param);
+		fflush(stdout);
 	}
 
 	/* Send reply to client */
@@ -317,7 +322,7 @@ int main(int argc, char *argv[])
 	strftime(date, sizeof(date), "%Y/%m/%d %H:%M:%S", localtime(&ts));
 
 	/* Output log entry */
-	printf("%s - Bdmd listening on port %d\n", date, server_port);
+	printf("%s - Listening to probe packets on port %d\n", date, server_port);
 	fflush(stdout);
 
 	/* Infinite loop */
