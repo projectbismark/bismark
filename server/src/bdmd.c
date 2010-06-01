@@ -37,13 +37,30 @@ typedef struct {
 	char *param; 	/* Parameter string */
 } pf;
 
-/* Message row */
+/* Message format */
 typedef struct {
 	char *mid; 	/* Message id */
 	char *from; 	/* Sender id */
 	char *to; 	/* Receiver id */
 	char *msg; 	/* Message string */
-} mrowf;
+} mf;
+
+/* Measure request format */
+typedef struct {
+	char *cat; 	/* Target category */
+	char *type; 	/* Measurement type */
+	char *zone;	/* Client location */
+	char *duration; /* Measurement duration */
+} mrf;
+
+/* Measure target format */
+typedef struct {
+	char *ip; 	/* IP address */
+	char *info; 	/* Additional info */
+	char *free_ts; 	/* Free timestamp */
+	char *curr_cli; /* Current clients count */
+	char *max_cli;	/* Max clients count */
+} mtf;
 
 /*
  * Constants
@@ -55,6 +72,8 @@ typedef struct {
 #define MAX_UDP_PSIZE 1472
 #define MAX_QUERY_LEN 1000
 #define MAX_IP_LEN 16
+#define MAX_INFO_LEN 30
+#define MAX_WAIT_LEN 5
 #define MAX_FILENAME_LEN 50
 
 /*
@@ -138,6 +157,7 @@ void *doit(void *param)
 	int thread_id; 			/* Thread identifier */
 	char *reply = NULL; 		/* Reply message */
 	char date[25]; 			/* Date string */
+	char *row; 			/* Query resulting row */
 	int i;
 
 	/* Get thread identifier */
@@ -176,7 +196,6 @@ void *doit(void *param)
 	/* Parse command */
 	if (!strncmp(probe.cmd, "ping", 4)) {
 		/* Ping */
-		char *row; 	/* Query result row */
 
 		/* Check device presence in db */
 		snprintf(query, MAX_QUERY_LEN, "SELECT id FROM devices WHERE id='%s';", probe.id);
@@ -195,7 +214,7 @@ void *doit(void *param)
 		/* Check messages */
 		snprintf(query, MAX_QUERY_LEN, "SELECT rowid,* FROM messages WHERE \"to\"='%s' LIMIT 1;", probe.id);
 		if ((row = do_query(db, query, 1))) {
-			mrowf msg; 	/* Message row fields */
+			mf msg; 	/* Message row fields */
 
 			/* Parse query result */
 			msg.mid = row;
@@ -245,6 +264,89 @@ void *doit(void *param)
 		/* Output log entry */
 		printf("%s - Received log from %s: %s\n", date, probe.id, probe.param);
 		fflush(stdout);
+	} else if (!strncmp(probe.cmd, "measure", 7)) {
+		/* Measure */
+		mrf request;
+		mtf target;
+		int exclusive;
+
+		/* Parse request */
+		request.cat = probe.param;
+		for (i = 0; probe.param[i] != ' '; i++);
+		request.type = &probe.param[i + 1];
+		for (probe.param[i] = 0; probe.param[i] != ' '; i++);
+		request.zone = &probe.param[i + 1];
+		for (probe.param[i] = 0; probe.param[i] != ' '; i++);
+		request.duration = &probe.param[i + 1];
+		probe.param[i] = 0;
+
+		/* Query target (prefer target with less clients and closest free timestamp) */
+		snprintf(query, MAX_QUERY_LEN, "SELECT t.ip,info,free_ts,curr_cli,max_cli FROM targets AS t, capabilities AS c "
+					       "WHERE t.ip=c.ip AND service='%s' AND cat='%s' AND zone='%s' ORDER BY curr_cli,free_ts ASC LIMIT 1;",
+					       request.type, request.cat, request.zone);
+		row = do_query(db, query, 1);
+		if (!row) {
+			/* Repeat query without zone */
+			snprintf(query, MAX_QUERY_LEN, "SELECT t.ip,info,free_ts,curr_cli,max_cli FROM targets AS t, capabilities AS c "
+						       "WHERE t.ip=c.ip AND service='%s' AND cat='%s' ORDER BY curr_cli,free_ts ASC LIMIT 1;",
+						       request.type, request.cat);
+			row = do_query(db, query, 1);
+		}
+
+		/* Parse query result */
+		target.ip = row;
+		for (i = 0; row[i] != ' '; i++);
+		target.info = &row[i + 1];
+		for (row[i] = 0; row[i] != ' '; i++);
+		target.free_ts = &row[i + 1];
+		for (row[i] = 0; row[i] != ' '; i++);
+		target.curr_cli = &row[i + 1];
+		for (row[i] = 0; row[i] != ' '; i++);
+		target.max_cli = &row[i + 1];
+		row[i] = 0;
+
+		/* Get measure type mode */
+		snprintf(query, MAX_QUERY_LEN, "SELECT exclusive FROM mtypes WHERE type='%s';", request.type);
+		exclusive = atoi(do_query(db, query, 1));
+
+		/* Process request */
+		reply = malloc(MAX_IP_LEN + MAX_INFO_LEN + MAX_WAIT_LEN + 4);
+		if (exclusive) {
+			/* Exclusive request (only mutual exclusion for now) */
+			if (ts > atoi(target.free_ts)) {
+				/* Set reply */
+				sprintf(reply, "%s %s %d\n", target.ip, target.info, 0);
+
+				/* Update target entry */
+				snprintf(query, MAX_QUERY_LEN, "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
+					ts + atoi(request.duration) + 2, target.ip);
+				do_query(db, query, 0);
+
+				/* Output log entry */
+				printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, ip, target.ip, ts, request.duration);
+				fflush(stdout);
+			} else {
+				/* Set reply */
+				sprintf(reply, "%s %s %lu\n", target.ip, target.info, atoi(target.free_ts) - ts + 2);
+
+				/* Update target entry */
+				snprintf(query, MAX_QUERY_LEN, "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
+					atol(target.free_ts) + atoi(request.duration) + 2, target.ip);
+				do_query(db, query, 0);
+
+				/* Output log entry */
+				printf("%s - Scheduled %s measure from %s to %s at %s for %s seconds\n", date, request.type, ip, target.ip, target.free_ts, request.duration);
+				fflush(stdout);
+			}
+		} else {
+			/* Set reply */
+			sprintf(reply, "%s %s %d\n", target.ip, target.info, 0);
+
+			/* Output log entry */
+			printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, ip, target.ip, ts, request.duration);
+			fflush(stdout);
+		}
+
 	}
 
 	/* Send reply to client */

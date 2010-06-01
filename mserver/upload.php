@@ -2,15 +2,8 @@
 /* PUT data comes in on the stdin stream */
 $putdata = fopen("php://input", "r");
 
-/* Open a file for writing */
-//$fp = fopen("/dev/null", "w");
-
-/* Read the data 1 KB at a time
-   and write to the file */
+/* Read the data 1 packet at a time */
 while ($data = fread($putdata, 1478));
-  //fwrite($fp, $data);
 
-/* Close the streams */
-//fclose($fp);
 fclose($putdata);
 ?>

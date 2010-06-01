@@ -46,9 +46,26 @@ if [ ! -e $BDM_DB ]; then
 		ts      INTEGER
 	       );"
 	query "CREATE TABLE messages(
-		'from'    TEXT,
-		'to'      TEXT, 
+		'from'  TEXT,
+		'to'    TEXT, 
 		msg     TEXT
+	       );"
+	query "CREATE TABLE targets(
+		ip       TEXT PRIMARY KEY,
+		cat      TEXT, 
+		zone     TEXT,
+		free_ts  INTEGER,
+		curr_cli INTEGER,
+		max_cli  INTEGER
+	       );"
+	query "CREATE TABLE capabilities(
+		ip       TEXT,
+		service  TEXT,
+		info     TEXT
+	       );"
+	query "CREATE TABLE mtypes(
+		type       TEXT PRIMARY KEY,
+		exclusive  INTEGER 
 	       );"
 fi
 

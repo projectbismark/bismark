@@ -183,7 +183,7 @@ fi
 # All but Workstations
 if [ $suffix != "ws" ]; then
 	echo "Configuring wireless:"
-	WPA_PSK=$(md5sum <<< $2 | cut -f 1)
+	WPA_PSK=$(md5sum <<< $2 | awk '{ print $1 }')
 	ssh $SSH_OPT $user@$1 'scripts/action config "ssid='$2'&wpa_psk='$WPA_PSK'&channel=1"'
 	echo done
 fi
