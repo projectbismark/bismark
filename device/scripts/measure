@@ -9,21 +9,33 @@
 # Globals
 xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
 
-# Get target IP
-# $1 = tool
-# $2 = target category
-target()
-{
-	dst=$(awk '
-		/\[.*\]/{ if (s == 1) { s=0 } }
-		/\['$2'\]/{ s=1 }
-		(s == 1) && /^[a-z0-9]/ && /'$1'/{ print $1 }
-	' ~/conf/targets.conf | head -1)
+# Measure message generator
+# $1 = options
+msg () {
+	echo "$DEVICE_ID measure $1"
+	sleep 3
 }
 
-# Check and set measure lock
-[ -e /tmp/mpid ] && exit
-echo on > /tmp/mpid
+# Get target info
+# $1 = category
+# $2 = type
+# $3 = zone
+# $4 = duration
+get_target()
+{
+	# OS depending options
+	case $DEVICE_ID in
+	LS*) NC_OPTS="-nuc" ;;
+	NB*|WS*) NC_OPTS="-q1 -nu" ;;
+	esac
+
+	# Send message
+	msg "$1 $2 $3 $4" | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/mreply
+
+	# Get reply
+	read dst info wait < /tmp/mreply
+	[ $dst ] || return 1 
+}
 
 # Create dirs and files
 mkdir -p /tmp/measure
@@ -43,45 +55,49 @@ cat > $xml_file <<-end
 	        <info deviceid=$DEVICE_ID userid=$USER_ID />
 end
 
+## Non invasive measurements ##
+
 # RTT measurement using PING
-target PING Bismark
-bping $dst | mstats RTT PING $src $dst >> $xml_file
+if get_target Bismark PING $ZONE 10 ; then
+	bping $dst | mstats RTT PING $src $dst >> $xml_file
+fi
 
 # Traceroute
 if [ $((count % 6)) -eq 0 ]; then
-	target TR Bismark
-	hops=$(btr $dst)
-	hops_cnt=$(echo "$hops" | wc -l)
-	if [ $hops_cnt -gt 1 ]; then
-		cat >> $xml_file <<-end
-		        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
-			$(echo "$hops" | awk '{ print "                " $0 }')
-		        </traceroute>
-		end
+	if get_target Bismark TR $ZONE 0 ; then
+		hops=$(btr $dst)
+		hops_cnt=$(echo "$hops" | wc -l)
+		if [ $hops_cnt -gt 1 ]; then
+			cat >> $xml_file <<-end
+			        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
+				$(echo "$hops" | awk '{ print "                " $0 }')
+			        </traceroute>
+			end
+		fi
 	fi
 fi
 
-# Downstream bitrate using wget and FTP
-#if [ $((count % 4)) -eq 0 ]; then
-#	target FTPDL Bismark
-#	dst_ip=$(echo $dst | awk -F'[/:]' '{ print $4 }')
-#	bwget "$dst" dw | mstats BITRATE WGET $dst_ip $src | grep -v nan >> $xml_file
-#fi
+## Invasive measurements ##
+if [ ! -e /tmp/mlock ]; then 
+	# Set measure lock
+	echo on > /tmp/mlock
 
-if [ ${DEVICE_ID:0:2} != LS ]; then
-	# Upstream bitrate using curl and HTTP
-	if [ $((count % 4)) -eq 0 ]; then
-		target HTTPDL Bismark
-		dst_ip=$(echo $dst | awk -F'[/:]' '{ print $4 }')
-		bcurl "$dst" dw $HTTP_DURATION | mstats BITRATE CURL $dst_ip $src | grep -v nan >> $xml_file
+	if [ ${DEVICE_ID:0:2} != LS -a $((count % 4)) -eq 0 ]; then
+		# Upstream bitrate using curl and HTTP
+		if get_target Bismark HTTPDL $ZONE $HTTP_DURATION ; then
+			sleep $wait
+			bcurl "http://$dst$info" dw $HTTP_DURATION $DW_KBPS | mstats BITRATE CURL $dst $src | grep -v nan >> $xml_file
+		fi
+
+		# Upstream bitrate using curl and HTTP
+		if get_target Bismark HTTPUL $ZONE $HTTP_DURATION ; then
+			sleep $wait
+			bcurl "http://$dst$info" up $HTTP_DURATION $UP_KBPS | mstats BITRATE CURL $src $dst | grep -v nan >> $xml_file
+		fi
 	fi
 
-	# Upstream bitrate using curl and HTTP
-	if [ $((count % 4)) -eq 0 ]; then
-		target HTTPUL Bismark
-		dst_ip=$(echo $dst | awk -F'[/:]' '{ print $4 }')
-		bcurl "$dst" up $HTTP_DURATION | mstats BITRATE CURL $src $dst_ip | grep -v nan >> $xml_file
-	fi
+	# Release measure lock
+	rm /tmp/mlock
 fi
 
 # XML file footer
@@ -92,5 +108,4 @@ end
 # Move file to measure folder
 mv $xml_file /tmp/measure
 
-# Remove measure lock
-rm /tmp/mpid
+
