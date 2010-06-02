@@ -23,7 +23,7 @@ output ()
 	if [ $REMOTE ]; then
 		( echo "$DEVICE_ID log $1 $(date +%s)" ; cat ) | nc $NC_OPTS $SERVER $PROBE_PORT
 	else
-		tail -n+2
+		cat
 	fi
 }
 
@@ -167,6 +167,13 @@ config)	# Get current configuration
 		ESSID: $ssid
 		Channel: $channel
 		WPA_PSK: ${wpa_psk:0:7}...
+		`
+		opts=$(awk -F= ' (/^[A-Z]/ && NR > 6 ){ print $1 }' ~/conf/dev.conf)
+		IFS=$'\n'
+		for opt in $opts; do
+			echo $opt=${!opt}
+		done
+		`
 	end
 ;;
 esac
