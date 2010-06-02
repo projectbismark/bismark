@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ ! $1 ]; then
+	sudo socat TCP-LISTEN:110,fork,reuseaddr EXEC:"$0 run",pipes &
+fi
+
+# Parse input
+read type rest
+
+# Select traceroute type
+case $type in
+ICMP) traceroute -n -q1 -I $SOCAT_PEERADDR ;;
+UDP)  traceroute -n -q1 $SOCAT_PEERADDR ;;
+TCP)  traceroute -n -q1 -T $SOCAT_PEERADDR ;;
+esac
