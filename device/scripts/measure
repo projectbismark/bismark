@@ -6,9 +6,6 @@
 # Load configuration file
 . ~/conf/dev.conf
 
-# Globals
-xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
-
 # Measure message generator
 # $1 = options
 msg () {
@@ -44,6 +41,12 @@ mkdir -p /tmp/measure
 # Get and update count
 count=$(cat /tmp/measure/counter)
 echo $(( (count + 1) % 288 )) > /tmp/measure/counter
+
+# Random wait
+sleep $((RANDOM % 30))
+
+# Globals
+xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
 
 # Get source IP
 src=$(cat /tmp/ip)

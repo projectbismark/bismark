@@ -388,8 +388,9 @@ function upgrade(){
 		# Wait reply
 		echo "\nWaiting for upgrade log"
 		if [ $1 == ALL ]; then
-			for ((i=60;i>0;i--)); do
-				echo -ne $i\r
+			for ((i=$MSG_TIMEOUT;i>0;i--)); do
+				echo -ne "$i\r"
+				sleep 1
 			done
 			echo
 			read_msg
