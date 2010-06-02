@@ -182,18 +182,8 @@ function recv_msg()
 	while [ true ]; do
 		info=$(query "SELECT rowid,msg FROM messages WHERE \"from\"='$1';")
 		if [ ${#info} -gt 0 ]; then
-			IFS=$'|' read mid msg <<< "$info"
-
-			echo "Message: $msg"
-			echo "Content:"
-			awk '
-				BEGIN{ out = 0 }
-				/^---/{ exit }
-				(out == 1){ print }
-				/'$msg'/{ out=1 }
-			' ~/var/log/devices/$id.log
-
-			query "DELETE FROM messages WHERE rowid='$mid';"
+			echo
+			read_msg $1
 			return 0
 		fi
 		[ $((time++)) -eq $MSG_TIMEOUT ] && return 1
@@ -388,13 +378,24 @@ function upgrade(){
 	done
 
 	# Start upgrade script
+	echo "Executing upgrade:"
 	if check_tunnel $1; then
-		echo "Executing upgrade:"
 		console $1 "~/scripts/action" update
 	else
-		# Wait for probe packet
+		# Send message
 		send_msg $1 update $VERSION || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 pending"; return 1; } ; }
-		recv_msg $1 || { echo -e "\nNo messages from $id"; return 2; } 
+
+		# Wait reply
+		echo "\nWaiting for upgrade log"
+		if [ $1 == ALL ]; then
+			for ((i=60;i>0;i--)); do
+				echo -ne $i\r
+			done
+			echo
+			read_msg
+		else
+			recv_msg $1 || { echo -e "\nNo messages from $id"; return 2; } 
+		fi
 	fi
 }
 
@@ -407,7 +408,7 @@ function info()
 		console $1 "~/scripts/action" info
 	else
 		send_msg $1 info || { echo -e "\nDelivery to $1 failed"; return 1; }
-		echo "Waiting for message from $1"
+		echo "\nWaiting for message from $1"
 		recv_msg $1 || { echo -e "\nNo messages from $1"; return 2; }
         fi
 }
@@ -420,7 +421,9 @@ function config()
 	id=$1
 	shift
 	params=$(echo $* | tr ' ' '&')
+	echo -n "Sending config request to $id"
 	send_msg $id config $params || { echo -e "\nDevice $id not found"; return 1; }
+	echo -ne "\nWaiting for reply"
 	recv_msg $id || { echo -e "\nNo messages from $id"; return 2; }
 }
 
@@ -495,9 +498,15 @@ function copy()
 }
 
 # Read messages
+# $1 = id
 function read_msg()
 {
-	rows=$(query "SELECT rowid,* FROM messages WHERE \"to\"='BDM';")
+	if [ $1 ]; then
+		rows=$(query "SELECT rowid,* FROM messages WHERE \"from\"='$1';")
+	else
+		rows=$(query "SELECT rowid,* FROM messages WHERE \"to\"='BDM';")
+	fi
+
 	if [ ${#rows} -gt 0 ]; then
 		IFS=$'\n'
 		for row in $rows; do
