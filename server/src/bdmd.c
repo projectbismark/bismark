@@ -199,11 +199,12 @@ void *doit(void *param)
 
 		/* Check device presence in db */
 		snprintf(query, MAX_QUERY_LEN, "SELECT id FROM devices WHERE id='%s';", probe.id);
-		if (do_query(db, query, 1)) {
+		if ((row = do_query(db, query, 1))) {
 			/* Update db entry */
 			snprintf(query, MAX_QUERY_LEN, "UPDATE devices SET ip='%s',ts=%lu,version=%s WHERE id='%s';", ip, ts, probe.param,
 				probe.id);
 			do_query(db, query, 0);
+			free(row);
 		} else {
 			/* Insert new db entry */
 			snprintf(query, MAX_QUERY_LEN, "INSERT INTO devices (id, ip, ts, version) VALUES('%s','%s',%lu,'%s');", probe.id,
@@ -284,8 +285,7 @@ void *doit(void *param)
 		snprintf(query, MAX_QUERY_LEN, "SELECT t.ip,info,free_ts,curr_cli,max_cli FROM targets AS t, capabilities AS c "
 					       "WHERE t.ip=c.ip AND service='%s' AND cat='%s' AND zone='%s' ORDER BY curr_cli,free_ts ASC LIMIT 1;",
 					       request.type, request.cat, request.zone);
-		row = do_query(db, query, 1);
-		if (!row) {
+		if (!(row = do_query(db, query, 1))) {
 			/* Repeat query without zone */
 			snprintf(query, MAX_QUERY_LEN, "SELECT t.ip,info,free_ts,curr_cli,max_cli FROM targets AS t, capabilities AS c "
 						       "WHERE t.ip=c.ip AND service='%s' AND cat='%s' ORDER BY curr_cli,free_ts ASC LIMIT 1;",
@@ -323,7 +323,7 @@ void *doit(void *param)
 				do_query(db, query, 0);
 
 				/* Output log entry */
-				printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, ip, target.ip, ts, request.duration);
+				printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, probe.id, target.ip, ts, request.duration);
 				fflush(stdout);
 			} else {
 				/* Set reply */
@@ -335,7 +335,7 @@ void *doit(void *param)
 				do_query(db, query, 0);
 
 				/* Output log entry */
-				printf("%s - Scheduled %s measure from %s to %s at %s for %s seconds\n", date, request.type, ip, target.ip, target.free_ts, request.duration);
+				printf("%s - Scheduled %s measure from %s to %s at %s for %s seconds\n", date, request.type, probe.id, target.ip, target.free_ts, request.duration);
 				fflush(stdout);
 			}
 		} else {
@@ -343,10 +343,12 @@ void *doit(void *param)
 			sprintf(reply, "%s %s %d\n", target.ip, target.info, 0);
 
 			/* Output log entry */
-			printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, ip, target.ip, ts, request.duration);
+			printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, probe.id, target.ip, ts, request.duration);
 			fflush(stdout);
 		}
 
+		/* Remove row */
+		free(row);
 	}
 
 	/* Send reply to client */
