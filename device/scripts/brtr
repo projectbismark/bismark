@@ -1,0 +1,18 @@
+#!/bin/bash
+# Bismark reverse traceroute wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. ~/conf/dev.conf
+[ -e ~/local.conf ] && . ~/local.conf
+
+# Help screen
+[ $2 ] || { echo "usage: $(basename $0) <dst_ip> <port>" ; exit 1 ; }
+
+# AWK filters
+filter='! /trace/{ print "<hop id="$1" ip="$2" rtt="$3" />" }'
+
+# Exec reverse traceroute
+echo $TRACEROUTE_TYPE | nc -n -q10 $1 $2 | awk "$filter"
+

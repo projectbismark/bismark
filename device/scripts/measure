@@ -65,14 +65,27 @@ if get_target Bismark PING $ZONE 10 ; then
 	bping $dst | mstats RTT PING $src $dst >> $xml_file
 fi
 
-# Traceroute
 if [ $((count % 6)) -eq 0 ]; then
+	# Traceroute
 	if get_target Bismark TR $ZONE 0 ; then
 		hops=$(btr $dst)
 		hops_cnt=$(echo "$hops" | wc -l)
 		if [ $hops_cnt -gt 1 ]; then
 			cat >> $xml_file <<-end
 			        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
+				$(echo "$hops" | awk '{ print "                " $0 }')
+			        </traceroute>
+			end
+		fi
+	fi
+
+	# Reverse traceroute
+	if get_target Bismark RTR $ZONE 0 ; then
+		hops=$(brtr $dst $info)
+		hops_cnt=$(echo "$hops" | wc -l)
+		if [ $hops_cnt -gt 1 ]; then
+			cat >> $xml_file <<-end
+			        <traceroute srcip=$dst dstip=$src timestamp=$(date +%s) hops=$hops_cnt>
 				$(echo "$hops" | awk '{ print "                " $0 }')
 			        </traceroute>
 			end

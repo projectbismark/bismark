@@ -386,7 +386,7 @@ function upgrade(){
 		send_msg $1 update $VERSION || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 pending"; return 1; } ; }
 
 		# Wait reply
-		echo "\nWaiting for upgrade log"
+		echo -e "\nWaiting for upgrade log"
 		if [ $1 == ALL ]; then
 			for ((i=$MSG_TIMEOUT;i>0;i--)); do
 				echo -ne "$i\r"
