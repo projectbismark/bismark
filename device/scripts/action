@@ -167,13 +167,7 @@ config)	# Get current configuration
 		ESSID: $ssid
 		Channel: $channel
 		WPA_PSK: ${wpa_psk:0:7}...
-		`
-		opts=$(awk -F= ' (/^[A-Z]/ && NR > 6 ){ print $1 }' ~/conf/dev.conf)
-		IFS=$'\n'
-		for opt in $opts; do
-			echo $opt=${!opt}
-		done
-		`
+		`set`
 	end
 ;;
 esac
