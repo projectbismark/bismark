@@ -269,7 +269,7 @@ void *doit(void *param)
 		/* Measure */
 		mrf request;
 		mtf target;
-		int exclusive;
+		char *exclusive;
 
 		/* Parse request */
 		request.cat = probe.param;
@@ -307,11 +307,11 @@ void *doit(void *param)
 
 		/* Get measure type mode */
 		snprintf(query, MAX_QUERY_LEN, "SELECT exclusive FROM mtypes WHERE type='%s';", request.type);
-		exclusive = atoi(do_query(db, query, 1));
+		exclusive = do_query(db, query, 1);
 
 		/* Process request */
 		reply = malloc(MAX_IP_LEN + MAX_INFO_LEN + MAX_WAIT_LEN + 4);
-		if (exclusive) {
+		if (*exclusive == '1') {
 			/* Exclusive request (only mutual exclusion for now) */
 			if (ts > atoi(target.free_ts)) {
 				/* Set reply */
@@ -347,7 +347,8 @@ void *doit(void *param)
 			fflush(stdout);
 		}
 
-		/* Remove row */
+		/* Free memory */
+		free(exclusive);
 		free(row);
 	}
 

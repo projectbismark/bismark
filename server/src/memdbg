@@ -1,0 +1,60 @@
+#!/bin/bash
+
+if [ ! $1 ]; then
+	echo "usage: $0 <source>"
+	exit
+fi
+
+cat <<-end
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+
+
+void *malloc_d(size_t b, char *file, int line)
+{
+        struct timeval tv;
+        struct timezone tz;
+        void *ptr = malloc(b);
+
+        gettimeofday(&tv, &tz);
+        fprintf(stderr, "%d.%06d malloc %p %d\t%s:%d\n", (int)tv.tv_sec, (int)tv.tv_usec, ptr, b, file, line);
+        return ptr;
+}
+
+void *calloc_d(size_t n, size_t d, char *file, int line)
+{
+        struct timeval tv;
+        struct timezone tz;
+        void *ptr = calloc(n,d);
+
+        gettimeofday(&tv, &tz);
+        fprintf(stderr, "%d.%06d calloc %p %d\t%s:%d\n", (int)tv.tv_sec, (int)tv.tv_usec, ptr, n * d, file, line);
+        return ptr;
+}
+
+void free_d(void *ptr, char *file, int line)
+{
+        struct timeval tv;
+        struct timezone tz;
+
+        gettimeofday(&tv, &tz);
+        fprintf(stderr, "%d.%06d free   %p\t%s:%d\n", (int)tv.tv_sec, (int)tv.tv_usec, ptr, file, line);
+        free(ptr);
+}
+
+#define MALLOC(b)                       malloc_d(b,__FILE__,__LINE__)
+#define CALLOC(n,d)                     calloc_d(n,d,__FILE__,__LINE__)
+#define FREE(a)                         free_d(a,__FILE__,__LINE__)
+
+end
+
+gawk -f /dev/stdin $1 <<-end
+{ 
+	gsub(/\<free\>/,"FREE"); 
+	gsub(/\<malloc\>/,"MALLOC"); 
+	gsub(/\<calloc\>/,"CALLOC"); 
+	print  
+}
+end
+
