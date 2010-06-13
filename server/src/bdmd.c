@@ -190,7 +190,8 @@ void *doit(void *param)
 	if (sqlite3_open(BDM_DB, &db)) {
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 		sqlite3_close(db);
-		return NULL;
+		free(tp);
+		pthread_exit(NULL);
 	}
 
 	/* Parse command */
@@ -377,7 +378,7 @@ void *doit(void *param)
 	num_thread--;
 	pthread_mutex_unlock(&mutex);
 
-	return NULL;
+	pthread_exit(NULL);
 }
 
 /*
@@ -455,10 +456,13 @@ int main(int argc, char *argv[])
 		/* Check max thread number */
 		if (num_thread >= MAX_NUM_THREAD) {
 			fprintf(stderr, "max connections reached: refusing connection from %s\n", (char *) inet_ntoa(cad.sin_addr));
+			free(ntp);
 		} else {
 			/* Create thread to handle the connection */
 			if (pthread_create(&hThr[i], NULL, doit, ntp) < 0) {
 				fprintf(stderr, "error creating thread\n");
+			} else {
+				pthread_detach(hThr[i]);
 			}
 		}
 	}

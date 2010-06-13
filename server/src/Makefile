@@ -1,4 +1,4 @@
-CFLAGS  = -Wall
+CFLAGS  = -Wall -ggdb
 LIBS    = -L ~/lib
 INCLUDE = -I ~/include
 CC      = gcc
@@ -6,9 +6,9 @@ CC      = gcc
 all: bdmd udpproxy
 
 bdmd: bdmd.c
-	$(CC) $(LIBS) -lpthread -lsqlite3 $(INCLUDE) -o $@ $@.c
+	$(CC) $(LIBS) $(CFLAGS) -lpthread -lsqlite3 $(INCLUDE) -o $@ $@.c
 
 udpproxy: udpproxy.c
-	$(CC) $(LIBS) -lpthread $(INCLUDE) -o $@ $@.c
+	$(CC) $(LIBS) $(CFLAGS) -lpthread $(INCLUDE) -o $@ $@.c
 
 
