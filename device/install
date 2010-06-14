@@ -13,6 +13,66 @@ PASS="sleep 1; echo $ROOT_PASS;"
 VERSION=$(svn info $SVN_DIR | awk '/^Rev/{ print $2 ; exit }')
 SSH_OPT="-i $SVN_DIR/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SCP_OPT=$SSH_OPT
+DEV_TYPES="LS NB WS"
+
+## Functions  ##
+
+# Install linksys packages
+# $1 = device address
+# $* = packages list
+function linksys_pkg()
+{
+	ip=$1 ; shift
+	REPOSITORY="http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/"
+	INSTALLED=$(ssh $SSH_OPT $user@$ip 'opkg list_installed')
+
+	for pkg in $*; do 
+		echo "$INSTALLED" | grep -q $pkg && continue
+		echo "Installing $pkg package:"
+		wget -O /tmp/$pkg "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/$pkg"
+		scp $SCP_OPT /tmp/$pkg $user@$ip:/tmp
+		ssh $SSH_OPT $user@$ip "opkg install /tmp/$pkg ; rm /tmp/$pkg"
+		echo done
+	done
+}
+
+# Create device packages
+function create_pkg()
+{
+	# Update version number
+	svn update $SVN_DIR
+	svn info $SVN_DIR | awk '/^Rev/{ print $2 ; exit }' > $SVN_DIR/device/VERSION
+	VERSION=$(cat $SVN_DIR/device/VERSION)
+
+	# Create last release packages
+	for type in $DEV_TYPES; do
+		if [ ! -e $SVN_DIR/device/dev-$type-$VERSION.tgz ]; then
+			echo "Creating $type package version $VERSION:"
+
+			# Clean & create package tree
+			rm -f $SVN_DIR/device/dev-$type-*.tgz
+			rm -rf /tmp/pkg/$type
+			mkdir -p /tmp/pkg/$type
+			mkdir /tmp/pkg/$type/{conf,scripts,bin,lib}
+
+			# Copy files
+			(
+			 cd $SVN_DIR/device
+			 cp VERSION /tmp/pkg/$type
+			 cp -d conf/* /tmp/pkg/$type/conf
+			 cp -d scripts/* /tmp/pkg/$type/scripts
+			 [ -e bin/$type ] && cp -d bin/$type/* /tmp/pkg/$type/bin
+			 [ -e lib/$type ] && cp -d lib/$type/* /tmp/pkg/$type/lib
+			)
+
+			# Create tgz archive
+			(
+			 cd /tmp/pkg/$type
+			 tar -czvf $SVN_DIR/device/dev-$type-$VERSION.tgz *
+			)
+		fi
+	done
+}
 
 # Parse options
 while getopts 'kp:' flag; do
@@ -79,27 +139,6 @@ WS)
 ;;
 esac
 
-## Functions  ##
-
-# Install linksys packages
-# $1 = device address
-# $* = packages list
-function linksys_pkg()
-{
-	ip=$1 ; shift
-	REPOSITORY="http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/"
-	INSTALLED=$(ssh $SSH_OPT $user@$ip 'opkg list_installed')
-
-	for pkg in $*; do 
-		echo "$INSTALLED" | grep -q $pkg && continue
-		echo "Installing $pkg package:"
-		wget -O /tmp/$pkg "http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/packages/$pkg"
-		scp $SCP_OPT /tmp/$pkg $user@$ip:/tmp
-		ssh $SSH_OPT $user@$ip "opkg install /tmp/$pkg ; rm /tmp/$pkg"
-		echo done
-	done
-}
-
 ## Installation ##
 
 # Lynksys first-time telnet login
@@ -141,6 +180,9 @@ if [ $suffix == ls ]; then
 		ln -s /tmp/lib lib
 	'
 fi
+
+echo "Creating/updating release packages:"
+create_pkg
 
 echo "Copying & installing last version package:"
 scp $SCP_OPT $SVN_DIR/device/dev-${2:0:2}-*.tgz $user@$1:/tmp/dev.tgz
