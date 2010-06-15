@@ -93,7 +93,7 @@ start)
 		echo "bdmd already running"
 	else
 		echo -n "Starting bdmd..."
-		bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE &
+		bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE 2> /tmp/bdmd.debug &
 		sleep 1
 		[ $(pgrep bdmd.real) ] && echo "done" || echo "error"
 	fi

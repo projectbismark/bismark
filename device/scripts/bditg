@@ -1,0 +1,35 @@
+#!/bin/bash
+# Bismark ditg wrapper (output in Kbps)
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Help screen
+[ $4 ] || { echo -e "usage: $(basename $0) tcp <target> <up|dw> <duration> <kbps>\n       $(basename $0) udp <target> <duration> <ppm>" ; exit ; }
+
+# Change path
+cd /tmp
+[ -e itgfifo ] || mkfifo itgfifo
+
+# Select protocol
+case $1 in
+tcp)
+	# Select direction
+	case $3 in
+	up)  
+		pkt_size=1460
+		pkt_rate=$(( ((${5}000 / 8) / $pkt_size) + 1 ))
+
+		ITGSend -a $2 -rp 0 -T TCP -c $pkt_size -C $pkt_rate -t ${4}000 -l itgfifo 2>/dev/null | ITGDec itgfifo -b 1000 > /dev/null 2>&1
+		awk '(NR > 1){ print $3 }' bitrate.dat
+	;;
+	dw)
+		curl "$1?duration=$3&kbps=$4" -o /dev/null --stderr - | parse_kbps $3
+	;;
+	esac
+;;
+udp) echo "Not implemented yet" ;;
+esac
+
