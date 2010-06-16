@@ -44,6 +44,8 @@ function help()
 	    settunnel <dev_id> <port>       Set the tunnel entry for <dev_id>
 
 	    setuser   <dev_id> <username>   Set the SSH username for <dev_id>
+	
+	    clearmsg  [id]                  Delete pending messages
 
 	Options:
 	
@@ -135,6 +137,9 @@ function parse()
 		[ $2 ] || { echo -e "Missing parameter: <file>\n"; help copy; }
 		[ $3 ] || { echo -e "Missing parameter: <dev_id>\n"; help copy; }
 		copy $2 $3
+	;;
+	clearmsg)
+		clearmsg $2 
 	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
@@ -471,12 +476,12 @@ function list()
 
 	# Dump messages table
 	echo -e "${BLUE}\nPending Messages:"
-	echo -e "${WHITE}FROM\tTO\tMESSAGE"
+	echo -e "${WHITE}ID\tFROM\tTO\tMESSAGE"
 	echo -ne $MAGENTA
 	IFS=$'\n' 
-	for message in $(query 'SELECT * FROM messages ORDER BY "from","to";'); do
-		IFS=$'|' read from to msg <<< "$message"
-		printf "%s\t%s\t%s\n" $from $to $msg
+	for message in $(query 'SELECT rowid,* FROM messages ORDER BY "from","to";'); do
+		IFS=$'|' read id from to msg <<< "$message"
+		printf "%s\t%s\t%s\t%s\n" $id $from $to $msg
 	done
 	echo -ne $NO_COLOR
 }
@@ -555,6 +560,18 @@ function settunnel()
 	echo done
 }
 
+# Clear pending messages
+# $1 = id
+function clearmsg()
+{
+	if [ $1 ]; then
+		query "DELETE FROM messages WHERE rowid=$1;"
+	else
+		echo "Delete all pending messages (y/N)?"
+		read a
+		[ $a == "y" ] && query "DELETE FROM messages;"
+	fi
+}
 
 ## Main ##
 # Parse command-line
