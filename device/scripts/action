@@ -16,34 +16,10 @@
 # Help screen
 [ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }
 
-# Output command
-# $1 = action
-output ()
-{
-	if [ $REMOTE ]; then
-		( echo "$DEVICE_ID log $1 $(date +%s)" ; cat ) | nc $NC_OPTS $SERVER $PROBE_PORT
-	else
-		cat
-	fi
-}
-
-# OS depending options
+# Platform depending options
 case $DEVICE_ID in
-LS*)
-	NC_OPTS="-nuc"
-	KEEP_ALIVE="-K 120"
-	WIF="wl0"
-;;
-NB*)
-	NC_OPTS="-q1 -nu"
-	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
-	WIF="ath0"
-	NB=true
-;;
-WS*)
-	NC_OPTS="-q1 -nu"
-	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
-;;
+LS*) WIF="wl0"  ;;
+NB*) WIF="ath0" ;;
 esac
 
 # Perform action
@@ -86,7 +62,7 @@ update)	# Software update
 
 	# Apply changes
 	crontab conf/crontab
-	[ $NB ] && /noxbox/bin/persist_changes
+	[ ${DEVICE_ID:0:2} == "NB" ] && /noxbox/bin/persist_changes
 
 	# Send diff
 	diff /tmp/old /tmp/new | output $1 
@@ -112,8 +88,8 @@ info)	# Info reply
 		wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
 	fi
 	output $1 <<-end
-		Version: $(cat ~/VERSION)
-		User ID: $(cat ~/USER)
+		Version: $VERSION
+		User ID: $USER_ID
 		Wifi $wifi_channel 
 		Wifi Essid: $wifi_essid
 	end

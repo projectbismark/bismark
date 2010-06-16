@@ -16,3 +16,14 @@ ed $1 <<-end
 	q
 end
 }
+
+# Log output destination
+# $1 = action
+output ()
+{
+        if [ $REMOTE ]; then
+                ( echo "$DEVICE_ID log $1 $(date +%s)" ; cat ) | nc -u $NC_OPTS $SERVER $PROBE_PORT
+        else
+                cat
+        fi
+}

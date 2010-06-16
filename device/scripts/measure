@@ -20,14 +20,8 @@ msg () {
 # $4 = duration
 get_target()
 {
-	# OS depending options
-	case $DEVICE_ID in
-	LS*) NC_OPTS="-nuc" ;;
-	NB*|WS*) NC_OPTS="-q1 -nu" ;;
-	esac
-
 	# Send message
-	msg "$1 $2 $3 $4" | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/mreply
+	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/mreply
 
 	# Get reply
 	read dst info wait < /tmp/mreply
@@ -42,7 +36,8 @@ mkdir -p /tmp/measure
 count=$(cat /tmp/measure/counter)
 echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 
-# Random wait
+# NTP plus Random wait
+[ ${DEVICE_ID:0:2} == "NB" ] && ntp-wait
 sleep $((RANDOM % 30))
 
 # Globals

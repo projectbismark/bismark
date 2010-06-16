@@ -21,12 +21,6 @@ msg () {
 # Launch startup script during boot
 [ -e /tmp/faults ] || startup
 
-# OS depending options
-case $DEVICE_ID in
-LS*) NC_OPTS="-nuc" ;;
-NB*|WS*) NC_OPTS="-q1 -nu" ;;
-esac
-
 # Create status files
 [ -e /tmp/faults ] || echo 0 > /tmp/faults
 [ -e /tmp/proxy ] || echo 0 > /tmp/proxy
@@ -45,9 +39,9 @@ sleep $((RANDOM % 30))
 
 # Send probe and store reply
 if [ $(cat /tmp/proxy) -eq 1 ]; then
-	msg | nc $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply
+	msg | nc -u $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply
 else
-	msg | nc $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
+	msg | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
 fi
 
 # Refresh faults count

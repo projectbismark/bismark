@@ -7,13 +7,6 @@
 # Load configuration file
 . ~/conf/dev.conf
 
-# OS depending options
-if [ -e /etc/openwrt_version ]; then
-	KEEP_ALIVE="-K 60"
-else
-	KEEP_ALIVE="-o ServerAliveInterval=60 -o ServerAliveCountMax=30"
-fi
-
 [ -e /tmp/server_last ] || echo `date +%s` > /tmp/server_last
 
 # Close pre-existing recovery tunnel
