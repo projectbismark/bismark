@@ -7,11 +7,12 @@
 . ~/conf/dev.conf
 
 # Help screen
-[ $4 ] || { echo -e "usage: $(basename $0) tcp <target> <up|dw> <duration> <kbps>\n       $(basename $0) udp <target> <duration> <ppm>" ; exit ; }
+[ $4 ] || { echo -e "usage: $(basename $0) tcp <target> <up|dw> <duration> <kbps>\n       $(basename $0) udp <target> <up|dw> <duration> <pps>" ; exit ; }
 
 # Change path
 cd /tmp
 [ -e itgfifo ] || mkfifo itgfifo
+src=$(cat /tmp/ip)
 
 # Select protocol
 case $1 in
@@ -24,16 +25,38 @@ tcp)
 	up)  
 
 		ITGSend -a $2 -rp 0 -T TCP -c $pkt_size -C $pkt_rate -t ${4}000 -l itgfifo 2>/dev/null | ITGDec itgfifo -b 1000 > /dev/null 2>&1
+		awk '(NR > 1){ print $3 }' bitrate.dat | mstats BITRATE DITG $src $2 | grep -v nan
 	;;
 	dw)
 		RANDOM=$(( `date +%s` % 32767 ))
 		port=$(( RANDOM % 5000 + 10000 ))
 		{ echo "-H -Ssp $port -rp 0 -T TCP -c $pkt_size -C $pkt_rate -t ${4}000" ; sleep 1 ; } | nc $NC_OPTS $2 143
 		ITGRecv -H $2 -Sp $port -l itgfifo 2>/dev/null | ITGDec itgfifo -b 1000 > /dev/null 2>&1
+		awk '(NR > 1){ print $3 }' bitrate.dat | mstats BITRATE DITG $2 $src | grep -v nan
 	;;
 	esac
-	awk '(NR > 1){ print $3 }' bitrate.dat
 ;;
-udp) echo "Not implemented yet" ;;
+udp)
+	pkt_size=512
+	pkt_rate=$5
+
+	# Select direction
+	case $3 in
+	up)  
+
+		ITGSend -a $2 -rp 0 -T UDP -c $pkt_size -C $pkt_rate -t ${4}000 -l itgfifo 2>/dev/null | ITGDec itgfifo -j 1000 -p 1000 > /dev/null 2>&1
+		awk '(NR > 1){ print $3 }' jitter.dat | mstats JITTER DITG $src $2 | grep -v nan
+		awk '(NR > 1){ print $3 }' packetloss.dat | mstats PKTLOSS DITG $src $2 | grep -v nan
+	;;
+	dw)
+		RANDOM=$(( `date +%s` % 32767 ))
+		port=$(( RANDOM % 5000 + 10000 ))
+		{ echo "-H -Ssp $port -rp 0 -T TCP -c $pkt_size -C $pkt_rate -t ${4}000" ; sleep 1 ; } | nc $NC_OPTS $2 143
+		ITGRecv -H $2 -Sp $port -l itgfifo 2>/dev/null | ITGDec itgfifo -p 1000 -j 1000 > /dev/null 2>&1
+		awk '(NR > 1){ print $3 }' jitter.dat | mstats JITTER DITG $2 $src | grep -v nan
+		awk '(NR > 1){ print $3 }' packetloss.dat | mstats PKTLOSS DITG $2 $src | grep -v nan
+	;;
+	esac
+;;
 esac
 

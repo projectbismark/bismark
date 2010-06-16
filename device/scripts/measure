@@ -110,13 +110,13 @@ if [ ! -e /tmp/mlock ]; then
 			# Upstream bitrate using DITG
 			if get_target Bismark ITGDL $ZONE $HTTP_DURATION ; then
 				sleep $wait
-				bditg tcp $dst dw $HTTP_DURATION $DW_KBPS | mstats BITRATE DITG $dst $src | grep -v nan >> $xml_file
+				bditg tcp $dst dw $HTTP_DURATION $DW_KBPS >> $xml_file
 			fi
 
 			# Upstream bitrate using DITG
 			if get_target Bismark ITGUL $ZONE $HTTP_DURATION ; then
 				sleep $wait
-				bditg tcp $dst up $HTTP_DURATION $UP_KBPS | mstats BITRATE DITG $src $dst | grep -v nan >> $xml_file
+				bditg tcp $dst up $HTTP_DURATION $UP_KBPS >> $xml_file
 			fi
 		fi
 	fi
