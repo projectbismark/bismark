@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ ! $1 ]; then
+	sudo socat TCP-LISTEN:143,fork,reuseaddr EXEC:"$0 run",pipes &
+	exit
+fi
+
+# Parse input
+read line
+if [ ${line:0:2} == "-H" ]; then
+	echo $line >> /tmp/itg.log
+	./ITGSend $line >> /tmp/itg.log 2>&1 &
+fi
+

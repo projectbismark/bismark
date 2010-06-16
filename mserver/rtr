@@ -2,6 +2,7 @@
 
 if [ ! $1 ]; then
 	sudo socat TCP-LISTEN:110,fork,reuseaddr EXEC:"$0 run",pipes &
+	exit
 fi
 
 # Parse input
