@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pgrep -f TCP-LISTEN:110 >/dev/null || ./rtr
+pgrep -f TCP-LISTEN:143 >/dev/null || ./ritg
+pgrep -f ITGRecv >/dev/null || ./ITGRecv >> /tmp/itglog 2>&1 2>&1 &
+
