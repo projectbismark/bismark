@@ -1,5 +1,5 @@
 #!/bin/bash
-
+touch /tmp/itg.log
 pgrep -f TCP-LISTEN:110 >/dev/null || ./rtr
 pgrep -f TCP-LISTEN:143 >/dev/null || ./ritg
 pgrep -f ITGRecv >/dev/null || ./ITGRecv >> /tmp/itg.log 2>&1 &
