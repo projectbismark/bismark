@@ -6,9 +6,24 @@ if [ ! $1 ]; then
 fi
 
 # Parse input
-read line
-if [ ${line:0:2} == "-H" ]; then
-	echo $line >> /tmp/itg.log
-	./ITGSend $line >> /tmp/itg.log 2>&1 &
-fi
+read cmd opt
 
+case $cmd in
+send)
+	if [ ${opt:0:2} == "-H" ]; then
+		echo $opt >> /tmp/itg.log
+		./ITGSend $opt >> /tmp/itg.log 2>&1 &
+	fi
+;;
+log)
+	echo $cmd - $opt >> /tmp/itg.log
+	./ITGDec $opt -j 1000 $opt.jitter -p 1000 $opt.pktloss -b 1000 $opt.bitrate 22> /dev/null
+	echo bitrate
+	awk '(NR > 1){ print $3 }' $opt.bitrate
+	echo jitter
+	awk '(NR > 1){ print $3 }' $opt.jitter
+	echo pktloss
+	awk '(NR > 1){ print $3 }' $opt.pktloss
+	rm $opt $opt.*
+;;
+esac
