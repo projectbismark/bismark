@@ -53,7 +53,7 @@ cat > $xml_file <<-end
 	        <info deviceid=$DEVICE_ID userid=$USER_ID />
 end
 
-## Non invasive measurements ##
+## Concurrent measurements ##
 
 # RTT measurement using PING
 if get_target Bismark PING $ZONE 10 ; then
@@ -88,14 +88,15 @@ if [ $((count % 6)) -eq 0 ]; then
 	fi
 fi
 
-## Invasive measurements ##
+## Serial measurements ##
 if [ ! -e /tmp/mlock ]; then 
 	# Set measure lock
 	echo on > /tmp/mlock
 
+	# Bitrate
 	if [ $((count % 4)) -eq 0 ]; then
 		if [ ${DEVICE_ID:0:2} != LS ]; then 
-			# Upstream bitrate using curl and HTTP
+			# Downstream bitrate using curl and HTTP
 			if get_target Bismark HTTPDL $ZONE $HTTP_DURATION ; then
 				sleep $wait
 				bcurl "http://$dst$info" dw $HTTP_DURATION $DW_KBPS | mstats BITRATE CURL $dst $src | grep -v nan >> $xml_file
@@ -107,18 +108,33 @@ if [ ! -e /tmp/mlock ]; then
 				bcurl "http://$dst$info" up $HTTP_DURATION $UP_KBPS | mstats BITRATE CURL $src $dst | grep -v nan >> $xml_file
 			fi
 		else
-			# Upstream bitrate using DITG
+			# Downstream bitrate using DITG
 			if get_target Bismark ITGDL $ZONE $HTTP_DURATION ; then
 				sleep $wait
-				bditg tcp $dst dw $HTTP_DURATION $DW_KBPS >> $xml_file
+				bditg tcp $dst $info dw $HTTP_DURATION $DW_KBPS >> $xml_file
 			fi
 
 			# Upstream bitrate using DITG
 			if get_target Bismark ITGUL $ZONE $HTTP_DURATION ; then
 				sleep $wait
-				bditg tcp $dst up $HTTP_DURATION $UP_KBPS >> $xml_file
+				bditg tcp $dst $info up $HTTP_DURATION $UP_KBPS >> $xml_file
 			fi
 		fi
+	fi
+
+	# Jitter & Packet loss using DITG
+	if [ $(( (count + 1) % 2)) -eq 0 ]; then
+			# Downstream 
+			if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
+				sleep $wait
+				bditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $xml_file
+			fi
+
+			# Upstream
+			if get_target Bismark ITGUL $ZONE $UDP_DURATION ; then
+				sleep $wait
+				bditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $xml_file
+			fi
 	fi
 
 	# Release measure lock
