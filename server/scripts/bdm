@@ -28,8 +28,6 @@ function help()
 
 	    exec     <dev_id> <command>          Execute a shell command on <dev_id>
 	
-	    info     <dev_id>                    Print some information about <dev_id>
-	
 	    list                                 List available devices and tunnels
 	
 	    readmsg                              Read incoming messages
@@ -102,11 +100,6 @@ function parse()
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help exec; }
 		echo "Executing \"${p#* * }\" on $2"
 		console $2 ${p#* * }
-	;;
-	info)
-		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help info; }
-		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help info; }
-		info $2
 	;;
 	list)	
 		list
@@ -405,21 +398,7 @@ function upgrade(){
 	fi
 }
 
-# Show dev info
-# $1 = dev id
-function info()
-{
-	echo "Obtaining information from $1"
-	if check_tunnel $1; then
-		console $1 "~/scripts/action" info
-	else
-		send_msg $1 info || { echo -e "\nDelivery to $1 failed"; return 1; }
-		echo "\nWaiting for message from $1"
-		recv_msg $1 || { echo -e "\nNo messages from $1"; return 2; }
-        fi
-}
-
-# Push configuration
+# Show/push configuration options
 # $1 = dev id
 # $* = options
 function config()

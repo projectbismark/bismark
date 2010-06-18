@@ -9,12 +9,7 @@
 # $3 = value
 mod_conf ()
 {
-ed $1 <<-end
-	/^$2=/
-	.s/=.*/=$3/
-	w
-	q
-end
+	sed -i -e "/^$2=/ s/=.*/=$3/" $1
 }
 
 # Log output destination

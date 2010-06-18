@@ -79,72 +79,57 @@ update)	# Software update
 	;;
 	esac
 ;;
-info)	# Info reply
-	if [ $WIF ]; then	
-		case $DEVICE_ID in
-		LS*) wifi_channel=$(iwlist $WIF channel | awk '/Current/{ print $2 }') ;;
-		NB*) wifi_channel=$(iwlist $WIF channel | awk -F'[\(\)]' '/Current/{ print $2 }') ;;
-		esac
-		wifi_essid=$(iwconfig $WIF | awk -F\" '/ESSID/{ print $2 }')
-	fi
-	output $1 <<-end
-		Version: $VERSION
-		User ID: $USER_ID
-		Wifi $wifi_channel 
-		Wifi Essid: $wifi_essid
-	end
-;;
-config)	# Get current configuration
-	case $DEVICE_ID in
-	LS*) 
-		channel=$(uci get wireless.wl0.channel)
-		ssid=$(uci get wireless.@wifi-iface[0].ssid)
-		wpa_psk=$(uci get wireless.@wifi-iface[0].key)
-		dec=local
-	;;
-	NB*)
-		grep -q ^channel= /etc/hostapd/hostapd.conf || echo channel=1 >> /etc/hostapd/hostapd.conf
-		channel=$(awk -F= '/^channel=/{ print $2 }' /etc/hostapd/hostapd.conf)
-		ssid=$(awk -F= '/^ssid=/{ print $2 }' /etc/hostapd/hostapd.conf)
-		wpa_psk=$(awk -F\" '{ print $2 }' /etc/hostapd/wpa_psk)
-		dec=declare
-	;;
-	esac
-	# awk -F= '! (/^#/ || /^\./) { print $1 }' ~/conf/dev.conf
-
+config)
+	# Modify parameters	
 	if [ $2 ]; then
 		# Parse new configuration
 		IFS=$'&'
 		for param in $2; do
-			$dec ${param%=*}=${param#*=}
+			name=${param%=*}
+			value=${param#*=}
+
+			# Check parameter validity
+			grep -q "^$name=" conf/dev.conf || { echo -e "Invalid option $name\n" ; continue ; }
+			
+			# Assign new value to parameter
+			$DEC $name=$value
+
+			# Check WIFI parameters presence
+			if [ ${name:0:4} == WIFI ]; then
+				wifi=1
+			# Store parameter in local.conf
+			elif grep -q "^${param%=*}=" local.conf; then
+				# Substitute
+				mod_conf local.conf $name "$value"
+			else
+				# Append
+				echo $param >> local.conf
+			fi
 		done
 
-		# Push new configuration
-		case $DEVICE_ID in
-		LS*) 
-			uci set wireless.wl0.channel=$channel
-			uci set wireless.@wifi-iface[0].ssid=$ssid
-			uci set wireless.@wifi-iface[0].key=$wpa_psk
-			uci commit wireless && wifi
-		;;
-		NB*) 
-			mod_conf /etc/hostapd/hostapd.conf channel $channel
-			mod_conf /etc/hostapd/hostapd.conf ssid $ssid
-			echo "00:00:00:00:00:00\"$wpa_psk" > /etc/hostapd/wpa_psk
-			/etc/init.d/hostapd restart
-			iwconfig $WIF channel $channel
-			/noxbox/bin/persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
-		;;
-		esac
+		# Push WIFI configuration
+		if [ $wifi ]; then
+			case $DEVICE_ID in
+			LS*) 
+				uci set wireless.wl0.channel=$WIFI_CHANNEL
+				uci set wireless.@wifi-iface[0].ssid=$WIFI_SSID
+				uci set wireless.@wifi-iface[0].key=$WIFI_WPA_PSK
+				uci commit wireless && wifi
+			;;
+			NB*) 
+				mod_conf /etc/hostapd/hostapd.conf channel $WIFI_CHANNEL
+				mod_conf /etc/hostapd/hostapd.conf ssid $WIFI_SSID
+				echo "00:00:00:00:00:00\"$WIFI_WPA_PSK" > /etc/hostapd/wpa_psk
+				/etc/init.d/hostapd restart
+				iwconfig $WIF channel $WIFI_CHANNEL
+				/noxbox/bin/persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
+			;;
+			esac
+		fi
 	fi
 
-	# Configuration resume
-	output $1 <<-end
-		ESSID: $ssid
-		Channel: $channel
-		WPA_PSK: ${wpa_psk:0:7}...
-		`set`
-	end
+	# Configuration output
+	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' conf/dev.conf - | output $1
 ;;
 esac
 

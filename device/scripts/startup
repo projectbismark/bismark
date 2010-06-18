@@ -8,6 +8,7 @@
 
 case $DEVICE_ID in
 NB*)
+	grep -q ^channel= /etc/hostapd/hostapd.conf || echo channel=1 >> /etc/hostapd/hostapd.conf
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
 ;;
 LS*)
