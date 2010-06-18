@@ -66,6 +66,8 @@ typedef struct {
  * Constants
  */
 #define BDM_DB "/var/tmp/bismark/db/bdm.db"
+#define MSG_DB "/var/tmp/bismark/db/msg.db"
+#define MSR_DB "/var/tmp/bismark/db/msr.db"
 #define LOG_DIR "/var/tmp/bismark/log/devices"
 
 #define MAX_NUM_THREAD 50
@@ -148,16 +150,16 @@ char *do_query(sqlite3 *db, const char *query, const int cb)
  */
 void *doit(void *param)
 {
-	thp *tp = (thp *) param; 	/* Thread parameters */
-	char query[MAX_QUERY_LEN]; 	/* Query string buffer */
-	time_t ts; 			/* Current timestamp */
-	pf probe; 			/* Probe dissection */
-	char ip[MAX_IP_LEN]; 		/* Client IP address */
-	sqlite3 *db; 			/* DB handler */
-	int thread_id; 			/* Thread identifier */
-	char *reply = NULL; 		/* Reply message */
-	char date[25]; 			/* Date string */
-	char *row; 			/* Query resulting row */
+	thp *tp = (thp *) param; 		/* Thread parameters */
+	char query[MAX_QUERY_LEN]; 		/* Query string buffer */
+	time_t ts; 				/* Current timestamp */
+	pf probe; 				/* Probe dissection */
+	char ip[MAX_IP_LEN]; 			/* Client IP address */
+	sqlite3 *bdm_db, *msg_db, *msr_db;	/* DB handlers */
+	int thread_id; 				/* Thread identifier */
+	char *reply = NULL; 			/* Reply message */
+	char date[25]; 				/* Date string */
+	char *row; 				/* Query resulting row */
 	int i;
 
 	/* Get thread identifier */
@@ -186,10 +188,10 @@ void *doit(void *param)
 	printf("%s - \"%s %s\" from %s [%s]\n", date, probe.cmd, probe.param, probe.id, ip);
 	fflush(stdout);
 #endif
-	/* Open db */
-	if (sqlite3_open(BDM_DB, &db)) {
-		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-		sqlite3_close(db);
+	/* Open bdm db */
+	if (sqlite3_open(BDM_DB, &bdm_db)) {
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(bdm_db));
+		sqlite3_close(bdm_db);
 		free(tp);
 		pthread_exit(NULL);
 	}
@@ -200,22 +202,23 @@ void *doit(void *param)
 
 		/* Check device presence in db */
 		snprintf(query, MAX_QUERY_LEN, "SELECT id FROM devices WHERE id='%s';", probe.id);
-		if ((row = do_query(db, query, 1))) {
+		if ((row = do_query(bdm_db, query, 1))) {
 			/* Update db entry */
 			snprintf(query, MAX_QUERY_LEN, "UPDATE devices SET ip='%s',ts=%lu,version=%s WHERE id='%s';", ip, ts, probe.param,
 				probe.id);
-			do_query(db, query, 0);
+			do_query(bdm_db, query, 0);
 			free(row);
 		} else {
 			/* Insert new db entry */
 			snprintf(query, MAX_QUERY_LEN, "INSERT INTO devices (id, ip, ts, version) VALUES('%s','%s',%lu,'%s');", probe.id,
 				ip, ts, probe.param);
-			do_query(db, query, 0);
+			do_query(bdm_db, query, 0);
 		}
 
 		/* Check messages */
+		sqlite3_open(MSG_DB, &msg_db);
 		snprintf(query, MAX_QUERY_LEN, "SELECT rowid,* FROM messages WHERE \"to\"='%s' LIMIT 1;", probe.id);
-		if ((row = do_query(db, query, 1))) {
+		if ((row = do_query(msg_db, query, 1))) {
 			mf msg; 	/* Message row fields */
 
 			/* Parse query result */
@@ -238,7 +241,7 @@ void *doit(void *param)
 
 			/* Remove message from db */
 			snprintf(query, MAX_QUERY_LEN, "DELETE FROM messages WHERE rowid='%s';", msg.mid);
-			do_query(db, query, 0);
+			do_query(msg_db, query, 0);
 
 			/* Remove row */
 			free(row);
@@ -247,6 +250,7 @@ void *doit(void *param)
 			reply = malloc(MAX_IP_LEN + 7);
 			sprintf(reply, "pong %s\n", ip);
 		}
+		sqlite3_close(msg_db);	
 	} else if (!strncmp(probe.cmd, "log", 3)) {
 		/* Log */
 		FILE *lfp;				/* Log file pointer */
@@ -260,8 +264,10 @@ void *doit(void *param)
 		fclose(lfp);
 
 		/* Send message to bdm client */
+		sqlite3_open(MSG_DB, &msg_db);
 		snprintf(query, MAX_QUERY_LEN, "INSERT INTO messages ('from', 'to', msg) VALUES('%s','BDM','%s');", probe.id, probe.param);
-		do_query(db, query, 0);
+		do_query(msg_db, query, 0);
+		sqlite3_close(msg_db);
 
 		/* Output log entry */
 		printf("%s - Received log from %s: %s\n", date, probe.id, probe.param);
@@ -283,15 +289,16 @@ void *doit(void *param)
 		probe.param[i] = 0;
 
 		/* Query target (prefer target with less clients and closest free timestamp) */
+		sqlite3_open(MSR_DB, &msr_db);
 		snprintf(query, MAX_QUERY_LEN, "SELECT t.ip,info,free_ts,curr_cli,max_cli FROM targets AS t, capabilities AS c "
 					       "WHERE t.ip=c.ip AND service='%s' AND cat='%s' AND zone='%s' ORDER BY curr_cli,free_ts ASC LIMIT 1;",
 					       request.type, request.cat, request.zone);
-		if (!(row = do_query(db, query, 1))) {
+		if (!(row = do_query(msr_db, query, 1))) {
 			/* Repeat query without zone */
 			snprintf(query, MAX_QUERY_LEN, "SELECT t.ip,info,free_ts,curr_cli,max_cli FROM targets AS t, capabilities AS c "
 						       "WHERE t.ip=c.ip AND service='%s' AND cat='%s' ORDER BY curr_cli,free_ts ASC LIMIT 1;",
 						       request.type, request.cat);
-			row = do_query(db, query, 1);
+			row = do_query(msr_db, query, 1);
 		}
 
 		/* Parse query result */
@@ -308,7 +315,7 @@ void *doit(void *param)
 
 		/* Get measure type mode */
 		snprintf(query, MAX_QUERY_LEN, "SELECT exclusive FROM mtypes WHERE type='%s';", request.type);
-		exclusive = do_query(db, query, 1);
+		exclusive = do_query(msr_db, query, 1);
 
 		/* Process request */
 		reply = malloc(MAX_IP_LEN + MAX_INFO_LEN + MAX_WAIT_LEN + 4);
@@ -321,7 +328,7 @@ void *doit(void *param)
 				/* Update target entry */
 				snprintf(query, MAX_QUERY_LEN, "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
 					ts + atoi(request.duration) + 2, target.ip);
-				do_query(db, query, 0);
+				do_query(msr_db, query, 0);
 
 				/* Output log entry */
 				printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, probe.id, target.ip, ts, request.duration);
@@ -333,7 +340,7 @@ void *doit(void *param)
 				/* Update target entry */
 				snprintf(query, MAX_QUERY_LEN, "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
 					atol(target.free_ts) + atoi(request.duration) + 2, target.ip);
-				do_query(db, query, 0);
+				do_query(msr_db, query, 0);
 
 				/* Output log entry */
 				printf("%s - Scheduled %s measure from %s to %s at %s for %s seconds\n", date, request.type, probe.id, target.ip, target.free_ts, request.duration);
@@ -347,6 +354,7 @@ void *doit(void *param)
 			printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, probe.id, target.ip, ts, request.duration);
 			fflush(stdout);
 		}
+		sqlite3_close(msr_db);
 
 		/* Free memory */
 		free(exclusive);
@@ -362,7 +370,7 @@ void *doit(void *param)
 			reply[strlen(reply) - 1] = 0;
 			reply[3] = 0;
 			snprintf(query, MAX_QUERY_LEN, "INSERT INTO tunnels VALUES('%s',%s,%lu);", probe.id, &reply[4], ts + 15);
-			do_query(db, query, 0);
+			do_query(bdm_db, query, 0);
 		}
 
 		free(reply);
@@ -371,7 +379,7 @@ void *doit(void *param)
 	free(tp);
 
 	/* Close db */
-	sqlite3_close(db);
+	sqlite3_close(bdm_db);
 
 	/* Update threads counter */
 	pthread_mutex_lock(&mutex);

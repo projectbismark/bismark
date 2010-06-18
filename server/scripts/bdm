@@ -7,7 +7,7 @@
 . ~/etc/bdm.conf
 
 # Aliases
-query(){ sqlite3 -list $BDM_DB "$1"; }
+query(){ sqlite3 -list $1 "$2"; }
 
 # Help screen
 # $1 = command
@@ -159,17 +159,17 @@ function send_msg()
 	# Add message to queue
 	if [ $1 == ALL ]; then
 		# Broadcast
-		for dev in $(query "SELECT id FROM devices;"); do
-			query "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$dev','$2 $3');"
+		for dev in $(query $BDM_DB "SELECT id FROM devices;"); do
+			query $MSG_DB "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$dev','$2 $3');"
 		done
 	else
 		# Unicast
-		query "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$1','$2 $3');"
+		query $MSG_DB "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$1','$2 $3');"
 
 		# Wait for message delivery
 		time=0
 		while [ true ]; do
-			rowid=$(query "SELECT rowid FROM messages WHERE \"to\"='$1' AND msg='$2 $3';")
+			rowid=$(query $MSG_DB "SELECT rowid FROM messages WHERE \"to\"='$1' AND msg='$2 $3';")
 			[ ${#rowid} -eq 0 ] && return 0
 			[ $((time++)) -eq $MSG_TIMEOUT ] && return 1
 			echo -n "."
@@ -185,7 +185,7 @@ function recv_msg()
 	# Wait for message 
 	time=0
 	while [ true ]; do
-		info=$(query "SELECT rowid,msg FROM messages WHERE \"from\"='$1';")
+		info=$(query $MSG_DB "SELECT rowid,msg FROM messages WHERE \"from\"='$1';")
 		if [ ${#info} -gt 0 ]; then
 			echo
 			read_msg $1
@@ -233,7 +233,7 @@ function gen_fwd_port()
 function get_fwd_port()
 {
 	# Query tunnels db
-	FWD_PORT=$(query "SELECT port FROM tunnels WHERE id='$1' LIMIT 1;")
+	FWD_PORT=$(query $BDM_DB "SELECT port FROM tunnels WHERE id='$1' LIMIT 1;")
 	[ $FWD_PORT ] || return 1
 }
 
@@ -256,7 +256,7 @@ function check_tunnel()
 	if check_fwd_port $FWD_PORT; then
 		return 0
 	else
-		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT AND ts<$(date +%s);"
+		query $BDM_DB "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT AND ts<$(date +%s);"
 		get_fwd_port $1 && return 2 || return 3
 	fi
 }
@@ -314,7 +314,7 @@ function console()
 	fi
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
-	SSH_USER=$(query "SELECT user FROM devices WHERE id='$1'")
+	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$1'")
 	ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
 
 	[ $new ] && stop_tunnel $1
@@ -337,7 +337,7 @@ function stop_tunnel()
 		echo "Unable to close tunnel"
 	else
 		echo "Tunnel closed"
-		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
+		query $BDM_DB "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
 	fi
 }
 
@@ -442,7 +442,7 @@ function list()
 	echo -e "${BLUE}\nDevices:"
 	echo -e "${WHITE}ID\tIP\t\tUSER\tVERSION\tLAST PROBE"
 	IFS=$'\n' 
-	for dev in $(query 'SELECT id,ip,user,version,ts FROM devices ORDER BY id;'); do
+	for dev in $(query $BDM_DB 'SELECT id,ip,user,version,ts FROM devices ORDER BY id;'); do
 		IFS=$'|' read id ip user ver ts <<< "$dev"
 		off_time=$(( $(date +%s) - $ts ))
 		if [ $off_time -lt 300 ]; then
@@ -460,7 +460,7 @@ function list()
 	echo -e "${WHITE}ID\tPORT\tSTART TIME"
 	echo -ne $GREEN
 	IFS=$'\n' 
-	for dev in $(query 'SELECT * FROM tunnels ORDER BY id;'); do
+	for dev in $(query $BDM_DB 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
 		check_tunnel $id $port
 		if [ $? -eq 0 ]; then
@@ -479,7 +479,7 @@ function list()
 	echo -e "${WHITE}ID\tFROM\tTO\tMESSAGE"
 	echo -ne $MAGENTA
 	IFS=$'\n' 
-	for message in $(query 'SELECT rowid,* FROM messages ORDER BY "from","to";'); do
+	for message in $(query $MSG_DB 'SELECT rowid,* FROM messages ORDER BY "from","to";'); do
 		IFS=$'|' read id from to msg <<< "$message"
 		printf "%s\t%s\t%s\t%s\n" $id $from $to $msg
 	done
@@ -499,7 +499,7 @@ function copy()
 		esac
 	fi
 
-	SSH_USER=$(query "SELECT user FROM devices WHERE id='$2'")
+	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$2'")
 	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp  
 }
 
@@ -508,9 +508,9 @@ function copy()
 function read_msg()
 {
 	if [ $1 ]; then
-		rows=$(query "SELECT rowid,* FROM messages WHERE \"from\"='$1';")
+		rows=$(query $MSG_DB "SELECT rowid,* FROM messages WHERE \"from\"='$1';")
 	else
-		rows=$(query "SELECT rowid,* FROM messages WHERE \"to\"='BDM';")
+		rows=$(query $MSG_DB "SELECT rowid,* FROM messages WHERE \"to\"='BDM';")
 	fi
 
 	if [ ${#rows} -gt 0 ]; then
@@ -527,7 +527,7 @@ function read_msg()
 			' ~/var/log/devices/$from.log
 			echo "------------------------"
 
-			query "DELETE FROM messages WHERE rowid='$mid';"
+			query $MSG_DB "DELETE FROM messages WHERE rowid='$mid';"
 		done
 	else
 		echo "No incoming messages"
@@ -542,10 +542,10 @@ function read_msg()
 function setuser()
 {
 	echo -n "Setting $1 SSH user to $2..."
-	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
-		query "UPDATE devices SET user='$2' WHERE id='$1';"
+	if [ $(query $BDM_DB "SELECT id FROM devices WHERE id='$1';") ]; then
+		query $BDM_DB "UPDATE devices SET user='$2' WHERE id='$1';"
 	else
-		query "INSERT INTO devices (id, user) VALUES('$1','$2');"
+		query $BDM_DB "INSERT INTO devices (id, user) VALUES('$1','$2');"
 	fi
 	echo done
 }
@@ -556,7 +556,7 @@ function setuser()
 function settunnel()
 {
 	echo -n "Setting tunnel db entry for $1 on port $2..."
-	query "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
+	query $BDM_DB "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
 	echo done
 }
 
@@ -565,11 +565,11 @@ function settunnel()
 function clearmsg()
 {
 	if [ $1 ]; then
-		query "DELETE FROM messages WHERE rowid=$1;"
+		query $MSG_DB "DELETE FROM messages WHERE rowid=$1;"
 	else
 		echo "Delete all pending messages (y/N)?"
 		read a
-		[ $a == "y" ] && query "DELETE FROM messages;"
+		[ $a == "y" ] && query $MSG_DB "DELETE FROM messages;"
 	fi
 }
 

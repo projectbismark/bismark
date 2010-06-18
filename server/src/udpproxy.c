@@ -31,7 +31,7 @@ int gsd;
 void *doit(void *vncad)
 {
 	char lbuf[1000];			// buffer per la stringa modificata
-	int i, sd;
+	int sd;
 	struct sockaddr_in lcad;
 	struct timeval timeout = {2,0};
 	
@@ -163,7 +163,9 @@ int main(int argc, char *argv[])
 			// Creazione di un thread per gestire la nuova connessione
 			if (pthread_create(&hThr[i], NULL, doit, &cad) < 0) {
 				fprintf(stderr, "error creating thread\n");
-			}
+			} else {
+                                pthread_detach(hThr[i]);
+                        }
 		}
 	}
 	

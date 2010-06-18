@@ -7,7 +7,7 @@
 . ~/etc/bdm.conf
 
 # Aliases
-query(){ sqlite3 -list $BDM_DB "$1"; }
+query(){ sqlite3 -list $1 "$2"; }
 
 # Help screen
 # $1 = command
@@ -33,24 +33,28 @@ mkdir -p ~/var/log/devices/
 
 # Check DB
 if [ ! -e $BDM_DB ]; then
-	query "CREATE TABLE devices(
+	query $BDM_DB "CREATE TABLE devices(
 		id      TEXT PRIMARY KEY,
 		version INTEGER, 
 		user    TEXT, 
 		ip      TEXT, 
 		ts      INTEGER
 	       );"
-	query "CREATE TABLE tunnels(
+	query $BDM_DB "CREATE TABLE tunnels(
 		id      TEXT,
 		port    INTEGER, 
 		ts      INTEGER
 	       );"
-	query "CREATE TABLE messages(
+fi
+if [ ! -e $MSG_DB ]; then
+	query $MSG_DB "CREATE TABLE messages(
 		'from'  TEXT,
 		'to'    TEXT, 
 		msg     TEXT
 	       );"
-	query "CREATE TABLE targets(
+fi
+if [ ! -e $MSR_DB ]; then
+	query $MSR_DB "CREATE TABLE targets(
 		ip       TEXT PRIMARY KEY,
 		cat      TEXT, 
 		zone     TEXT,
@@ -58,12 +62,12 @@ if [ ! -e $BDM_DB ]; then
 		curr_cli INTEGER,
 		max_cli  INTEGER
 	       );"
-	query "CREATE TABLE capabilities(
+	query $MSR_DB "CREATE TABLE capabilities(
 		ip       TEXT,
 		service  TEXT,
 		info     TEXT
 	       );"
-	query "CREATE TABLE mtypes(
+	query $MSR_DB "CREATE TABLE mtypes(
 		type       TEXT PRIMARY KEY,
 		exclusive  INTEGER 
 	       );"
