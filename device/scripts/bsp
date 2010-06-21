@@ -16,6 +16,6 @@ prober | awk '
 	/^Upstream:/{ print "\t<measurement param=CAPACITY tool=SP srcip='$src' dstip=" dst " timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
 	/^Downstream:/{  print "\t<measurement param=CAPACITY tool=SP srcip=" dst " dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
 	/^Up:/{ print "\t<measurement param=SHAPERATE tool=SP srcip='$src' dstip=" dst " timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
-	/^Dw:/{ print "\t<measurement param=SHAPERATE tool=SP srcip=" dst " dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
+	/^Down:/{ print "\t<measurement param=SHAPERATE tool=SP srcip=" dst " dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
 '
  
