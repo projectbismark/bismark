@@ -49,8 +49,8 @@ src=$(cat /tmp/ip)
 # XML file header
 cat > $xml_file <<-end
 	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<measurements version="1.0">
-	        <info deviceid=$DEVICE_ID userid=$USER_ID />
+	<measurements version="1.1">
+	        <info deviceid=$DEVICE_ID />
 end
 
 ## Concurrent measurements ##
