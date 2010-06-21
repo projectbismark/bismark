@@ -1,0 +1,40 @@
+#!/bin/bash
+# Extract useful data from DB
+
+function query()
+{
+	mysql -NB -u root -e "$1" bismark_test
+}
+
+# Help
+if [ ! $1 ]; then
+	cat <<-end
+		Syntax: 
+		       $(basename $0) <command> [parameters]
+
+		Options:
+		       devip <dev_id> [history]
+	end
+	exit
+fi
+
+case $1 in
+devip)
+	if [ "$3" == history ]; then
+		query "select timestamp,inet_ntoa(srcip) from MEASUREMENTS where deviceid='$2' and tool='PING' order by timestamp" | \
+		gawk '{ if (prev != $2) print strftime("%Y-%m-%d %H:%M:%S (%s)", $1) "\t" $2; prev=$2 }'
+	else
+		# Get ip list
+		ips=$(query "select inet_ntoa(srcip) from MEASUREMENTS where deviceid='$2' and tool='PING' order by srcip" | uniq)
+
+		# Get ip start/end timestamps
+		echo -e "IP\t\tFirst\t\t\tLast"
+		IFS=$'\n'
+		for ip in $ips; do
+			query "select timestamp from MEASUREMENTS where deviceid='$2' and tool='PING' and srcip=inet_aton('$ip') order by timestamp" | \
+			gawk '{ if (!last) first=$1 ; last=$1 } 
+			      END{ print "'$ip'\t" strftime("%Y-%m-%d %H:%M:%S", first) "\t" strftime("%Y-%m-%d %H:%M:%S", last) "\t(" first " - " last ")" }'
+		done | sort -k2
+	fi
+;;
+esac

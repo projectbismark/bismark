@@ -88,6 +88,11 @@ if [ $((count % 6)) -eq 0 ]; then
 	fi
 fi
 
+if [ $((count % 144)) -eq 0 ]; then
+	# Shaper probe
+	bsp
+fi
+
 ## Serial measurements ##
 if [ ! -e /tmp/mlock ]; then 
 	# Set measure lock

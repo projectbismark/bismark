@@ -4,7 +4,6 @@
 # - on-demand SSH tunnel
 # - server heartbeat
 # - software update
-# - information query
 # - configuration query/push
 #
 # author: walter.dedonato@unina.it
@@ -45,15 +44,15 @@ update)	# Software update
 	find * -path "scripts/*" | sort >> /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
 	case $DEVICE_ID in
-	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }') ;;
+	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }' | grep -v 'rshell\|action\|probe') ;;
 	NB*) 
-		files=$(diff /tmp/old /tmp/new | awk '/^</{ print $2 }')
+		files=$(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'rshell\|action\|probe')
 		rm -f $files
 		remountrw
 		rm -f $(echo "$files" | awk '/^</{ print "/ro/root/" $2 }')
 		remountro
 	;;
-	WS*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }') ;;
+	WS*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'rshell\|action\|probe') ;;
 	esac
 
 	# Extract new package

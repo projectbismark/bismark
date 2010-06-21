@@ -1,0 +1,21 @@
+#!/bin/bash
+# Bismark ditg wrapper (output in Kbps)
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Get measure info 
+src=$(cat /tmp/ip)
+tstamp=$(date +%s)
+
+prober | awk '
+	BEGIN{ RS="[\r\n]" }
+	/Connected to server/{ dst=substr($4,0,length($4)-1) }
+	/^Upstream:/{ print "\t<measurement param=CAPACITY tool=SP srcip='$src' dstip=" dst " timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
+	/^Downstream:/{  print "\t<measurement param=CAPACITY tool=SP srcip=" dst " dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
+	/^Up:/{ print "\t<measurement param=SHAPERATE tool=SP srcip='$src' dstip=" dst " timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
+	/^Dw:/{ print "\t<measurement param=SHAPERATE tool=SP srcip=" dst " dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
+'
+ 
