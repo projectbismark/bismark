@@ -90,7 +90,7 @@ fi
 
 if [ $((count % 144)) -eq 0 ]; then
 	# Shaper probe
-	bsp
+	bsp >> $xml_file
 fi
 
 ## Serial measurements ##
