@@ -88,11 +88,6 @@ if [ $((count % 6)) -eq 0 ]; then
 	fi
 fi
 
-if [ $((count % 144)) -eq 0 ]; then
-	# Shaper probe
-	bsp >> $xml_file
-fi
-
 ## Serial measurements ##
 if [ ! -e /tmp/mlock ]; then 
 	# Set measure lock
@@ -140,6 +135,11 @@ if [ ! -e /tmp/mlock ]; then
 				sleep $wait
 				bditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $xml_file
 			fi
+	fi
+
+	# Shaper probe
+	if [ $((count % 144)) -eq 0 ]; then
+		bsp >> $xml_file
 	fi
 
 	# Release measure lock
