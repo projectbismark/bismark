@@ -76,7 +76,7 @@ if get_target Bismark PING $ZONE 10 ; then
 	bping $dst | mstats RTT PING $src $dst >> $xml_file
 fi
 
-if [ $((count % 6)) -eq 0 ]; then
+if [ $((count % TR_FQ)) -eq 0 ]; then
 	# Traceroute
 	if get_target Bismark TR $ZONE 0 ; then
 		hops=$(btr $dst)
@@ -110,7 +110,7 @@ if [ ! -e /tmp/mlock ]; then
 	echo on > /tmp/mlock
 
 	# Bitrate
-	if [ $((count % 4)) -eq 0 ]; then
+	if [ $((count % BR_FQ)) -eq 0 ]; then
 		if [ ${DEVICE_ID:0:2} != LS ]; then 
 			# Downstream bitrate using curl and HTTP
 			if get_target Bismark HTTPDL $ZONE $HTTP_DURATION ; then
@@ -139,7 +139,7 @@ if [ ! -e /tmp/mlock ]; then
 	fi
 
 	# Jitter & Packet loss using DITG
-	if [ $(( (count + 1) % 2)) -eq 0 ]; then
+	if [ $((count % UDP_FQ)) -eq 0 ]; then
 			# Downstream 
 			if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
 				sleep $wait
@@ -154,7 +154,7 @@ if [ ! -e /tmp/mlock ]; then
 	fi
 
 	# Shaper probe
-	if [ $((count % 144)) -eq 0 ]; then
+	if [ $((count % SP_FQ)) -eq 0 ]; then
 		bsp >> $xml_file
 	fi
 
