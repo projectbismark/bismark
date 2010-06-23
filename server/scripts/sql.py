@@ -12,7 +12,7 @@ import numpy as np
 sql_host = "localhost"
 sql_user = "root"
 #sql_passwd = "grenouille"
-sql_db = "bismark_test"
+sql_db = "bismark_live_v1"
 
 def sqlconn():
   try:
@@ -25,7 +25,7 @@ def sqlconn():
 
 def run_insert_cmd(cmd):
   conn,cursor = sqlconn()
-  print "cmd ",cmd
+  print cmd
   try:
     cursor.execute(cmd)
   except:

@@ -3,7 +3,8 @@
 
 function query()
 {
-	mysql -NB -u root -e "$1" bismark_test
+	[ $2 ] || out="-NB"
+	mysql $out -u root -e "$1" bismark_live_v1
 }
 
 # Help
@@ -14,6 +15,7 @@ if [ ! $1 ]; then
 
 		Options:
 		       devip <dev_id> [history]
+		       devsla 
 	end
 	exit
 fi
@@ -36,5 +38,9 @@ devip)
 			      END{ print "'$ip'\t" strftime("%Y-%m-%d %H:%M:%S", first) "\t" strftime("%Y-%m-%d %H:%M:%S", last) "\t(" first " - " last ")" }'
 		done | sort -k2
 	fi
+;;
+devsla)
+	query "select deviceid,name,isp,sla,ul,dl,b.start,b.end from USERS as a,USERSLA as b,SLA as c, USERDEVICE as d 
+		where a.userid=d.userid and a.userid=b.userid and b.slaid=c.slaid order by deviceid" tab
 ;;
 esac

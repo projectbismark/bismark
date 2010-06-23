@@ -56,6 +56,12 @@ def get_id_from_table(table,did,ts):
   res = sql.run_data_cmd(cmd)
   return str(res[0][0])
 
+def get_uid(did,table):
+  cmd = 'SELECT userid from ' + table + ' where '
+  cmd += 'deviceid = "' + did + '"'
+  res = sql.run_data_cmd(cmd)
+  return str(res[0][0])
+
 def write_block_v1_0(data,tables,log):
   if 'info' not in data:
     log.write('Error: No info field')
@@ -71,8 +77,10 @@ def write_block_v1_0(data,tables,log):
         if tab != 'hop':
           fids,vals = get_measurement_params(fids,vals,data['info'][0])
         else:
+          ttid = data[tab][i]['ttid']
+          data[tab][i].pop('ttid')
           did = data['info'][0]['deviceid']
-          ts = data['traceroute'][0]['timestamp']
+          ts = data['traceroute'][ttid]['timestamp']
           tid = get_id_from_table(tables['traceroute'],did,ts)
           idtuple = {"tid":tid}
           fids,vals = get_measurement_params(fids,vals,idtuple)
@@ -101,6 +109,8 @@ def parse_block_v1_0(block,version,tables,log):
       data[head] = []
 
     tuple = {}
+    if head == 'hop':
+      tuple['ttid'] = len(data['traceroute']) -1
     for field in fields[1:]:
       field = field.split("=")
       name = field[0]
@@ -112,10 +122,23 @@ def parse_block_v1_0(block,version,tables,log):
     data[head].append(tuple)
   return data
 
+def parse_block_v1_1(block,version,tables,log):
+  data = parse_block_v1_0(block,version,tables,log)
+  return data
+
 def parse_block(block,version,tables,log):
   if version == '1.0':
     data = parse_block_v1_0(block,version,tables,log)
     write_block_v1_0(data,tables,log)
+  if version == '1.1':
+    data = parse_block_v1_1(block,version,tables,log)
+    did = data['info'][0]['deviceid']
+    uid = get_uid(did,tables['userdevice'])
+    print uid
+    data['info'][0]['userid'] = uid
+    write_block_v1_0(data,tables,log)
+  for i in data:
+    print i, data[i]
 
 def parsefile(file,tables,log):
   start_block = '<measurements'
@@ -150,10 +173,11 @@ def move_file(file,dir):
 
 if __name__ == '__main__':
   HOME = os.environ['HOME'] + '/'
+  #HOME = '/tmp/bismark_test/'
   MEASURE_FILE_DIR = 'var/data/'
   LOG_DIR = 'var/log/'
   ARCHIVE_DIR = 'var/data/old'
-  tables = {'measurement':'MEASUREMENTS','traceroute':'TRACEROUTES','hop':'TRACEROUTE_HOPS'}
+  tables = {'measurement':'MEASUREMENTS','traceroute':'TRACEROUTES','hop':'TRACEROUTE_HOPS','userdevice':'USERDEVICE'}
 
   log = gz.open(HOME+LOG_DIR+'insert.log.gz','ab')
   files = os.listdir(HOME+MEASURE_FILE_DIR)
