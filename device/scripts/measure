@@ -8,7 +8,8 @@
 
 # Measure message generator
 # $1 = options
-msg () {
+msg () 
+{
 	echo "$DEVICE_ID measure $1"
 	sleep 3
 }
@@ -18,7 +19,7 @@ msg () {
 # $2 = type
 # $3 = zone
 # $4 = duration
-get_target()
+get_target ()
 {
 	# Send message
 	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/mreply
@@ -26,6 +27,21 @@ get_target()
 	# Get reply
 	read dst info wait < /tmp/mreply
 	[ $dst ] || return 1 
+}
+
+# Wait NTP synchronization
+wait_ntp ()
+{
+	cycle=1
+	while [ $(date +%s) -lt 1000000000 ]; do
+		case $DEVICE_ID in
+		NB*) ntpd -q ;;
+		WS*) sudo ntpdate pool.ntp.org ;;
+		LS*) ntpclient -s -h pool.ntp.org ;;
+		esac
+		sleep 1
+		[ $((cycle++)) -gt 5 ] && exit
+	done
 }
 
 # Create dirs and files
@@ -37,7 +53,7 @@ count=$(cat /tmp/measure/counter)
 echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 
 # NTP plus Random wait
-[ ${DEVICE_ID:0:2} == "NB" ] && ntp-wait
+wait_ntp
 sleep $((RANDOM % 30))
 
 # Globals
