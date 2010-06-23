@@ -5,7 +5,6 @@
 
 # Load configuration files
 . ~/conf/dev.conf
-[ -e ~/local.conf ] && . ~/local.conf
 
 # Help screen
 [ $2 ] || { echo "usage: $(basename $0) <ip> <port>" ; exit 1 ; }
@@ -14,5 +13,5 @@
 filter='! /trace/{ print "<hop id="$1" ip="$2" rtt="$3" />" }'
 
 # Exec reverse traceroute
-{ echo $TRACEROUTE_TYPE ; sleep 10 ; } | nc $NC_OPTS $1 $2 | awk "$filter"
+{ echo $RTR_TYPE ; sleep 10 ; } | nc $NC_OPTS $1 $2 | awk "$filter"
 

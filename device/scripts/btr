@@ -5,7 +5,6 @@
 
 # Load configuration files
 . ~/conf/dev.conf
-[ -e ~/local.conf ] && . ~/local.conf
 
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit 1 ; }
@@ -15,7 +14,7 @@ filter_std='! /trace/{ print "<hop id="$1" ip="$2" rtt="$3" />" }'
 filter_tcp='{ rtt=$3 } ; /\[.*\]/{ rtt=$4 } ; { print "<hop id="$1" ip="$2" rtt="rtt" />" }'
 
 # Select traceroute type
-case $TRACEROUTE_TYPE in
+case $TR_TYPE in
 UDP)  
 	cmd="traceroute"
 	opts="-n -q1"
