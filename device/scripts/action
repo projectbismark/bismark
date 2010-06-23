@@ -88,7 +88,7 @@ config)
 			value=${param#*=}
 
 			# Check parameter validity
-			grep -q "^$name=" conf/dev.conf || { echo -e "Invalid option $name\n" ; continue ; }
+			grep -q "^$name=" conf/dev.conf local.conf || { echo -e "Invalid option $name\n" ; continue ; }
 			
 			# Assign new value to parameter
 			eval $name=$value
