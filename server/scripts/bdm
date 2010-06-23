@@ -20,7 +20,7 @@ function help()
 	
 	Commands:
 	
-	    config   <dev_id> [[opt=value] ...]  Show or Change <dev_id> configuration options
+	    config   <dev_id> [[opt=value] ...]  Show or Change <dev_id> configuration options (ALL applies)
 
 	    console  <dev_id>                    Open a console on <dev_id> over the SSH tunnel
 	
@@ -113,7 +113,7 @@ function parse()
 	;;
 	config)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }
-		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help config; }
+		[ $2 == ALL ] && echo $* | grep -q DEVICE_ID && { echo -e "ALL not allowed for DEVICE_ID\n"; help console; }
 		$* 
 	;;
 	setuser)
@@ -405,11 +405,23 @@ function config()
 {
 	id=$1
 	shift
+	
 	params=$(echo $* | tr ' ' '&')
 	echo -n "Sending config request to $id"
 	send_msg $id config $params || { echo -e "\nDevice $id not found"; return 1; }
-	echo -ne "\nWaiting for reply"
-	recv_msg $id || { echo -e "\nNo messages from $id"; return 2; }
+	
+	# Wait reply
+	echo -e "\nWaiting for config log:"
+	if [ $1 == ALL ]; then
+		for ((i=$MSG_TIMEOUT;i>0;i--)); do
+			echo -ne "Remaining $i seconds  \r"
+			sleep 1
+		done
+		echo
+		read_msg
+	else
+		recv_msg $id || { echo -e "\nNo messages from $id"; return 2; }
+	fi
 }
 
 # List active devices and tunnels

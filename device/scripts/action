@@ -91,18 +91,25 @@ config)
 			grep -q "^$name=" conf/dev.conf || { echo -e "Invalid option $name\n" ; continue ; }
 			
 			# Assign new value to parameter
-			$DEC $name=$value
+			eval $name=$value
 
 			# Check WIFI parameters presence
 			if [ ${name:0:4} == WIFI ]; then
 				wifi=1
-			# Store parameter in local.conf
-			elif grep -q "^${param%=*}=" local.conf; then
-				# Substitute
-				mod_conf local.conf $name "$value"
 			else
-				# Append
-				echo $param >> local.conf
+				if [ $value ]; then
+					# Store parameter in local.conf
+					if grep -q "^$name=" local.conf; then
+						# Substitute
+						mod_conf local.conf $name "$value"
+					else
+						# Append
+						echo $param >> local.conf
+					fi
+				elif grep -q "^$name=" local.conf; then
+					# Remove parameter from local.conf
+					mod_conf local.conf $name
+				fi
 			fi
 		done
 
