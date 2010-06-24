@@ -32,7 +32,8 @@ function help()
 	
 	    readmsg                              Read incoming messages
 
-	    tunnel   <dev_id> <on|off>           Open/Close a tunnel to <dev_id> using SSH port forwarding
+	    tunnel   <dev_id> <on> [ip:port]     Open a tunnel to <dev_id> using SSH port forwarding (default: 127.0.0.1:22)
+	             <dev_id> <off> [port]       Close a tunnel to <dev_id> (default: oldest)
 	
 	    upgrade  <dev_id> [rebuild]          Upgrade software on <dev_id> (ALL applies)
 
@@ -85,7 +86,7 @@ function parse()
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help tunnel; }
 		[ $3 ] || { echo -e "Missing parameter: on|off\n"; help tunnel; }
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help tunnel; }
-		[ $3 == "on" ] && start_tunnel $2
+		[ $3 == "on" ] && start_tunnel $2 $4
 		[ $3 == "off" ] && stop_tunnel $2 $4
 	;;
 	console)
@@ -226,7 +227,7 @@ function gen_fwd_port()
 function get_fwd_port()
 {
 	# Query tunnels db
-	FWD_PORT=$(query $BDM_DB "SELECT port FROM tunnels WHERE id='$1' LIMIT 1;")
+	FWD_PORT=$(query $BDM_DB "SELECT port FROM tunnels WHERE id='$1' ORDER BY ts ASC LIMIT 1;")
 	[ $FWD_PORT ] || return 1
 }
 
@@ -280,16 +281,22 @@ function wait_tunnel()
 
 # Start new tunnel
 # $1 = dev id
+# $2 = ip:port
 function start_tunnel()
 {
-	if check_tunnel $1; then 
+	if [ ! $2 ] && check_tunnel $1; then 
 		echo "Tunnel listening on 127.0.0.1:$FWD_PORT" 
 		return 1
 	fi
 	gen_fwd_port
 
-	echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
-	send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
+	if [ $2 ]; then
+		echo "Starting SSH tunnel to dev $1 on port $FWD_PORT (to $2)"
+		send_msg $1 fwd $FWD_PORT%$2 || { echo -e "\nDelivery to $1 failed"; return 2; }
+	else
+		echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
+		send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
+	fi
  	wait_tunnel $FWD_PORT || return 3
 }
 
@@ -315,9 +322,10 @@ function console()
 
 # Stop active tunnel
 # $1 = dev id
+# $2 = port number
 function stop_tunnel()
 {
-	if ! check_tunnel $1; then
+	if ! check_tunnel $1 $2; then
 		echo "Tunnel expired"
 		return 1 
 	fi

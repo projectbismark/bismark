@@ -24,7 +24,11 @@ esac
 # Perform action
 case $1 in
 fwd)	# on-demand SSH tunnel
-	ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER &
+	if [ $2 == ${2#*%} ]; then
+		ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER &
+	else
+		ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:${2#*%} $USER@$SERVER &
+	fi
 ;;
 pong)	# Server heartbeat
 	date +%s > /tmp/server_last
