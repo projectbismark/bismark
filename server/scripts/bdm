@@ -412,7 +412,7 @@ function config()
 	
 	# Wait reply
 	echo -e "\nWaiting for config log:"
-	if [ $1 == ALL ]; then
+	if [ $id == ALL ]; then
 		for ((i=$MSG_TIMEOUT;i>0;i--)); do
 			echo -ne "Remaining $i seconds  \r"
 			sleep 1
