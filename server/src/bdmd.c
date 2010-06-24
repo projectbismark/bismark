@@ -369,7 +369,7 @@ void *doit(void *param)
 		if (!strncmp(reply, "fwd", 3)) {
 			reply[strlen(reply) - 1] = 0;
 			reply[3] = 0;
-			snprintf(query, MAX_QUERY_LEN, "INSERT INTO tunnels VALUES('%s',%s,%lu);", probe.id, &reply[4], ts + 15);
+			snprintf(query, MAX_QUERY_LEN, "INSERT INTO tunnels VALUES('%s',%d,%lu);", probe.id, atoi(&reply[4]), ts + 15);
 			do_query(bdm_db, query, 0);
 		}
 

@@ -292,7 +292,7 @@ function start_tunnel()
 
 	if [ $2 ]; then
 		echo "Starting SSH tunnel to dev $1 on port $FWD_PORT (to $2)"
-		send_msg $1 fwd $FWD_PORT%$2 || { echo -e "\nDelivery to $1 failed"; return 2; }
+		send_msg $1 fwd $FWD_PORT:$2 || { echo -e "\nDelivery to $1 failed"; return 2; }
 	else
 		echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
 		send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
