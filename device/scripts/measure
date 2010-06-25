@@ -33,7 +33,7 @@ get_target ()
 wait_ntp ()
 {
 	cycle=1
-	while [ $(date +%s) -lt 1000000000 ]; do
+	while [ $(date +%s) -lt 1270000000 ]; do
 		case $DEVICE_ID in
 		NB*) ntpd -q ;;
 		WS*) sudo ntpdate pool.ntp.org ;;

@@ -26,6 +26,8 @@ function help()
 	
 	    copy     <file> <dev_id>             Copy file to <dev_id> /tmp directory
 
+	    gtunnel  <dev_id> [port]             Open a globally accessible tunnel to <dev_id> (default: random)
+
 	    exec     <dev_id> <command>          Execute a shell command on <dev_id>
 	
 	    list                                 List available devices and tunnels
@@ -88,6 +90,11 @@ function parse()
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help tunnel; }
 		[ $3 == "on" ] && start_tunnel $2 $4
 		[ $3 == "off" ] && stop_tunnel $2 $4
+	;;
+	gtunnel)
+		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help gtunnel; }
+		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help gtunnel; }
+		start_gtunnel $2 $3 
 	;;
 	console)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help console; }
@@ -195,7 +202,7 @@ function recv_msg()
 # $1 = port number
 function check_fwd_port()
 {
-	if [ $(netstat -lnt | grep -c "127.0.0.1:$FWD_PORT\>") -gt 0 ]; then
+	if [ $(netstat -lnt | grep -c "::1\?:$FWD_PORT\>") -gt 0 ]; then
 		return 0
 	else
 		return 1
@@ -230,7 +237,6 @@ function get_fwd_port()
 	FWD_PORT=$(query $BDM_DB "SELECT port FROM tunnels WHERE id='$1' ORDER BY ts ASC LIMIT 1;")
 	[ $FWD_PORT ] || return 1
 }
-
 
 # Check tunnel availability
 # $1 = dev id
@@ -277,6 +283,16 @@ function wait_tunnel()
 	done
 }
 
+# Set device tunnel entry
+# $1 = dev id
+# $2 = port
+function settunnel()
+{
+	echo -n "Setting tunnel db entry for $1 on port $2..."
+	query $BDM_DB "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
+	echo done
+}
+
 ## User command functions ##
 
 # Start new tunnel
@@ -315,9 +331,12 @@ function console()
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
 	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$1'")
-	ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
-
-	[ $new ] && stop_tunnel $1
+	if [ "$cmd" == bg ]; then
+		ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY 2>/dev/null &
+	else
+		ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $cmd 2>/dev/null
+		[ $new ] && stop_tunnel $1
+	fi
 }
 
 # Stop active tunnel
@@ -331,7 +350,7 @@ function stop_tunnel()
 	fi
 
 	echo "Stopping SSH tunnel to device $1 on port $FWD_PORT"
-	pid=$(sudo netstat -lntp | grep 127.0.0.1:$FWD_PORT | awk '{ print $7 }')
+	pid=$(sudo netstat -lntp | grep "::1\?:$FWD_PORT\>" | awk '{ print $7 }')
 	kill ${pid%/*}
 
 	if (check_fwd_port $FWD_PORT); then
@@ -339,6 +358,35 @@ function stop_tunnel()
 	else
 		echo "Tunnel closed"
 		query $BDM_DB "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
+	fi
+}
+
+# Start global tunnels
+# $1 = dev id
+# $2 = port
+function start_gtunnel()
+{
+	if [ $2 ]; then 
+		if check_tunnel $1 $2; then 
+			echo "Tunnel listening on port $FWD_PORT" 
+			return 1
+		fi
+		tport=$2
+	else
+		gen_fwd_port
+		tport=$FWD_PORT
+		FWD_PORT=""
+	fi
+
+	SSH_OPTIONS="-N -L $tport:127.0.0.1:22 -g $SSH_OPTIONS"
+	console $1 bg
+	sleep 1
+
+	if (check_fwd_port $tport); then
+		settunnel $1 $tport
+		echo "Tunnel listening on 0.0.0.0:$tport"
+	else
+		echo "Unable to open tunnel"
 	fi
 }
 
@@ -546,16 +594,6 @@ function setuser()
 	else
 		query $BDM_DB "INSERT INTO devices (id, user) VALUES('$1','$2');"
 	fi
-	echo done
-}
-
-# Set device tunnel entry
-# $1 = dev id
-# $2 = port
-function settunnel()
-{
-	echo -n "Setting tunnel db entry for $1 on port $2..."
-	query $BDM_DB "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
 	echo done
 }
 

@@ -1,10 +1,12 @@
 #!/bin/bash
 # Extract useful data from DB
 
+[ $DB ] || DB="bismark_live_v1"
+
 function query()
 {
 	[ $2 ] || out="-NB"
-	mysql $out -u root -e "$1" bismark_live_v1
+	mysql $out -u root -e "$1" $DB 
 }
 
 # Help
@@ -15,7 +17,8 @@ if [ ! $1 ]; then
 
 		Options:
 		       devip <dev_id> [history]
-		       devsla 
+		       devsla
+		       data
 	end
 	exit
 fi
@@ -42,5 +45,13 @@ devip)
 devsla)
 	query "select deviceid,name,isp,sla,ul,dl,b.start,b.end from USERS as a,USERSLA as b,SLA as c, USERDEVICE as d 
 		where a.userid=d.userid and a.userid=b.userid and b.slaid=c.slaid order by deviceid" tab
+;;
+data)
+	devices=$(query "select deviceid from DEVICES;")
+	IFS=$'\n'
+	for dev in $devices; do
+		query "select deviceid,param,from_unixtime(min(timestamp)),from_unixtime(max(timestamp)) 
+			from MEASUREMENTS where deviceid='$dev' and timestamp > 1270000000  group by param" tab
+	done
 ;;
 esac
