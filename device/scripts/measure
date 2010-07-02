@@ -107,7 +107,7 @@ fi
 ## Serial measurements ##
 if [ ! -e /tmp/mlock ]; then 
 	# Set measure lock
-	echo on > /tmp/mlock
+	echo $(date +%s) > /tmp/mlock
 
 	# Bitrate
 	if [ $((count % BR_FQ)) -eq 0 ]; then
@@ -160,6 +160,14 @@ if [ ! -e /tmp/mlock ]; then
 
 	# Release measure lock
 	rm /tmp/mlock
+else
+	# Check lock
+	locktime=$(cat /tmp/lock)
+	currtime=$(date +%s)
+	if [ $((currtime - locktime)) -gt 444400  ]; then
+		killall curl prober ITGRecv ITGSend
+		rm /tmp/lock
+	fi
 fi
 
 # XML file footer

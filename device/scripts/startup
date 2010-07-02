@@ -13,7 +13,7 @@ NB*)
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
 
 	# Mount storage partition
-	echo "/dev/hda2 /mnt ext2 rw,user,noatime 0 0" > /etc/fstab
+	echo "/dev/hda2 /mnt ext2 rw,user,noatime,exec 0 0" > /etc/fstab
 	mount -a
 ;;
 LS*)
