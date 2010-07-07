@@ -43,7 +43,7 @@ devip)
 	fi
 ;;
 devsla)
-	query "select deviceid,name,isp,sla,ul,dl,b.start,b.end from USERS as a,USERSLA as b,SLA as c, USERDEVICE as d 
+	query "select deviceid,a.userid,name,isp,sla,ul,dl,b.start,b.end from USERS as a,USERSLA as b,SLA as c, USERDEVICE as d 
 		where a.userid=d.userid and a.userid=b.userid and b.slaid=c.slaid order by deviceid" tab
 ;;
 data)
