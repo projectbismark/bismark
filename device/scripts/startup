@@ -11,10 +11,6 @@ NB*)
 	# Configure wireless interface channel
 	grep -q ^channel= /etc/hostapd/hostapd.conf || echo channel=1 >> /etc/hostapd/hostapd.conf
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
-
-	# Mount storage partition
-	echo "/dev/hda2 /mnt ext2 rw,user,noatime,exec 0 0" > /etc/fstab
-	mount -a
 ;;
 LS*)
 	# Create bin and lib directories on ramdisk

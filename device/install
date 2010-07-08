@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/bash
 # Bismark Devices Installation script
 #
 # author: walter.dedonato@unina.it
@@ -157,6 +157,26 @@ if [ $suffix == ls ] && nc -z $1 23 ; then
 	echo "done"
 fi
 
+# Noxbox only
+if [ $suffix == nb ]; then
+	echo -n "Setting rc.local and mounting storage partition..."
+	ssh $SSH_OPT $user@$1 '
+		cat >/tmp/rc.local <<-end
+			$(head -13 /etc/rc.local)
+			# Mount storage partition
+			echo "/dev/hda2 /root ext2 rw,user,noatime,exec 0 0" > /etc/fstab
+			mount -a
+
+			exit 0
+		end
+		chmod +x /tmp/rc.local
+		mv /tmp/rc.local /etc
+		/noxbox/bin/persist_files /etc/rc.local
+		/etc/rc.local
+	' 2>/dev/null
+	echo done
+fi
+
 # Generic public key auth config
 if [ $KEYS ]; then
 	echo -n "Adding SSH public and host keys..."
@@ -214,9 +234,6 @@ if [ $suffix == nb ]; then
 	echo "Setting root password:"
 	ssh $SSH_OPT $user@$1 "{ $PASS $PASS } | passwd" 2>/dev/null
 
-	echo -n "Setting fstab..."
-	ssh $SSH_OPT $user@$1 'echo /dev/hda2 /mnt ext2 rw,user,noatime 0 0 > /etc/fstab' 2>/dev/null
-	echo done
 
 	echo "Persisting changes to flash memory:" 
 	ssh $SSH_OPT $user@$1 "/noxbox/bin/persist_changes" 2>/dev/null
@@ -226,7 +243,7 @@ fi
 if [ $suffix != "ws" ]; then
 	echo "Configuring wireless:"
 	WPA_PSK=$(md5sum <<< $2 | awk '{ print $1 }')
-	ssh $SSH_OPT $user@$1 'scripts/action config "ssid='$2'&wpa_psk='$WPA_PSK'&channel=1"'
+	ssh $SSH_OPT $user@$1 'scripts/action config "WIFI_SSID='$2'&WIFI_WPA_PSK='$WPA_PSK'&WIFI_CHANNEL=1"'
 	echo done
 fi
 
