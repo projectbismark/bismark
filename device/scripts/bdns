@@ -1,0 +1,18 @@
+#!/bin/bash
+# Bismark dns wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. ~/conf/dev.conf
+
+# Get IP and DNS server
+src_ip=$(cat /tmp/ip)
+dns_server=$(awk '!/^#/{ print $2 ; exit }' /etc/resolv.conf)
+
+# Create named pipe
+PIPE=/tmp/dns.fifo
+[ -e $pipe ] || mkfifo $pipe
+
+# Compute DNS delay (output to stderr)
+mdns 2>$pipe | mstats DNSDELAY MDNS $src_ip $dns_server >&2 | mstats DNSFAIL MDNS $src_ip $dns_server <$pipe >&2
