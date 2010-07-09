@@ -29,21 +29,6 @@ get_target ()
 	[ $dst ] || return 1 
 }
 
-# Wait NTP synchronization
-wait_ntp ()
-{
-	cycle=1
-	while [ $(date +%s) -lt 1270000000 ]; do
-		case $DEVICE_ID in
-		NB*) ntpd -q ;;
-		WS*) sudo ntpdate pool.ntp.org ;;
-		LS*) ntpclient -s -h pool.ntp.org ;;
-		esac
-		sleep 1
-		[ $((cycle++)) -gt 5 ] && exit
-	done
-}
-
 # Create dirs and files
 mkdir -p /tmp/measure
 [ -e /tmp/measure/counter ] || echo 0 > /tmp/measure/counter
@@ -52,8 +37,7 @@ mkdir -p /tmp/measure
 count=$(cat /tmp/measure/counter)
 echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 
-# NTP plus Random wait
-wait_ntp
+# Random wait
 sleep $((RANDOM % 30))
 
 # Globals
@@ -102,6 +86,11 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 			end
 		fi
 	fi
+fi
+
+# DNS delay and failure
+if [ $((count % DNS_FQ)) -eq 0 ]; then
+	bdns 2>> $xml_file
 fi
 
 ## Serial measurements ##
