@@ -8,10 +8,10 @@
 
 # Get IP and DNS server
 src_ip=$(cat /tmp/ip)
-dns_server=$(awk '!/^#/{ print $2 ; exit }' /etc/resolv.conf)
+dns_server=$(awk '/^nameserver/{ print $2 ; exit }' /etc/resolv.conf)
 
 # Create named pipe
-PIPE=/tmp/dns.fifo
+pipe=/tmp/dns.fifo
 [ -e $pipe ] || mkfifo $pipe
 
 # Compute DNS delay (output to stderr)
