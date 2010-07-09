@@ -53,9 +53,9 @@ int main(int argn, char **argv)
 			failures++;
 
 		if (t_end.tv_usec > t_start.tv_usec)
-			printf("%u.%06u\n", t_end.tv_sec - t_start.tv_sec, t_end.tv_usec - t_start.tv_usec);
+			printf("%lu.%06lu\n", t_end.tv_sec - t_start.tv_sec, t_end.tv_usec - t_start.tv_usec);
 		else
-			printf("%u.%06u\n", t_end.tv_sec - t_start.tv_sec - 1, 1000000 - (t_start.tv_usec - t_end.tv_usec));
+			printf("%lu.%06lu\n", t_end.tv_sec - t_start.tv_sec - 1, 1000000 - (t_start.tv_usec - t_end.tv_usec));
 	}
 
 	fclose(fp);
