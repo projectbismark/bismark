@@ -74,6 +74,7 @@ typedef struct {
 #define MAX_UDP_PSIZE 1472
 #define MAX_QUERY_LEN 1000
 #define MAX_IP_LEN 16
+#define MAX_TS_LEN 10
 #define MAX_INFO_LEN 30
 #define MAX_WAIT_LEN 5
 #define MAX_FILENAME_LEN 50
@@ -247,8 +248,8 @@ void *doit(void *param)
 			free(row);
 		} else {
 			/* Set pong reply */
-			reply = malloc(MAX_IP_LEN + 7);
-			sprintf(reply, "pong %s\n", ip);
+			reply = malloc(MAX_IP_LEN + MAX_TS_LEN + 7);
+			sprintf(reply, "pong %s %lu\n", ip, ts);
 		}
 		sqlite3_close(msg_db);	
 	} else if (!strncmp(probe.cmd, "log", 3)) {

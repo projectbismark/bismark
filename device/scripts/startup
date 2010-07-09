@@ -11,6 +11,10 @@ NB*)
 	# Configure wireless interface channel
 	grep -q ^channel= /etc/hostapd/hostapd.conf || echo channel=1 >> /etc/hostapd/hostapd.conf
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
+
+	# Setup dhcp log script
+	sed -i -e "/dhcp-script/ s/*/dhcp-script=\/root\/scripts\/bdhcp/" /etc/dnsmasq.conf
+	/etc/init.d/dnsmasq restart
 ;;
 LS*)
 	# Create bin and lib directories on ramdisk

@@ -14,7 +14,7 @@
 # Probe message generator
 msg () {
 	echo "$DEVICE_ID ping $VERSION"
-	sleep 3
+	sleep 1
 	return 0
 }
 

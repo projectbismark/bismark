@@ -31,14 +31,24 @@ fwd)	# on-demand SSH tunnel
 	fi
 ;;
 pong)	# Server heartbeat
-	date +%s > /tmp/server_last
+	ltime=$(date +%s)
+	stime=$(( $3 + 2 ))
+
+	# Check clock synch
+	if [ $stime -ne $ltime ]; then
+		ltime=$stime
+		date -s @$ltime
+	fi
+	echo $ltime > /tmp/server_last
+
+	# Store public IP 
 	echo $2 > /tmp/ip
 ;;
 update)	# Software update
 	cd ~
 
 	# Skip if same version
-	[ $2 ] && [ $VERSION -eq $2 ] && { echo "Device up to date" ; exit ; }
+	[ $2 ] && [ $VERSION -eq $2 ] && { echo "Device up to date" | output $1 ; exit ; }
 
 	# Get new bismark package
 	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-${DEVICE_ID:0:2}-*.tgz /tmp/dev.tgz
@@ -48,15 +58,9 @@ update)	# Software update
 	find * -path "scripts/*" | sort >> /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
 	case $DEVICE_ID in
-	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }' | grep -v 'rshell\|action\|probe') ;;
-	NB*) 
-		files=$(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'rshell\|action\|probe')
-		rm -f $files
-		remountrw
-		rm -f $(echo "$files" | awk '/^</{ print "/ro/root/" $2 }')
-		remountro
-	;;
-	WS*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'rshell\|action\|probe') ;;
+	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe') ;;
+	NB*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe') ;;
+	WS*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe') ;;
 	esac
 
 	# Extract new package

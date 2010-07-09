@@ -1,0 +1,7 @@
+#!/bin/bash
+# Records DHCP events 
+#
+# author: walter.dedonato@unina.it
+
+IFS=$'\t'
+echo -e "$(date +%s)\t$*" >> /tmp/measure/dhcp.log
