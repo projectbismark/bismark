@@ -69,7 +69,10 @@ update)	# Software update
 
 	# Apply changes
 	crontab conf/crontab
-	[ ${DEVICE_ID:0:2} == "NB" ] && /noxbox/bin/persist_changes
+	if [ ${DEVICE_ID:0:2} == "NB" ]; then 
+		diff -q -I installed {/ro,}/var/spool/cron/crontabs/root || \
+		/noxbox/bin/persist_files /var/spool/cron/crontabs/root
+	fi
 
 	# Send diff
 	diff /tmp/old /tmp/new | output $1 

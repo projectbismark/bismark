@@ -4,4 +4,4 @@
 # author: walter.dedonato@unina.it
 
 IFS=$'\t'
-echo -e "$(date +%s)\t$*" >> /tmp/measure/dhcp.log
+echo -e "$(date +%s)\t$*" >> /tmp/measure/$DEVICE_ID.dhcp
