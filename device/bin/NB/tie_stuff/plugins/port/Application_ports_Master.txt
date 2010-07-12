@@ -1,0 +1,3637 @@
+# File: Application_ports_Master.txt
+# -----------------------------------------------------------
+# Listing of interesting applications by protocol, port number,
+# and IP subnets
+#
+# Note: While every entry should have a source, most entries
+# here are from the Registered IANA ports list.  DO NOT ADD 
+# ENTRIES WITHOUT INDICATING THE SOURCE FOR THE ENTRIES!
+# -----------------------------------------------------------
+
+# ------------------------------------------------------------
+description:	World Wide Web
+name:	HTTP
+group:	WWW
+sport:	80,8080
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Squid Web Cache
+name:	SQUID
+group:	WWW
+sport:	3128
+dport:	*
+sym:	1
+protocol:	6
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Squid Web Cache (ICP)
+name:	SQUID_ICP
+group:	WWW
+sport:	3130
+dport:	*
+sym:	1
+protocol:	17
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Secure Web
+name:	HTTPS
+group:	WWW
+sport:	443
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Domain Name Service
+name:	DNS
+group:	Network_Infrastructure
+sport:	53
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Multicast DNS
+name:	MULTICAST_DNS
+group:	Network_Infrastructure
+sport:	5353
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	OSU Network Monitoring System
+name:	OSUNMS
+group:	Network_Infrastructure
+sport:	192
+dport:	*
+sym:	1
+protocol:	17
+priority:	10
+contributor:	rkoga
+date:	2001-08-30
+notes:	Used for finding wireless base stations
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Service Location Protocol
+name:	SLP
+group:	Network_Infrastructure
+sport:	427
+dport:	*
+sym:	1
+protocol:	17
+priority:	10
+contributor:	rkoga
+date:	2001-08-30
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	DHCP/BOOTP IP Address Assignment
+name:	BOOTP
+group:	Network_Infrastructure
+sport:	67
+dport:	68
+sym:	1
+protocol:	17
+priority:	10
+contributor:	rkoga
+date:	2001-08-30
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+#ftp data
+# ------------------------------------------------------------
+description:	FTP (data stream)
+name:	FTP_DATA
+group:	File_Transfer
+sport:	20,989
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+#ftp control
+# ------------------------------------------------------------
+description:	FTP (control)
+name:	FTP_CONTROL
+group:	File_Transfer
+sport:	21,990
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	GSI FTP
+name:	GSI_FTP
+group:	File_Transfer
+sport:	2811
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	BB FTP
+name:	BBFTP
+group:	File_Transfer
+sport:	5020-5022
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-06-24
+reference:	bbFTP FAQ - Ports used by bbFTP
+url: 	http://doc.in2p3.fr/bbftp/doc.current.html#ports
+
+# ------------------------------------------------------------
+description:	BBCP
+name:	BBCP
+group:	File_Transfer
+sport:	5031-5039
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	Bandwidth to the World page, by SLAC IEPM (Internet End-to-End performance Monitoring) group
+url: 	http://www-iepm.slac.stanford.edu/monitoring/bulk/sc2001/host-req.html
+
+# ------------------------------------------------------------
+# Internet Mail Services
+# ------------------------------------------------------------
+description:	Mail Forwarding
+name:	SMTP
+group:	Mail/News
+sport:	25
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Secure Mail Forwarding
+name:	SMTPS
+group:	Mail/News
+sport:	465
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2001-08-09
+notes:	Not officially approved, but already implemented.
+reference:	Linnet Solutions
+url:	http://www.ec11.dial.pipex.com/port-num.htm
+
+# ------------------------------------------------------------
+# Port 587 is reserved for email message submission.
+# RFC 2476 - Message Submission, at http://www.ietf.org/rfc/rfc2476.txt
+description:	New Mail Submission
+name:	SMTPSubmission
+group:	Mail/News
+sport: 587	
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	hkim
+date:	2006-12-05
+notes:	
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers     
+
+# ------------------------------------------------------------
+description:	Post Office Protocol (v2 & v3)
+name:	POP
+group:	Mail/News
+sport:	109-110,995
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Internet Message Access Protocol
+name:	IMAP
+group:	Mail/News
+sport:	143,220,585,993
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	hkim
+date:	2006-06-26
+notes:	585 is assigned for SSL IMAP, but not recommended.
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+#ssh
+# ------------------------------------------------------------
+description:	Secure Shell
+name:	SSH
+group:	Encryption
+sport:	22
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+#Telnet
+# ------------------------------------------------------------
+description:	Telnet
+name:	TELNET
+group:	Login
+sport:	23,992
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Who Is
+# ------------------------------------------------------------
+description:	Who Is
+name:	WHOIS
+group:	Other
+sport:	43
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-08-27
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+#Gopher
+# ------------------------------------------------------------
+description:	Gopher Information
+name:	GOPHER
+group:	WWW
+sport:	70
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Ident
+# ------------------------------------------------------------
+description:	Ident Authentication
+name:	IDENT
+group:	Other
+sport:	113
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-08-27
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# USENET News
+# ------------------------------------------------------------
+description:	USENET News
+name:	NNTP
+group:	Mail/News
+sport:	119,563
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2001-08-09
+notes:	Unsecure and TLS versions
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Simple Network Management Protocol
+name:	SNMP
+group:	Network_Infrastructure
+sport:	161-162
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Traceroute
+name:	TRACEROUTE
+group:	Network_Infrastructure
+sport:	*
+dport:	33434-33524
+sym:	0
+protocol:	17
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignment
+url:	http://www.iana.org/assignments/port-numbers
+
+# Microsoft Windows Netbios protocols (and Microsoft DS, shuttle, rome, and Name Service)
+# ------------------------------------------------------------
+description:	Microsoft Netbios
+name:	NETBIOS
+group:	Tunneling
+sport:	135,137-139,445,568,569,1512
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	30
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	RealPlayer
+name:	REALPLAYER
+group:	Streaming
+sport:	7070-7071
+dport:	*
+sym:	1
+protocol:	6
+priority:	30
+contributor:	rkoga
+date:	2006-10-26
+notes:	7070 is used by Quicktime RTSP streams as well.
+reference:	RealNetworks Firewall Support
+url:	http://service.real.com/firewall/adminfw.html
+
+# ------------------------------------------------------------
+description:	RealPlayer
+name:	REALPLAYER
+group:	Streaming
+sport:	6970-7170
+dport:	*
+sym:	1
+protocol:	17
+priority:	30
+contributor:	rkoga
+date:	2006-10-26
+notes:	6970-6999 are used by Quicktime streams as well.
+reference:	RealNetworks Firewall Support
+url:	http://service.real.com/firewall/adminfw.html
+
+# ------------------------------------------------------------
+description:	Real Time Stream Control Protocol
+name:	RTSP
+group:	Streaming
+sport:	554,8554
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	30
+contributor:	rkoga
+date:	2001-09-06
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	MS NetMeeting (control)
+name:	MS_NETMEET
+group:	Conferencing
+sport:	522,1503,1720,1731
+dport:	*
+sym:	1
+protocol:	6
+priority:	30
+contributor:	rkoga
+date:	2001-02-05
+reference:	Microsoft tech support
+url:	http://support.microsoft.com/support/kb/articles/Q158/6/23.ASP
+
+# Liquid Audio from: http://www.chebucto.ns.ca/~rakerman/port-table.html -- actually 18888/TCP & 18888, 18889/UDP
+# ------------------------------------------------------------
+description:	Liquid Audio audio streaming
+name:	LIQUIDAUDIO
+group:	Streaming
+sport:	18888,18889
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	elagache
+date:	2000-02-14
+reference:	Any Port in a Datastorm
+url:	http://www.chebucto.ns.ca/~rakerman/port-table.html
+
+# ------------------------------------------------------------
+description:	MS Media Player
+name:	MS_MEDIA
+group:	Streaming
+sport:	1755,7007
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	30
+contributor:	hkim
+date:	2006-06-26
+notes:	UDP for control only, TCP for control and data.
+reference:	Microsoft TechNet
+url:	http://www.microsoft.com/TechNet/WinMedia/technote/fwconfig.asp
+
+# Shoutcast from yp.shoutcast.com
+# ------------------------------------------------------------
+description:	Shoutcast MP3 Streaming
+name:	SHOUTCAST
+group:	Streaming
+sport:	8000,9000
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	SHOUTcast download page
+url: 	http://www.shoutcast.com/download/serve.phtml
+
+# ------------------------------------------------------------
+description:	Backbone Radio
+name:	BACKBONE_RADIO
+group:	Streaming
+sport:	2048,7070,8080
+dport:	*
+sym:	1
+protocol:	6
+priority:	50
+contributor:	hkim
+date:	2006-12-05
+reference: Backbone Radio Quick Reference Guide
+url: http://www.backbone.com/QuickRef/QuickRef.html
+
+# ------------------------------------------------------------
+description:	Backbone Radio
+name:	BACKBONE_RADIO
+group:	Streaming
+sport:	2050
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-06-24
+reference: Backbone Radio Quick Reference Guide
+url: http://www.backbone.com/QuickRef/QuickRef.html
+
+# ------------------------------------------------------------
+description:	Camarades Live Webcam Community
+name:	CAMARADES
+group:	Streaming
+sport:	1972
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference:	Camarades Live Webcam Community - FAQ
+url:	http://www1.camarades.com/viewfaq.php3?cat=Using%20webcam%20software&lang=en
+
+# ------------------------------------------------------------
+description:	Camarades Live Webcam Community
+name:	CAMARADES
+group:	Streaming
+sport:	2047-2048
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	70
+contributor:	hkim
+date:	2006-12-05
+reference:	Camarades Live Webcam Community - FAQ
+url:	http://www1.camarades.com/viewfaq.php3?cat=Using%20webcam%20software&lang=en
+
+
+# CU-SeeMe http://www.chebucto.ns.ca/~rakerman/port-table.html (actually 7648-7649/TCP, 7648-7652,24032/UDP)
+# ------------------------------------------------------------
+description:	CU SeeMe Video-conferencing
+name:	CUSEEME
+group:	Conferencing
+sport:	7648-7652,24032
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	elagache
+date:	2000-02-14
+reference:	Any Port in a Datastorm
+url:	http://www.chebucto.ns.ca/~rakerman/port-table.html
+
+# Doom http://www.con.wesleyan.edu/~triemer/network/doom/doom_tcp.html
+# ------------------------------------------------------------
+description:	Doom game
+name:	DOOM
+group:	Games
+sport:	666
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-06-26
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers     
+
+# Quake server ports collected from web searches and defaults.
+# ------------------------------------------------------------
+# Quake 1 server: 26000
+# Quake world client: 27001
+# Quake world server: 27000,27500
+# Quake 2 client: 27901
+# Quake 2 server: 27910
+# Quake 3 arena server: 27960 
+# Quake 4: 28004, 27650 (from Activision support)
+# Priority lowered due to large port range.
+description:	Quake game
+name:	QUAKE
+group:	Games
+sport:	26000-26010,26666,27000-27010,27500-27510,27650,27901-30000
+dport:	*
+sym:	1
+protocol:	17
+priority:	100
+contributor:	rkoga
+date:	2006-10-26
+notes:	Wide range of ports due to many variants and servers
+reference:	Wikipedia's port number list
+url:	http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+
+
+# Unreal game (source?)
+# ------------------------------------------------------------
+description:	Unreal game
+name:	UNREAL
+group:	Games
+sport:	7777-7779
+dport:	*
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2001-09-07
+reference:	UnrealServer tech support
+url:	http://unreal.epicgames.com/Master.htm
+
+# StarCraft game (source?)
+# ------------------------------------------------------------
+description:	Starcraft game
+name:	STARCRAFT
+group:	Games
+sport:	6112
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+## Age of Empires game: 
+# ------------------------------------------------------------
+description:	Age of Empires game
+name:	AoE
+group:	Games
+sport:	32280
+dport:	*
+sym:	1
+protocol:	17
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Port 7000 is more often used by IRC.
+# ------------------------------------------------------------
+# description:	EverQuest patch
+# name:	EVERQUESTPATCH
+# group:	Games
+# sport:	7000
+# dport:	*
+# sym:	1
+# protocol:	6
+# contributor:	rkoga
+# date:	2001-04-02
+# reference:	Everquest firewall information
+# url:	http://everquest.station.sony.com/support/connection/firewall_proxy_information.jsp
+
+# Login port 5999, chat port 5998
+# All other data is on a random port and cannot be easily tracked.
+# ------------------------------------------------------------
+description:	EverQuest game
+name:	EVERQUEST
+group:	Games
+sport:	5998-5999
+dport:	*
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2001-04-02
+reference:	Everquest firewall information
+url:	http://everquest.station.sony.com/support/connection/firewall_proxy_information.jsp
+
+# ------------------------------------------------------------
+description:	Asheron's Call game
+name:	ASHERONS
+group:	Games
+sport:	9000-9001,9004-9005,9008-9009,9012-9013
+dport:	*
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2001-04-02
+reference:	Asheron's Call support page
+url:	http://support.microsoft.com/support/kb/articles/q236/4/30.asp
+
+# Half life game.  Notes from Sean.
+# Client port: 27005, server port: 27015
+# ------------------------------------------------------------
+description:	Half Life game
+name:	HALFLIFE
+group:	Games
+sport:	27005,27015
+dport:	*
+sym:	1
+protocol:	17
+contributor:	elagache
+date:	2000-02-28
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Black & White game
+name:	BLACKWHITE
+group:	Games
+sport:	2611
+dport:	*
+sym:	1
+protocol:	6
+contributor:	rkoga
+date:	2006-10-26
+notes:	Also uses IRC to communicate
+reference:	Electronic Arts FAQ
+url:	http://common.ea-europe.com/faqs/b&w.htm#online
+
+# ------------------------------------------------------------
+description:	Halo game
+name:	HALO
+group:	Games
+sport:	2302-2303
+dport:	*
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2004-11-16
+reference:	Microsoft Support
+url:	http://support.microsoft.com/?id=829473
+
+# ------------------------------------------------------------
+description:	Star Wars Galaxies game
+name:	SWG
+group:	Games
+sport:	*
+dport:	44453,44462-44463
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2005-02-16
+reference:	Sony tech support
+url:	http://starwarsgalaxies.station.sony.com/content.jsp?page=Tech%20Support%20Firewall%20Proxy
+
+# ------------------------------------------------------------
+description:	STARSIEGE
+name:	STARSIEGE
+group:	Games
+sport:	28000-28008
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-06-24
+reference: Internet2 NetFlow Analysis code, NFSTAT.W
+url: http://netflow.internet2.edu/weekly/nfstat.pdf 
+
+# ------------------------------------------------------------
+description:	Netrek
+name:	NETREK
+group:	Games
+sport:	2592
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Yahoo Games
+name:	YAHOO_GAMES
+group:	Games
+sport:	11999
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-06-24
+reference:	Yahoo! Games
+url:	http://help.yahoo.com/help/ca/games/games-05.html
+
+# ------------------------------------------------------------
+description: World Of Warcraft
+name: WOW
+group: Games
+sport: 3724
+dport: *
+sym: 1
+protocol: 6
+contributor:	hkim
+date:	2006-12-05
+reference:	Blizzard Technical Support Site
+url: 	http://www.blizzard.com/support/?id=msi0445p
+
+# Blizzard Battle.net Games
+# ------------------------------------------------------------
+description:	Battle.net games
+name:	BATTLENET
+group:	Games
+sport:	6112-6119
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	Blizzard Technical Support Site
+url: 	http://www.blizzard.com/support/?id=msi0445p
+
+# Battle.net ports in TCP only (Diablo II) (World of Warcraft is separate)
+# ------------------------------------------------------------
+description:	Battle.net games
+name:	BATTLENET
+group:	Games
+sport:	4000
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	Blizzard Technical Support Site
+url: 	http://www.blizzard.com/support/?id=msi0445p
+
+# ------------------------------------------------------------
+#    * 3783 (Voice Chat Port)
+#    * 6500 (Query Port)
+#    * 6667 (IRC)
+#    * 28900 (Master Server List Request)
+#    * 29900 (GP Connection Manager)
+#    * 29901 (GP Search Manager)
+description:	GameSpy Arcade
+name:	GAMESPY_ARCADE
+group:	Games
+sport:	3783,6500,28900,29900-29901
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+notes:	Also uses IRC to communicate
+date:	2006-12-05
+reference:	GameSpy support
+url:	http://www.gamespyarcade.com/support/firewalls.shtml
+
+# ------------------------------------------------------------
+#    * 6500 (Query Port)
+#    * 6515 (Dplay UDP)
+#    * 6700 (XBox Tunnel)
+#    (http://www.gamespyarcade.com/support/tunnel_xbox.shtml)
+#    * 13139 (Custom UDP Pings)
+#    * 27900 (Master Server UDP Heartbeat)
+#    * 28900 (Master Server List Request)
+description:	GameSpy Arcade
+name:	GAMESPY_ARCADE
+group:	Games
+sport:	6500,6515,6700,13139,27900,28900
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+notes:	Also uses IRC to communicate
+date:	2006-12-05
+reference:	GameSpy support
+url:	http://www.gamespyarcade.com/support/firewalls.shtml
+
+# ------------------------------------------------------------
+description:	DirectPlay
+name:	DIRECT_PLAY
+group:	Games
+sport:	2300-2400
+dport:	2300-2400
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-06-24
+reference:	Microsoft Support Page
+url: http://support.microsoft.com/kb/240429
+
+# ------------------------------------------------------------
+description:	DirectPlay
+name:	DIRECT_PLAY
+group:	Games
+sport:	47624
+dport:	47624
+protocol:	6
+contributor:	hkim
+date:	2006-06-24
+reference:	Microsoft Support Page
+url: http://support.microsoft.com/kb/240429
+
+# ------------------------------------------------------------
+description:	DirectPlay
+name:	DIRECT_PLAY
+group:	Games
+sport:	6073
+dport:	6073
+protocol:	17
+contributor:	hkim
+date:	2006-06-24
+reference:	Microsoft Support Page
+url: http://support.microsoft.com/kb/240429
+
+
+## http://doncaster.on.ca/~lnevo/masq/misc.html#hotlineclient
+## http://www.hotlinesw.com/support/faq/firewalls.shtml
+# ------------------------------------------------------------
+description:	Hotline servers
+name:	HOTLINE
+group:	P2P
+sport:	5500-5501
+dport:	*
+sym:	1
+protocol:	6
+contributor:	bigj
+date:	1999-07-08
+reference:	IANA Port assignments
+url:	http://www.hotlinesw.com/support/faq/firewalls.shtml
+
+# Port 7000 is used by DALnet
+# http://www.mirc.co.uk/ircintro.html
+# Internet Relay Chat Protocol
+# ------------------------------------------------------------
+description:	Internet Relay Chat
+name:	IRC
+group:	Conferencing
+sport:	194,529,994,6665-6669,7000
+dport:	*
+sym:	1
+protocol:	6
+contributor:	rkoga
+date:	2001-04-10
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Network time protocol NTP.
+# ------------------------------------------------------------
+description:	Network time
+name:	NTP
+group:	Network_Infrastructure
+sport:	123
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# BGP routing
+# ------------------------------------------------------------
+description:	Border Gateway Protocol
+name:	BGP
+group:	Network_Infrastructure
+sport:	179
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# RIP routing
+# ------------------------------------------------------------
+description:	Routing Information Protocol
+name:	RIP
+group:	Network_Infrastructure
+sport:	520
+dport:	*
+sym:	1
+protocol:	17
+contributor:	dmoore
+date:	2001-04-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Official default port is 5001, as in http://dast.nlanr.net/Projects/Iperf/iperfdocs_1.7.0.html
+# ------------------------------------------------------------
+description:	IPERF
+name:	IPERF
+group:	Network_Infrastructure
+sport:	5000-5011
+dport:	*
+sym:	1
+protocol:	6
+priority:	70
+contributor:	hkim
+date:	2006-12-05
+reference:	Bandwidth to the World page, by SLAC IEPM (Internet End-to-End performance Monitoring) group
+url: 	http://www-iepm.slac.stanford.edu/monitoring/bulk/sc2001/host-req.html
+
+
+# Network File System
+# ------------------------------------------------------------
+description:	Network File System
+name:	NFS
+group:	File_Systems
+sport:	1110,2049
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	30
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+
+# ------------------------------------------------------------
+description:	AFS
+name:	AFS
+group:	File_Systems
+sport:	7000-7009
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+#LDAP Lightweight Directory Access Protocol http://advice.networkice.com/advice/Exploits/Ports/
+# ------------------------------------------------------------
+description:	Lightweight Directory Access Protocol
+name:	LDAP
+group:	Other
+sport:	389,689
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://advice.networkice.com/advice/Exploits/Ports/
+
+# Kerberos
+# ------------------------------------------------------------
+description:	Kerberos
+name:	KERBEROS
+group:	Encryption
+sport:	88,464,543-544,750-751,754,760-761,2105-2106
+dport:	*
+sym:	1
+protocol:	6
+priority:	30
+contributor:	elagache
+date:	2000-02-1
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Standard UNIX servers
+# ------------------------------------------------------------
+description:	Echo
+name:	ECHO
+group:	Other
+sport:	7
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-04-13
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Discard
+name:	DISCARD
+group:	Other
+sport:	9
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-04-13
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Active users list
+name:	SYSTAT
+group:	Other
+sport:	11
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-04-13
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Day/time
+name:	DAYTIME
+group:	Other
+sport:	13
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-04-13
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Character generator
+name:	CHARGEN
+group:	Other
+sport:	19
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-04-13
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Time server
+name:	TIMESERVER
+group:	Other
+sport:	37
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	dmoore
+date:	2001-04-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Internet Key Exchange
+name:	ISAKMP
+group:	Encryption
+sport:	500
+dport:	*
+sym:	1
+protocol:	17
+priority:	30
+contributor:	dmoore
+date:	2001-04-14
+reference:	Internet Security Association and Key Management Protocol
+url:	http://www.cisco.com/univercd/cc/td/doc/product/software/ios120/12cgcr/secur_c/scprt4/scike.htm
+
+# Berkeley UNIX specific ports.
+# ------------------------------------------------------------
+description:	BSD rexec
+name:	REXEC
+group:	Login
+sport:	512
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	BSD biff
+name:	BIFF
+group:	Mail/News
+sport:	512
+dport:	*
+sym:	1
+protocol:	17
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	BSD rlogin
+name:	RLOGIN
+group:	Login
+sport:	513
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	BSD rwho
+name:	WHO
+group:	Other
+sport:	513
+dport:	*
+sym:	1
+protocol:	17
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	BSD rshell
+name:	RSHELL
+group:	Login
+sport:	514
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	UNIX talk
+name:	TALK
+group:	Conferencing
+sport:	517-518
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	UNIX print spooler
+name:	LPR
+group:	Other
+sport:	515
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	rkoga
+date:	2001-03-16
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	RPC portmapper
+name:	RPC
+group:	Other
+sport:	111
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	10
+contributor:	rkoga
+date:	2001-04-06
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# America Online ports.
+# ------------------------------------------------------------
+description:	America Online
+name:	AOL
+group:	Tunneling
+sport:	5190-5193
+dport:	*
+sym:	1
+protocol:	6,17
+priority:	30
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# X-windows system & X Font service
+# ------------------------------------------------------------
+description:	X-Windows
+name:	X11
+group:	Login
+sport:	6000-6063,7100
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+date:	2000-02-14
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# SQL Server ports http://advice.networkice.com/advice/Exploits/Ports/ & www.filemaker.com
+# (Microsoft=1433,1434, Oracle 1521, MySQL=3306, mSQL=4333, Filemaker 5003
+# ------------------------------------------------------------
+description:	Various SQL servers
+name:	SQL
+group:	Other
+sport:	1433-1434,1521,3306,4333,5003
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+date:	2000-02-14
+reference:	Port Knowledgebase
+url:	http://advice.networkice.com/advice/Exploits/Ports/
+
+description:	Microsoft SQL Monitor
+name:	MS_SQL_UDP
+group:	Other
+sport:	1434
+dport:	*
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2002-11-04
+reference:	Microsoft
+url:	http://www.microsoft.com/technet/security/bulletin/MS02-039.asp
+
+# ------------------------------------------------------------
+# IANA Protocol numbers page: http://www.iana.org/assignments/protocol-numbers
+description:	IPsec
+name:	IPSEC
+group:	Encryption
+protocol:	50,51
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Protocol numbers page
+url:		http://www.iana.org/assignments/protocol-numbers
+
+# ICMP 
+# ------------------------------------------------------------
+description:	ICMP Echo reply
+name:	ICMP_ECHOREPLY
+group:	Network_Infrastructure
+sport:	0
+dport:	0
+sym:	0
+protocol:	1 
+contributor:	rkoga
+date:	2001-03-15
+reference:	IANA ICMP parameter assignments
+url:	http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Net unreachable
+name:	ICMP_UNREACH_NET
+group:	Network_Infrastructure
+sport:	3
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2001-03-15
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Host unreachable
+name:	ICMP_UNREACH_HOST
+group:	Network_Infrastructure
+sport:	3
+dport:	1 
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2001-03-15
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Protocol unreachable
+name:	ICMP_UNREACH_PROTOCOL
+group:	Network_Infrastructure
+sport:	3
+dport:	2 
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2001-03-15
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Port unreachable
+name:	ICMP_UNREACH_PORT
+group:	Network_Infrastructure
+sport:	3
+dport:	3 
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2001-03-15
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Fragmentation Needed
+name:	ICMP_UNREACH_NEEDFRAG
+group:	Network_Infrastructure
+sport:	3
+dport:	4 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Source Route Failed
+name:	ICMP_UNREACH_SRCFAIL
+group:	Network_Infrastructure
+sport:	3
+dport:	5 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Destination Network Unknown
+name:	ICMP_UNREACH_NET_UNKNOWN
+group:	Network_Infrastructure
+sport:	3
+dport:	6 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Destination Host Unknown
+name:	ICMP_UNREACH_HOST_UNKNOWN
+group:	Network_Infrastructure
+sport:	3
+dport:	7 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Source Host Isolated
+name:	ICMP_UNREACH_ISOLATED
+group:	Network_Infrastructure
+sport:	3
+dport:	8 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Network Administratively Prohibited
+name:	ICMP_UNREACH_NET_PROHIB
+group:	Network_Infrastructure
+sport:	3
+dport:	9 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Host Administratively Prohibited
+name:	ICMP_UNREACH_HOST_PROHIB
+group:	Network_Infrastructure
+sport:	3
+dport:	10 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Network Unreachable for Type of Service
+name:	ICMP_UNREACH_TOSNET
+group:	Network_Infrastructure
+sport:	3
+dport:	11 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Host Unreachable for Type of Service
+name:	ICMP_UNREACH_TOSHOST
+group:	Network_Infrastructure
+sport:	3
+dport:	12 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Communication Administratively Prohibited
+name:	ICMP_UNREACH_FILTER_PROHIB
+group:	Network_Infrastructure
+sport:	3
+dport:	13
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2004-07-14
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Host Precedence Violation
+name:	ICMP_UNREACH_HOST_PRECEDENCE
+group:	Network_Infrastructure
+sport:	3
+dport:	14
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2004-07-14
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Precedence cutoff in effect
+name:	ICMP_UNREACH_PRECEDENCE_CUTOFF
+group:	Network_Infrastructure
+sport:	3
+dport:	15
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2004-07-14
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Source Quench
+name:	ICMP_SOURCEQUENCH
+group:	Network_Infrastructure
+sport:	4
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Network Redirect
+name:	ICMP_REDIRECT_NET
+group:	Network_Infrastructure
+sport:	5
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Host Redirect
+name:	ICMP_REDIRECT_HOST
+group:	Network_Infrastructure
+sport:	5
+dport:	1 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Network Redirect for TOS
+name:	ICMP_REDIRECT_TOSNET
+group:	Network_Infrastructure
+sport:	5
+dport:	2 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Host Redirect for TOS
+name:	ICMP_REDIRECT_TOSHOST
+group:	Network_Infrastructure
+sport:	5
+dport:	3 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Echo request
+name:	ICMP_ECHO
+group:	Network_Infrastructure
+sport:	8
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2001-03-15
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Router Advertisement
+name:	ICMP_ROUTERADVERT
+group:	Network_Infrastructure
+sport:	9
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Router Selection
+name:	ICMP_ROUTERSOLICIT
+group:	Network_Infrastructure
+sport:	10
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP TTL Exceeded
+name:	ICMP_TIMXCEED_INTRANS
+group:	Network_Infrastructure
+sport:	11
+dport:	0
+sym:	0
+protocol:	1
+contributor:	rkoga
+date:	2001-03-15
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Pointer Indicates Parameter Problem
+name:	ICMP_PARAMPROB_ERRATPTR
+group:	Network_Infrastructure
+sport:	12
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Missing Required Option
+name:	ICMP_PARAMPROB_OPTABSENT
+group:	Network_Infrastructure
+sport:	12
+dport:	1 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Bad Length Parameter
+name:	ICMP_PARAMPROB_LENGTH
+group:	Network_Infrastructure
+sport:	12
+dport:	1 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Timestamp Request
+name:	ICMP_TSTAMP
+group:	Network_Infrastructure
+sport:	15
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Timestamp Reply
+name:	ICMP_TSTAMPREPLY
+group:	Network_Infrastructure
+sport:	14
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Information Request
+name:	ICMP_IREQ
+group:	Network_Infrastructure
+sport:	15
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Information Reply
+name:	ICMP_IREQREPLY
+group:	Network_Infrastructure
+sport:	16
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Address Mask Request
+name:	ICMP_MASKREQ
+group:	Network_Infrastructure
+sport:	17
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# ------------------------------------------------------------
+description:	ICMP Address Mask Reply
+name:	ICMP_MASKREPLY
+group:	Network_Infrastructure
+sport:	18
+dport:	0 
+sym:	0
+protocol:	1
+contributor:	cshannon
+date:	2003-06-04
+reference:      IANA ICMP parameter assignments
+url:    http://www.iana.org/assignments/icmp-parameters
+
+# 14, 16, 18
+# ------------------------------------------------------------
+description:	@Backup facilities
+name:	AT_BACKUP
+group:	Other
+sport:	16841
+dport:	*
+sym:	1
+protocol:	6
+contributor:	rkoga
+date:	2007-03-27
+reference:	@Backup FAQ
+url:	http://www.backup.com/support/faqs.asp#connection
+
+# Dialpad Internet phone http://www.dialpad.com/support/faq.html#firewall
+# ------------------------------------------------------------
+description:	Dialpad Internet phone (data)
+name:	DIALPAD_DATA
+group:	Conferencing
+sport:	51200-51201
+dport:	*
+sym:	1
+protocol:	17
+contributor:	mccreary
+notes:		Obsolete; bought by Yahoo!
+priority:	100
+date:	2000-03-10
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Dialpad Internet phone (control)
+name:	DIALPAD_CTRL
+group:	Conferencing
+sport:	51210
+dport:	*
+sym:	1
+protocol:	6
+contributor:	mccreary
+notes:		Obsolete; bought by Yahoo!
+priority:	100
+date:	2000-03-10
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# Napster
+# ------------------------------------------------------------
+description:	Napster MP3 Sharing (data)
+name:	NAPSTER_DATA
+group:	P2P 
+sport:	6677,6688,6697,6699
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+notes:		Obsolete; bought by Roxio
+priority:	100
+date:	2000-02-17
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Napster MP3 Sharing (control)
+name:	NAPSTER_CONTROL
+group:	P2P 
+sport:	4444,5555,6666,7777,8888
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+notes:		Obsolete; bought by Roxio
+priority:	100
+date:	2000-02-17
+reference:	Any Port in a Datastorm
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	FastTrack
+name:	FASTTRACK
+group:	P2P
+sport:	1214
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	rkoga
+date:	2001-08-01
+notes:	Clients include KaZaA, Morpheus, and Grokster.
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:  eDonkey 2000
+name:	EDONKEY
+group:        P2P
+sport:        4661-4662,4711-4712
+dport:        *
+sym:  1
+protocol:     6
+contributor:  hkim
+notes:	      Includes clones like eMule, aMule, Kademlia
+date: 	2006-12-05
+reference:    AMule Project FAQ
+url:  	http://www.amule.org/wiki/index.php/FAQ_eD2k-Kademlia#Are_there_any_limitations_on_the_ED2K_network?
+
+# ------------------------------------------------------------
+description:  eDonkey 2000
+name:	EDONKEY
+group:        P2P
+sport:        4665,4672
+dport:        *
+sym:  1
+protocol:     17
+contributor:  hkim
+notes:	      Includes clones like eMule, aMule, Kademlia
+date: 	2006-12-05
+reference:    AMule Project FAQ
+url:  	http://www.amule.org/wiki/index.php/FAQ_eD2k-Kademlia#Are_there_any_limitations_on_the_ED2K_network?
+
+# 6346-6347 from IANA Ports List
+# 6348-6350 from Internet2 NetFlow Analysis code, NFSTAT.W 
+# ------------------------------------------------------------
+description:	Gnutella
+name:	GNUTELLA
+group:	P2P
+sport:	6346-6347
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Scour Exchange
+name:	SCOUR_EX
+group:	P2P
+sport:	8311
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+notes:		Obsolete
+priority:	100
+date:	2000-05-09
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	iMesh
+name:	IMESH
+group:	P2P
+sport:	1863, 4329
+dport:	*
+sym:	1
+protocol:	6
+contributor:	rkoga
+date:	2006-10-26
+reference:	iMesh support page
+url:	http://www.imesh.com/helpTech.html
+
+# ------------------------------------------------------------
+description:	Direct Connect
+name:	DIRECT_CONNECT
+group:	P2P
+sport:	411-412
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+notes: S. Sen, O. Spatscheck, and D. Wang's paper (WWW 2004): ports 411 and 412
+reference:	DC++ FAQ in Configuration
+url:	http://www.dcpp.net/faq/index.php?action=show&cat=7
+
+# ------------------------------------------------------------
+# BitTorrent defaults to 6881 and increases sequentially, but starts 
+# to conflict with RealAudio and Quicktime above 6970.  Port numbers are
+# easily configurable by the user.
+# Lowered priority due to common port number changes and conflicts.
+description:	BitTorrent file sharing
+name:	BITTORRENT
+group:	P2P
+sport:	6881-6999
+dport:	*
+sym:	1
+protocol:	6
+priority:	80
+contributor:	rkoga
+date:	2006-10-26
+reference:	BitTorrent FAQ
+url:	http://btfaq.com/serve/cache/25.html
+
+# ------------------------------------------------------------
+description:	iTunes file sharing
+name:	ITUNES
+group:	Streaming
+sport:	3689
+dport:	*
+sym:	1
+protocol:	6
+contributor:	rkoga
+date:	2004-12-09
+notes:	Only works on local networks, so unlikely to see.
+reference:	Apple support
+url:	http://docs.info.apple.com/article.html?artnum=107547	
+
+# ------------------------------------------------------------
+description:	rsync
+name:	RSYNC
+group:	File_Transfer
+sport:	873
+dport:	*
+sym:	1
+protocol:	6
+priority:	10
+contributor:	elagache
+date:	2001-08-09
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	ROMnet game sharing
+name:	ROMNET
+group:	P2P
+sport:	6574
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+date:	2000-08-02
+reference:	ROMnet
+url:	http://romnet.zophar.net/
+
+# ------------------------------------------------------------
+description:	Portal of doom exploit
+name:	PORTDOOM
+group:	Other
+sport:	9872-9875
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+date:	2000-11-06
+reference:	SANS institute
+url:	http://www.sans.org/newlook/resources/IDFAQ/oddports.htm
+
+# ------------------------------------------------------------
+description:	L2TP Tunneling
+name:	L2TP
+group:	Tunneling
+sport:	1701
+dport:	*
+sym:	1
+protocol:	17
+contributor:	dmoore
+date:	2001-04-14
+reference:	RFC 2661
+url:	http://www.ietf.org/rfc/rfc2661.txt?number=2661
+
+# ------------------------------------------------------------
+description:	Pointcast info service
+name:	POINTCAST
+group:	Streaming
+sport:	90
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	elagache
+date:	2001-08-09
+notes:	Unofficial use of port 90
+reference:	Linnet Solutions
+url:	http://www.ec11.dial.pipex.com/port-num.htm
+
+# ------------------------------------------------------------
+# Some of the control ports used by the current Appletalk
+# over TCP/IP implementation.  No data is carried over these
+# ports.  Sadly for researchers, it was "hidden" on http on 
+# port 80 earlier implementations OS-8 or earlier.  Newer Mac 
+# operating systems may or may not still use port 80 (now
+# can run web servers as well so probably don't use http if
+# so.)
+# ------------------------------------------------------------
+description:	Appletalk TCP/IP
+name:	APPLETALK_IP
+group:	Tunneling
+sport:	311,387,548
+dport:	*
+sym:	1
+protocol:	6
+contributor:	elagache
+date:	2001-08-09
+notes:	Current Appletalk implementation
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+
+# ------------------------------------------------------------
+description:	iVisit
+name:	iVisit
+group:	Conferencing
+sport:	9944,9945,56768
+dport:	*
+sym:	1
+protocol:	17
+contributor:	cshannon
+date:	2001-12-20
+notes:	videoconferencing software
+reference:	
+url:	http://www.chebucto.ns.ca/~rakerman/port-table.html
+
+
+# ------------------------------------------------------------
+description:	ICU II
+name:	ICU_II
+group:	Conferencing
+sport:	2000,2001,2002,2003
+dport:	*
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2001-12-20
+notes:	videoconferencing software
+reference:	
+url:	http://www.chebucto.ns.ca/~rakerman/port-table.html
+
+# ------------------------------------------------------------
+description:	Roger Wilco
+name:	ROGER_WILCO
+group:	Conferencing
+sport:	3782-3783
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	rkoga
+date:	2006-10-26
+notes:	Voice chat for gamers
+reference:	GameSpy support
+url:	http://rogerwilco.gamespy.com/support/rw/firewalls.html
+
+
+
+
+# ------------------------------------------------------------
+description:	tinc
+name:	tinc
+group:	Tunneling
+sport:	655
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	cshannon
+date:	2001-12-20
+notes:	linux VPN software
+reference:	
+url:	http://tinc.nl.linux.org/documentation/tinc_4.html
+
+
+# ------------------------------------------------------------
+description:	WinMX
+name:	WINMX
+group:	P2P
+sport:	6699
+dport:	*
+sym:	1
+protocol:	6
+contributor:	rkoga
+date:	2006-10-26
+notes:	music exchange application
+reference:	
+url:	http://lists.jammed.com/fw-wiz/2001/09/0010.html http://www.linxent.com/articles/Proxy%20Server%20Setup%20for%20WinMX.htm
+
+
+
+# ------------------------------------------------------------
+description:	WINMX
+name:	WINMX
+group:	P2P
+sport:	6257
+dport:	*
+sym:	1
+protocol:	17
+contributor:	rkoga
+date:	2006-10-26
+notes:	music exchange application
+reference:	
+url:	http://lists.jammed.com/fw-wiz/2001/09/0010.html http://www.linxent.com/articles/Proxy%20Server%20Setup%20for%20WinMX.htm
+
+# ------------------------------------------------------------
+description:	BLUBSTER
+name:	BLUBSTER
+group:	P2P
+sport:	*
+dport:	41170-41350
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference: Blubster How To Guide
+url:	http://www.blubster.com/help/howto.html
+
+# Don't know what this is.
+# ------------------------------------------------------------
+description:	tekpls
+name:	tekpls
+group:	Other
+sport:	1946
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	rkoga
+date:	2007-03-09
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+
+# ------------------------------------------------------------
+description:	netOctopus Agent
+name:	nOAgent
+group:	Other
+sport:	1917
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference: Ports used by netOctopus
+url:  http://www.netopia.com/support/software/technotes/netoctopus/NTO_016.html
+
+# ------------------------------------------------------------
+description:	netOctopus Administrator
+name:	nOAgent
+group:	Other
+sport:	1921
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference: Ports used by netOctopus
+url:  http://www.netopia.com/support/software/technotes/netoctopus/NTO_016.html
+
+# ------------------------------------------------------------
+description:	IETF SIP
+name:	SIP
+group:	Conferencing
+sport:	5060
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:    hkim
+date:   2006-12-29
+notes:	session setup thingy for phones/video/etc
+reference:	
+url:	http://www.cs.columbia.edu/sip/assignments.html
+
+# ------------------------------------------------------------
+description:    IETF SIP TLS
+name:   SIP_TLS
+group:  Conferencing
+sport:  5061
+dport:  *
+sym:    1
+protocol:       6
+contributor:    hkim
+date:   2006-12-29
+notes:  session setup thingy for phones/video/etc
+reference:
+url:    http://www.cs.columbia.edu/sip/assignments.html
+
+# ------------------------------------------------------------
+description:	VocalTec Internet Phone
+name:	VOCALTEC
+group:	Conferencing
+sport:	1796,6667,6670,22555,25793
+dport:	*
+sym:	1
+protocol:	6,17
+priority: 	70
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Virtual Places
+name:	VIRTUAL_PLACES
+group:	Conferencing
+sport:	1516-1519,1533
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+# http://support.microsoft.com/default.aspx?scid=/servicedesks/webcasts/wc071702/WCT071702.asp (port 1863)
+# Whiteboard and application sharing: 1503 
+# Login & messaging: 1863 
+# File transfer: 6891-6900     
+description:	Windows Messenger
+name:	WINDOWS_MESSENGER
+group:	Conferencing
+sport:	1503,1863,6891-6901
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference: Microsoft Help and Support Home
+url: 	http://support.microsoft.com/default.aspx?scid=kb;en-us;324214
+
+# ------------------------------------------------------------
+description:	Windows Messenger
+name:	WINDOWS_MESSENGER
+group:	Conferencing
+sport:	2001-2120,6801,6901
+dport:	*
+sym:	1
+protocol:	17	
+contributor:	hkim
+date:	2006-12-05
+reference: Microsoft Help and Support Home
+url: 	http://support.microsoft.com/default.aspx?scid=kb;en-us;324214
+
+# ------------------------------------------------------------
+description:	DigiChat
+name:	DIGICHAT
+group:	Conferencing
+sport:	8396,22222-22232
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference:	DigiChat AV Help page
+url:	http://www.digichat.com/avhelp/index.html
+
+# ------------------------------------------------------------
+description:	Pretty Good Privacy Phone
+name:	PGPFONE
+group:	Conferencing
+sport:	4747
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference: PGPfone Manual
+url:	ftp://ftp.pgpi.com/pub/pgp/pgpfone/manual/pgpfone10b7.doc
+
+# ------------------------------------------------------------
+# HelpBytes' Yahoo! Connection Problems - http://www.helpbytes.co.uk/yconnect.php
+# Yahoo! voice chat -  http://vc.yahoo.com:5001/
+description:	Yahoo Messenger
+name:	YAHOO_MESSENGER
+group:	Conferencing
+sport:	5000-5001,5050,5100-5101
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference: Yahoo! Voice Chat, HelpBytes' Yahoo! Connection Problems
+url: http://www.helpbytes.co.uk/yconnect.php
+
+# ------------------------------------------------------------
+description:	Yahoo Messenger
+name:	YAHOO_MESSENGER
+group:	Conferencing
+sport:	5000-5010 
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-06-24
+reference: Yahoo! Voice Chat, HelpBytes' Yahoo! Connection Problems
+url: http://www.helpbytes.co.uk/yconnect.php
+
+# ------------------------------------------------------------
+# port 5220 is referenced from iChat FAQs page, 
+# http://www.ralphjohnsuk.dsl.pipex.com/page16.html
+description:	XMPP/Jabber
+name:	XMPP_JABBER
+group:	Conferencing
+sport:	5220,5222,5223,5269
+dport:	*
+sym:	1
+protocol:	6,17
+priority:       50
+contributor:	hkim
+date:	2006-12-29
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Qnext
+name:	QNEXT
+group:	Conferencing
+sport:	5235-5237
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	QNext Online Manual 
+url:	http://server.qnext.com/help/?pg_id=8
+
+# ------------------------------------------------------------
+description:	Apple iChat
+name:	ICHAT
+group:	Conferencing
+sport:	5678,16384-16403
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-29
+reference:	"Well Known" TCP and UDP Ports Used by Apple Software Products
+url:	http://docs.info.apple.com/article.html?artnum=106439
+
+# ------------------------------------------------------------
+description:	NET2PHONE CommCenter
+name:	NET2PHONE
+group:	Conferencing
+sport:	6801
+dport:	*
+sym:	1
+protocol:	17	
+contributor:	hkim
+date:	2006-06-24
+reference:	Net2Phone CommCenter Homepage
+url:	http://web.net2phone.com/consumer/commcenter/helpfirewall.asp
+
+# ------------------------------------------------------------
+description:	iVisit
+name:	IVISIT
+group:	Conferencing
+sport:	9940
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference:	iVisit usage configuration information for Routers & Firewalls
+url:	http://www.ivisit.com/help/reference/routers.html
+
+# ------------------------------------------------------------
+description:	The Palace
+name:	THE_PALACE
+group:	Conferencing
+sport:	9992-9998
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Italk
+name:	ITALK
+group:	Conferencing
+sport:	12345
+dport:	*
+sym:	1
+protocol:	6,17
+priority: 	50
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Skype bootstrap supernode port
+name:	SKYPE
+group:	Conferencing
+sport:	33033
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-06-30
+reference:	S. Baset et al.'s paper "An Analysis of the Skype Peer-to-Peer Internet Telephony Protocol"
+url:	http://www1.cs.columbia.edu/~salman/publications/skype1_4.pdf
+
+#PC Anywhere
+# ------------------------------------------------------------
+description:	PC Anywhere
+name:	PCAnywhere
+group:	Login
+sport:	5631,5632
+dport:	*
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-04
+reference:	Cisco - Configuring pcAnywhere in a Cisco CSS 11000
+url:	http://www.cisco.com/warp/public/117/css_pcanywhere.pdf
+
+#network copy
+# ------------------------------------------------------------
+description:	ncp
+name:	ncp
+group:	Login
+sport:	*
+dport:	524
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Internet Storm Center
+url:	http://isc.incidents.org/port_details.html?port=524
+
+#Automatic Position Reporting Service
+# ------------------------------------------------------------
+description:	APRS Server
+name:	APRS_Server
+group:	Other
+sport:	*
+dport:	10152-10155
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Australian APRS-IS Internet Server ports.
+url:	http://www.aprs.net.au/ports.html
+
+#Automatic Position Reporting Service
+# ------------------------------------------------------------
+description:	APRS Link Port
+name:	APRS_Link
+group:	Other
+sport:	*
+dport:	1313
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Australian APRS-IS Internet Server ports.
+url:	http://www.aprs.net.au/ports.html
+
+#Automatic Position Reporting Service
+# ------------------------------------------------------------
+description:	APRS Message Port
+name:	APRS_MSG
+group:	Other
+sport:	*
+dport:	1314
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Australian APRS-IS Internet Server ports.
+url:	http://www.aprs.net.au/ports.html
+
+#Automatic Position Reporting Service
+# ------------------------------------------------------------
+description:	APRS HTTP Port
+name:	APRS_HTTP
+group:	Other
+sport:	*
+dport:	14501
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Australian APRS-IS Internet Server ports.
+url:	http://www.aprs.net.au/ports.html
+
+
+#Convers Amateur Radio IRC client (implements subset of IRC)
+# ------------------------------------------------------------
+description:	Convers IRC Client
+name:	Convers
+group:	Conferencing
+sport:	*
+dport:	3600
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Xconvers, a TCP/IP client for Amateur radio convers
+url:	http://people.debian.org/~pa3aba/xconvers.html
+
+#Kuang2TheVirus
+# ------------------------------------------------------------
+description:	Kuang2 Virus (trojan)
+name:	Kuang2TheVirus
+group:	Other
+sport:	*
+dport:	17300
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-04
+reference:	Internet Storm Center Port Report
+url:	http://isc.incidents.org/port_details.html?port=17300
+
+#Linux/Slapper-B worm
+# ------------------------------------------------------------
+description:	Linux/Slapper-B worm
+name:	Slapper_Worm
+group:	Other
+sport:	*
+dport:	4156
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Linux/Slapper-B
+url:	http://www.sophos.com/virusinfo/analyses/linuxslapperb.html
+
+#Sub7 trojan
+# ------------------------------------------------------------
+description:	Backdoor-Sub7 Trojan
+name:	Sub7_Trojan
+group:	Other
+sport:	*
+dport:	27374 
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	BackDoor-Sub7 
+url:	http://vil.nai.com/vil/content/v_10566.htm
+
+#Radmin remote administration tool for windows 95
+# ------------------------------------------------------------
+description:	Radmin
+name:	Radmin
+group:	Login
+sport:	*
+dport:	4899
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	bugtraq archive
+url:	http://www.securityfocus.com/archive/1/290099/2003-04-08/2003-04-14/0
+
+#Also: Bugbear backdoor (apache server)
+#socks tunnel client
+# ------------------------------------------------------------
+description:	SOCKS
+name:	SOCKS
+group:	Tunneling
+sport:	*
+dport:	1080
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	FAQ: Firewall Forensics (What am I seeing?)
+url:	http://www.robertgraham.com/pubs/firewall-seen.html#1.1
+
+#Novell Netware (XXX more ports possible)
+# ------------------------------------------------------------
+description:	Novell Netware
+name:	Netware
+group:	Login
+sport:	*
+dport:	427
+sym:	1
+protocol:	6,17
+contributor:	cshannon
+date:	2003-06-05
+reference:	Novell Technical Information Document
+url:	http://home.wlu.edu/~jknudson/TIDs/NetWarePorts.htm
+
+#linuxconf
+# ------------------------------------------------------------
+description:	linuxconf
+name:	linuxconf
+group:	Login
+sport:	*
+dport:	98
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	FAQ: Firewall Forensics (What am I seeing?)
+url:	http://www.robertgraham.com/pubs/firewall-seen.html#1.1
+
+#Checkpoint Firewall-1
+# ------------------------------------------------------------
+description:	Checkpoint FW-1
+name:	Firewall-1
+group:	Login
+sport:	*
+dport:	256-258
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	bugtraq archive
+url:	http://www.securityfocus.com/archive/1/18701
+
+# ------------------------------------------------------------
+description:	Windows Remote Desktop Protocol 
+name:	WINDOWS_RDP
+group:	Login
+sport:	3389
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	VNC
+name:	VNC
+group:	Login
+sport:	5800-5806,5900-5906
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	RealVNC FAQ
+url:	http://www.realvnc.com/faq.html#firewall
+
+#Xlog remote keylogger
+# ------------------------------------------------------------
+description:	Xlog keylogger
+name:	Xlog
+group:	Other
+sport:	*
+dport:	5553
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Xlog
+url:	http://www.megasecurity.org/trojans/x/xlog/Xlog_all.html
+
+#RemoConChubo trojan
+# ------------------------------------------------------------
+description:	RemoConChubo Trojan
+name:	RemoConChubo
+group:	Other
+sport:	*
+dport:	81
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Internet Storm Center
+url:	http://isc.incidents.org/port_details.html?port=81
+
+#Backdoor.LaLa (installed by W32.Sobig.A@mm)
+# ------------------------------------------------------------
+description:	Backdoor.LaLa
+name:	Backdoor.LaLA
+group:	Other
+sport:	*
+dport:	1149,4627,1877
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2003-06-05
+reference:	Symantec Backdoor.Lala
+url:	http://securityresponse.symantec.com/avcenter/venc/data/backdoor.lala.html
+
+#Dabber Worm Backdoor
+# ------------------------------------------------------------
+description:	Dabber Worm Backdoor
+name:	Dabber_Backdoor
+group:	Other
+sport:	*
+dport:	9898
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=9898
+
+#Sasser Worm FTP Server
+# ------------------------------------------------------------
+description:	Sasser Worm FTP
+name:	Sasser_FTP
+group:	Other
+sport:	*
+dport:	5554
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=5554
+
+#W32.MyDoom, W32.Novarg.A Backdoor
+# ------------------------------------------------------------
+description:	W32.MyDoom, W32.Novarg.A Backdoor
+name:	MyDoom_Backdoor
+group:	Other
+sport:	*
+dport:	3127
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=3127
+
+#Trojans: FraggleRock, md5Backdoor, NetSpy, RemoteStorm
+# ------------------------------------------------------------
+description:	Trojans: FraggleRock, md5Backdoor, NetSpy, RemoteStorm
+name:	Port_1025_Trojans_(4)
+group:	Other
+sport:	*
+dport:	1025
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=1025
+
+#Trojan: RemoteStorm
+# ------------------------------------------------------------
+description:	RemoteStorm Trojan (UDP)
+name:	RemoteStorm
+group:	Other
+sport:	*
+dport:	1025
+sym:	1
+protocol:	17
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=1025
+
+#Bagle Worm Backdoor
+# ------------------------------------------------------------
+description:	Bagle Worm Backdoor
+name:	Bagle_Backdoor
+group:	Other
+sport:	*
+dport:	2745
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=2745
+
+#Norton Antivirus Host Discovery
+# ------------------------------------------------------------
+description:	Norton Antivirus Host Discovery
+name:	Norton_AV_Host_Discovery
+group:	Other
+sport:	*
+dport:	38293
+sym:	1
+protocol:	17
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=38293
+
+#Dameware Remote Admin
+# ------------------------------------------------------------
+description:	Dameware Remote Admin
+name:	Dameware
+group:	Login
+sport:	*
+dport:	6129
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=6129
+
+#Samba SWAT tool
+# ------------------------------------------------------------
+description:	Samba SWAT tool
+name:	Samba_SWAT
+group:	Other
+sport:	*
+dport:	901
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=901, http://info.ccone.at/INFO/Samba/SWAT.html
+
+#TCP 5000 Trojans
+# ------------------------------------------------------------
+description:	Trojans: BackDoor, BioNet Lite, Blazer5, Bubbel, ICKiller, Ra1d, SocketsdesTroie
+name:	Port_5000_Trojans_(7)
+group:	Other
+sport:	*
+dport:	5000
+sym:	1
+protocol:	6
+priority: 	90	
+contributor:    hkim
+date:   2006-12-29
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=5000
+
+#commplex-main
+# ------------------------------------------------------------
+description:	commplex-main (remote file access server)
+name:	commplex-main
+group:	Other
+sport:	*
+dport:	5000
+sym:	1
+protocol:	17
+priority:	90
+contributor:    hkim
+date:   2006-12-29
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=5000
+
+#Sasser.E backdoor
+# ------------------------------------------------------------
+description:	Sasser.E Worm Backdoor
+name:	Sasser.E_Backdoor
+group:	Other
+sport:	*
+dport:	1023
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	DShield
+url:	http://www.dshield.org/port_report.php?port=1023
+
+#OptixPro Trojan
+# ------------------------------------------------------------
+description:	OptixPro Trojan
+name:	OptixPro_Trojan
+group:	Other
+sport:	*
+dport:	3410
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	linklogger
+url:	http://www.linklogger.com/TCP3410.htm
+
+#NHCI status
+# ------------------------------------------------------------
+description:	NHCI status
+name:	NHCI_status
+group:	Other
+sport:	*
+dport:	3842
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	networksorcery
+url:	http://www.networksorcery.com/enp/protocol/ip/ports03000.htm
+
+#Crat Pro Backdoor
+# ------------------------------------------------------------
+description:	Crat Pro Backdoor
+name:	Crat_Pro_Backdoor
+group:	Other
+sport:	*
+dport:	956,9561,9563
+sym:	1
+protocol:	6
+contributor:	cshannon
+date:	2004-08-25
+reference:	simovits
+url:	http://www.simovits.com/trojans/tr_data/y727.html
+
+#Messenger Spam
+# ------------------------------------------------------------
+description:	Messenger Spam
+name:	Messenger_Spam
+group:	Other
+sport:	*
+dport:	1026-1029
+sym:	1
+protocol:	17
+contributor:	cshannon
+date:	2004-08-25
+reference:	linklogger et al
+url:	http://www.linklogger.com/UDP1026.htm
+
+#Handle Server
+# ------------------------------------------------------------
+description:	Handle Server
+name:	HDL_Server
+group:	Network_Infrastructure
+sport:	*
+dport:	2641
+sym:	1
+protocol:	6,17
+contributor:	kkeys
+date:	2005-01-19
+reference:	CRNI
+url:	http://www.handle.net/
+
+# ------------------------------------------------------------
+description:	Big Brother
+name:	BIG_BROTHER
+group:	Network_Infrastructure
+sport:	1984
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	MADCAP - Multicast Address Dynamic Client Allocation Protocol
+name:	MADCAP
+group:	Network_Infrastructure
+sport:	2535
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	NetworkLens Event
+name:	NETWORKLENS_EVENT
+group:	Network_Infrastructure
+sport:	3409
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	NetworkLens SSL Event
+name:	NETWORKLENS_SSL_EVENT
+group:	Network_Infrastructure
+sport:	3410
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Apple Bonjour
+name:	BONJOUR
+group:	Network_Infrastructure
+sport:	5297-5298
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-29
+reference:	"Well Known" TCP and UDP Ports Used by Apple Software Products
+url:	http://docs.info.apple.com/article.html?artnum=106439
+
+# ------------------------------------------------------------
+description:	Apple Bonjour
+name:	BONJOUR
+group:	Network_Infrastructure
+sport:	5298
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-29
+reference:	"Well Known" TCP and UDP Ports Used by Apple Software Products
+url:	http://docs.info.apple.com/article.html?artnum=106439
+
+# ------------------------------------------------------------
+description:	Carracho
+name:	CARRACHO
+group:	Other
+sport:	6700-6701
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+notes:		server
+date:	2006-12-05
+reference:	Carracho FAQ
+url: 	http://www.carracho.com/faq/index.html
+
+# ------------------------------------------------------------
+description:	Carracho
+name:	CARRACHO
+group:	Other
+sport:	6702
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+notes:		client
+date:	2006-12-05
+reference:	Carracho FAQ
+url: 	http://www.carracho.com/faq/index.html
+
+# ------------------------------------------------------------
+description:	UNIDATA Local Data Manager
+name:	UNIDATA_LDM
+group:	Other
+sport:	388
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	RTIP
+name:	RTIP
+group:	Other
+sport:	771
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Internet Backplane Protocol
+name:	IBP
+group:	Other
+sport:	6714
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	MCIDAS Data Transmission Protocol
+name:	MCIDAS
+group:	Other
+sport:	112
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Timbuktu
+name:	TIMBUKTU
+group:	Login
+sport:	407,1417-1420
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Internet Printing Protocol
+name:	INTERNET_PRINTING_PROTOCOL
+group:	Other
+sport:	631
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments. 
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Secure LDAP (LDAP over TSL/SSL)
+name:	SECURE_LDAP
+group:	Other
+sport:	636
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-06-24
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Unicenter Remote Control
+name:	REMOTE_CONTROL
+group:	Other
+sport:	798
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference: Unicenter Remote Control Technical Support page
+url: 	http://www.casupport.jp/resources/tng/tec/urc60/033080013.htm
+
+# ------------------------------------------------------------
+description:	Unicenter Remote Control
+name:	REMOTE_CONTROL
+group:	Other
+sport:	4104
+dport:	*
+sym:	1
+protocol:	17
+contributor:	hkim
+date:	2006-12-05
+reference: Unicenter Remote Control Technical Support page
+url: 	http://www.casupport.jp/resources/tng/tec/urc60/033080013.htm
+
+# ------------------------------------------------------------
+description:	VMWare Virtual Machine Console
+name:	VMWARE
+group:	Login
+sport:	902
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	VMWare Technology Network Server Configuration page
+url:	http://www.vmware.com/support/gsx3/doc/manage_portnum_gsx.html
+
+# ------------------------------------------------------------
+description:	OpenVPN
+name:	OpenVPN
+group:	Tunneling
+sport:	1194
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	WASTE
+name:	WASTE
+group:	P2P
+sport:	1337
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	WASTE Official Documentation & FAQ 
+url:	http://waste.sourceforge.net/docs/docs.html
+
+# ------------------------------------------------------------
+# Soulseek also seems to use TCP 5534 according to
+# http://www.slyck.com/ss.php, but it's not included here since the page is
+# not official.
+description:	SoulSeek
+name:	SOULSEEK
+group:	P2P
+sport:	2234
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	Soulseek FAQ 
+url:	http://faq.slsknet.org/index.php?action=artikel&cat=3&id=24&artlang=en
+
+# ------------------------------------------------------------
+description:	Laplink ShareDirect
+name:	SHARE_DIRECT
+group:	P2P
+sport:	2705
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-06-24
+reference:	Laplink FAQ homepage
+url:	http://www.laplink.com/support/faq/faq2.asp?ID=255
+
+# ------------------------------------------------------------
+description:	Abacast
+name:	ABACAST
+group:	Streaming
+sport:	4000-4100,4500,9000-9100
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+priority:	60
+date:	2006-12-05
+reference:	Abacast Firewall FAQ
+url:	http://support.abacast.com/index.php?x=&mod_id=2&id=29
+
+# ------------------------------------------------------------
+description:  Soribada mp3 sharing system 
+name:	SORIBADA
+group:        P2P
+sport:        7674-7675,22321-22322
+dport:        *
+sym:  1
+protocol:     6,17
+contributor:  hkim
+date: 	2006-9-12
+reference:    Thomas et al.'s paper, Transport Layer Identification of P2P Traffic
+url:	http://www.caida.org/outreach/papers/2004/p2p-layerid/p2p-layerid.pdf 
+
+# ------------------------------------------------------------
+description:  GoBoogy P2P system 
+name:	GOBOOGY
+group:        P2P
+sport:        5335
+dport:        *
+sym:  1
+protocol:     6,17
+contributor:  hkim
+date: 	2006-9-12
+reference:    Thomas et al.'s paper, Transport Layer Identification of P2P Traffic
+url:	http://www.caida.org/outreach/papers/2004/p2p-layerid/p2p-layerid.pdf 
+
+# ------------------------------------------------------------
+description:  PeerEnabler by Joltid
+name:   PEERENABLER 
+group:        P2P
+sport:        3531 
+dport:        *
+sym:  1
+protocol:     6,17
+contributor:  hkim
+date: 	2006-9-27
+reference:    Thomas et al.'s paper, Transport Layer Identification of P2P Traffic
+url:	http://www.caida.org/outreach/papers/2004/p2p-layerid/p2p-layerid.pdf 
+
+# ------------------------------------------------------------
+description:  ARES P2P system
+name:   ARES
+group:        P2P
+sport:        32285
+dport:        *
+sym:  1
+protocol:     6,17
+contributor:  hkim
+date: 2006-12-05
+reference:    ARES Galaxy P2P Client
+url:	http://compnetworking.about.com/od/aresp2pnetwork/p/aresgalaxy.htm
+
+# ------------------------------------------------------------
+# click the 3rd question on the below FAQ homepage.
+description:  Freechal P2P FileGuri System (Korean)
+name:   FILEGURI
+group:        P2P
+sport:        9493
+dport:        *
+sym:  1 
+protocol:     6,17
+contributor:  hkim
+date: 2006-12-05
+reference:    Fileguri FAQ (in Korean only)
+url:	http://www.fileguri.com/customercenter/faq/faq.asp?category=7&search=%B0%F8%C0%AF%B1%E2%2F%B9%E6%C8%AD%BA%AE
+
+# ------------------------------------------------------------
+description:  FileBee P2P system (Korean)
+name:   FILEBEE
+group:        P2P
+sport:        7128,7144,7243,7244,10376,10377
+dport:        *
+sym:  1
+protocol:     6
+contributor:  hkim 
+date: 2006-10-15
+reference:    FileBee FAQ (in Korean only)
+url:    http://www.filebee.co.kr/board/faq/read.asp?serial=12&page=1
+
+# ------------------------------------------------------------
+# click the 4th question on the below FAQ homepage.
+description:  FilePia P2P system (Korean)
+name:   FILEPIA
+group:        P2P
+sport:        8090-8091
+dport:        *
+sym:  1
+protocol:     6,17
+contributor:  hkim
+date:   2006-10-15
+reference:    FILEPIA FAQ (In Korean only)
+url:    http://http://www.filepia.com/guide_main.html
+
+# ------------------------------------------------------------
+description:	Grouper
+name:	GROUPER
+group:	P2P
+sport:	8038
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-06-24
+reference:	Grouper Technical Specifications
+url:	http://www.grouper.com/support/techspecs.aspx#routable
+
+# ------------------------------------------------------------
+description:	Lotus Notes Domino
+name:	LOTUS_NOTES
+group:	Other
+sport:	1352
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Citrix ICA remote application access
+name:	CITRIX_ICA
+group:	Other
+sport:	1494
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Novell GroupWise (Remote Client)
+name:	NOVELL_GROUPWISE
+group:	Other
+sport:	1677
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	PPTP
+name:	PPTP
+group:	Other
+sport:	1723
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Glimpse Server
+name:	GLIMPSE_SERVER
+group:	Other
+sport:	2001
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-06-24
+reference:	Glimpse server Help Page
+url:	http://webglimpse.net/gdocs/glimpseserverhelp.html
+
+# ------------------------------------------------------------
+description:	Distributed.Net
+name:	DISTRIBUTED_NET
+group:	Other
+sport:	2064
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-06-24
+reference:	Distributed.net Networking Options page
+url:	http://www.distributed.net//docs/tutor_netopt.php#no_firewall
+
+# ------------------------------------------------------------
+description:	Borland InterBase DB and InterServer
+name:	BORLAND_INTERBASE_DB
+group:	Other
+sport:	3050,3060
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	Borland Devloper Network: InterBase with Windows XP SP2
+url:	http://bdn.borland.com/article/32532
+
+# ------------------------------------------------------------
+description:	Internet Storage Name Service
+name:	iSNS
+group:	Other
+sport:	3205
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	iSCSI
+name:	iSCSI
+group:	Other
+sport:	3260
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	PDL Datastream
+name:	PDL_DATASTREAM
+group:	Other
+sport:	9100
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-06-24
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Network Data Management Protocol
+name:	NDMP
+group:	Other
+sport:	10000
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+description:	Amanda
+name:	AMANDA
+group:	Other
+sport:	10080
+dport:	*
+sym:	1
+protocol:	6,17
+contributor:	hkim
+date:	2006-12-05
+reference:	IANA Port assignments
+url:	http://www.iana.org/assignments/port-numbers
+
+# ------------------------------------------------------------
+# NetBus trojan also targets TCP port 12345   
+description:	NetBus (trojan)
+name:	NetBusTrojan
+group:	Other
+sport:	*
+dport:	12345
+sym:	1
+protocol:	6
+priority: 	90
+contributor:	hkim
+date:	2006-12-30
+reference:	WindowSecurity.com The NetBus trojan page
+url:	http://www.windowsecurity.com/articles/The_Netbus_trojan.html
+
+# ------------------------------------------------------------
+description:	Palm Network HotSync
+name:	PALM_HOTSYNC
+group:	Other
+sport:	14237
+dport:	*
+sym:	1
+protocol:	6
+contributor:	hkim
+date:	2006-12-05
+reference:	Palm Support Knowledge Library
+url:	http://kb.palm.com/SRVS/CGI-BIN/WEBCGI.EXE?New,kb=PalmSupportKB,CASE=obj(5570),ts=Palm_External2001
+
+# ------------------------------------------------------------
+description:	Palm Network Hotsync
+name:	PALM_HOTSYNC
+group:	Other
+sport:	14238
+dport:	*
+sym:	1
+protocol: 	17	
+contributor:	hkim
+date:	2006-12-05
+reference:	Palm Support Knowledge Library
+url:	http://kb.palm.com/SRVS/CGI-BIN/WEBCGI.EXE?New,kb=PalmSupportKB,CASE=obj(5570),ts=Palm_External2001
+
+# ------------------------------------------------------------
+description:  Vipul's Razor
+name:   RAZOR
+group:  Other
+sport:        2703
+dport:        *
+sym:  1
+protocol:     6
+contributor:  hkim
+date: 2007-02-05
+reference:    Razor FAQ
+url:    http://razor.sourceforge.net/docs/faq.php
+
+# unknown: 9657, 18499, 28780, 9657, udp 22321

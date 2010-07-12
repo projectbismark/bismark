@@ -1,0 +1,10 @@
+# This file contains a list of the plugins that will be enabled
+# for compilation and/or execution. 
+#
+# The order in the list gives the priority of each classifier:
+# the 1st has precedence on the 2nd, the 2nd on the 3rd, and so on
+# 
+# Comment out the plugins to disable them
+
+port
+nbc2.5
