@@ -1,0 +1,12 @@
+#!/bin/bash
+# Bismark airodump wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. ~/conf/dev.conf
+
+if ! (ifconfig | grep -q ath1) ; then
+	wlanconfig ath1 create wlandev wifi0 wlanmode monitor
+	ifconfig ath1 up
+fi
