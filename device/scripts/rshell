@@ -21,7 +21,7 @@ fi
 if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
 	RANDOM=$(( `date +%s` % 32767 ))
 	port=$(( RANDOM % 5000 + 5000 ))
-	ssh -i $SSH_KEY $USER@$SERVER '. etc/bdm.conf ; bdm settunnel $DEVICE_ID $port'
+	ssh -i $SSH_KEY $USER@$SERVER "bin/bdm settunnel $DEVICE_ID $port"
 	ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER &
 	echo $! > /tmp/tunnel
 fi
