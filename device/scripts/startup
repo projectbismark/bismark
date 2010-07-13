@@ -13,15 +13,20 @@ NB*)
 	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
 
 	# Setup dhcp log script
-	echo "dhcp-script=/root/scripts/bdhcp" >> /etc/dnsmasq.conf
-	/etc/init.d/dnsmasq restart
+	if ! grep -q ^dhcp-script= /etc/dnsmasq.conf ; then
+		echo "dhcp-script=/root/scripts/bdhcp" >> /etc/dnsmasq.conf
+		/etc/init.d/dnsmasq restart
+	fi
+
+	# Set local time
+	ln -fs /usr/share/zoneinfo/$LOCALTIME /etc/localtime
 ;;
 LS*)
 	# Create bin and lib directories on ramdisk
-	mkdir /tmp/bin /tmp/lib
-	ln -s /tmp/bin bin
-	ln -s /tmp/lib lib
+	mkdir -p /tmp/bin /tmp/lib
+	ln -fs /tmp/bin bin
+	ln -fs /tmp/lib lib
 	sleep 10
-	action update
+	[ -d /tmp/measure ] || action update
 ;;
 esac

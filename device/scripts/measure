@@ -40,6 +40,7 @@ echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 # Launch continous measurements
 if [ ${DEVICE_ID:0:2} == NB ]; then
 	[ $(pgrep -n tie) ] || tie -n -m c -i any -E $DEVICE_ID -d /tmp/measure/ -P32
+	bwdump
 fi
 
 # Random wait

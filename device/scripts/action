@@ -78,6 +78,9 @@ update)	# Software update
 	diff /tmp/old /tmp/new | output $1 
 	rm /tmp/old /tmp/new
 
+	# Call startup script
+	startup
+
 	# Check installed packages
 	case $DEVICE_ID in
 	LS*)
