@@ -420,7 +420,7 @@ function upgrade()
 			 cp VERSION /tmp/pkg/$type
 			 cp -d conf/* /tmp/pkg/$type/conf
 			 cp -d scripts/* /tmp/pkg/$type/scripts
-			 [ -e bin/$type ] && (cd  bin/$type && tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/bin -xvf /dev/stdin )
+			 [ -e bin/$type ] && (cd  bin/$type && tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/bin -xf /dev/stdin )
 			 [ -e lib/$type ] && cp -d lib/$type/* /tmp/pkg/$type/lib
 			)
 

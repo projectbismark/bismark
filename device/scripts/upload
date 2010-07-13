@@ -6,14 +6,11 @@
 # Load configuration file
 . ~/conf/dev.conf
 
-# Copy files using scp
+# Copy active measurements files
 scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
 
-# Syncronize clock
-if [ ${DEVICE_ID:0:2} == WS ]; then
-	if [ $(id -u) -eq 0 ]; then
-		ntpdate pool.ntp.org
-	else
-		sudo ntpdate pool.ntp.org
-	fi
-fi
+# Copy passive measurements files
+scp -i $SSH_KEY /tmp/measure/*.t2 $USER@$SERVER:~/var/data && rm /tmp/measure/*.t2
+scp -i $SSH_KEY /tmp/measure/*.dhcp $USER@$SERVER:~/var/data && rm /tmp/measure/*.dhcp
+
+
