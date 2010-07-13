@@ -78,8 +78,9 @@ update)	# Software update
 	diff /tmp/old /tmp/new | output $1 
 	rm /tmp/old /tmp/new
 
-	# Call startup script
+	# Call startup script and set restart flag
 	startup
+	touch /tmp/restart
 
 	# Check installed packages
 	case $DEVICE_ID in
