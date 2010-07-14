@@ -3,5 +3,8 @@
 #
 # author: walter.dedonato@unina.it
 
+# Load configuration file
+. ~/conf/dev.conf
+
 IFS=$'\t'
 echo -e "$(date +%s)\t$*" >> /tmp/measure/$DEVICE_ID.dhcp
