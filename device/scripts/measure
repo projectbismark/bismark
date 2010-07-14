@@ -45,6 +45,9 @@ if [ ${DEVICE_ID:0:2} == NB ]; then
 
 	# Airodump
 	bwdump
+
+	# Arp
+	barp
 fi
 
 # Random wait

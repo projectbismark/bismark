@@ -1,0 +1,10 @@
+#!/bin/bash
+# Bismark arp wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. ~/conf/dev.conf
+
+# Dump arp table 
+arp -n | gawk '(NR > 1){ print '$(date +%s)' "\t" $1 "\t" $3}' >> /tmp/measure/${DEVICE_ID}.arp
