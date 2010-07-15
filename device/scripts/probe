@@ -47,10 +47,10 @@ fi
 # Refresh faults count
 if [ "`cat /tmp/reply`" ]; then
 	echo 0 > /tmp/faults
-	bevent uplink up
+	event uplink up
 else
 	echo $((++faults)) > /tmp/faults
-	bevent uplink down
+	event uplink down
 fi
 
 # Parse reply

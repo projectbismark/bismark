@@ -7,7 +7,7 @@
 . ~/conf/dev.conf
 
 # Help screen
-[ $1 ] || { echo "usage: $(basename $0) <alive|boot|reboot|modem|uplink> [options]" ; exit ; }
+[ $1 ] || { echo "usage: $(basename $0) <alive|boot|reboot|modem|uplink|trouble> [options]" ; exit ; }
 
 mkdir -p ~/cache 
 event_log=~/cache/${DEVICE_ID}.events
@@ -50,5 +50,9 @@ uplink) # To be called after probe reply
 		fi
 	;;
 	esac
+;;
+trouble)
+	shift
+	echo -e "$(date +%s)\tTROUBLE\t$*" >> $event_log
 ;;
 esac

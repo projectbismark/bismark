@@ -18,6 +18,6 @@ if [ ${DEVICE_ID:0:2} == NB ]; then
 	scp -i $SSH_KEY ~/cache/*.event $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).event && rm ~/cache/*.event
 	
 	# Restart modem event watcher
-	bevent modem
+	event modem
 fi
 
