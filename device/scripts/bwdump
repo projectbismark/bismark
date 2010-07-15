@@ -7,13 +7,11 @@
 . ~/conf/dev.conf
 
 # Enable monitor interface 
-if ! (ifconfig | grep -q ath1) ; then
-	wlanconfig ath1 create wlandev wifi0 wlanmode monitor
-	ifconfig ath1 up
+if ! (/sbin/ifconfig | grep -q ath1) ; then
+	/sbin/wlanconfig ath1 create wlandev wifi0 wlanmode monitor
+	/sbin/ifconfig ath1 up
 fi
 
 # Start airodump and stop after 5 minutes
 airodump-ng --channel $WIFI_CHANNEL -w /tmp/measure/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 2> /dev/null &
-pid=$?
-(sleep 300 && kill $pid) &
 
