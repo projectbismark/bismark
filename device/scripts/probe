@@ -46,9 +46,11 @@ fi
 
 # Refresh faults count
 if [ "`cat /tmp/reply`" ]; then
-    echo 0 > /tmp/faults
+	echo 0 > /tmp/faults
+	bevent uplink up
 else
-    echo $((++faults)) > /tmp/faults
+	echo $((++faults)) > /tmp/faults
+	bevent uplink down
 fi
 
 # Parse reply

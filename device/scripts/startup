@@ -20,6 +20,17 @@ NB*)
 
 	# Set local time
 	ln -fs /usr/share/zoneinfo/$LOCALTIME /etc/localtime
+
+	# Set boot event
+	bevent boot
+	
+	# Set reboot script
+	echo -e "#!/bin/bash\n/root/scripts/bevent reboot" > /etc/init.d/breboot
+	chmod +x /etc/init.d/breboot
+	ln -s /etc/init.d/breboot /etc/rc6.d/S10_breboot
+
+	# Start modem monitor
+	bevent modem
 ;;
 LS*)
 	# Create bin and lib directories on ramdisk

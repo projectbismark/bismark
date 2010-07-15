@@ -1,0 +1,54 @@
+#!/bin/bash
+# Bismark events logger
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. ~/conf/dev.conf
+
+# Help screen
+[ $1 ] || { echo "usage: $(basename $0) <alive|boot|reboot|modem|uplink> [options]" ; exit ; }
+
+mkdir -p ~/cache 
+event_log=~/cache/${DEVICE_ID}.events
+
+case $1 in
+boot) # To be called during boot
+	# Set POWER_OFF event if not rebooted
+	if [ -e $event_log -a -e ~/cache/power ]; then
+		tail -n1 $event_log | grep -q REBOOT || echo -e "$(cat ~/cache/power)\tPOWER_OFF"  >> $event_log
+	fi
+
+	# Get boot timestamp 
+	boot_ts=$(( $(date +%s) - $(cut -f1 -d"." /proc/uptime) ))
+	echo -e "$boot_ts\tPOWER_ON" >> $event_log
+;;
+reboot) # To be called just before reboot
+	echo -e "$(date +%s)\tREBOOT" >> $event_log
+;;
+alive) # To be called every 5 minutes
+	date +%s > ~/cache/power
+;;
+modem) # To be called after boot and upload
+	[ $(pgrep -n mii-tool) ] && killall mii-tool
+	mii-tool -w eth0  | awk '{ printf "%s", systime() } ; /no link/{ print "\tMODEM_DOWN" } ; /link ok/{ print "\tMODEM_UP" }' >> $event_log &
+;;
+uplink) # To be called after probe reply
+	[ -e /tmp/uplink ] || echo down > /tmp/uplink
+
+	case $2 in
+	up)
+ 		if [ $(cat /tmp/uplink) == "down" ]; then
+			echo -e "$(date +%s)\tUPLINK_UP" >> $event_log
+			echo up > /tmp/uplink
+		fi
+	;;
+	down)
+ 		if [ $(cat /tmp/uplink) == "up" ]; then
+			echo -e "$(date +%s)\tUPLINK_DOWN" >> $event_log
+			echo down > /tmp/uplink
+		fi
+	;;
+	esac
+;;
+esac

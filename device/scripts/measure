@@ -48,6 +48,9 @@ if [ ${DEVICE_ID:0:2} == NB ]; then
 
 	# Arp
 	barp
+
+	# Alive TS
+	bevent alive
 fi
 
 # Random wait

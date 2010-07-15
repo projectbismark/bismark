@@ -10,9 +10,14 @@
 scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
 
 # Copy passive measurements files
-scp -i $SSH_KEY /tmp/measure/*.t2 $USER@$SERVER:~/var/data && rm /tmp/measure/*.t2
-scp -i $SSH_KEY /tmp/measure/*.csv $USER@$SERVER:~/var/data && rm /tmp/measure/*.csv
 scp -i $SSH_KEY /tmp/measure/*.arp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).arp && rm /tmp/measure/*.arp
-scp -i $SSH_KEY /tmp/measure/*.dhcp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).dhcp && rm /tmp/measure/*.dhcp
-
+if [ ${DEVICE_ID:0:2} == NB ]; then
+	scp -i $SSH_KEY /tmp/measure/*.t2 $USER@$SERVER:~/var/data && rm /tmp/measure/*.t2
+	scp -i $SSH_KEY /tmp/measure/*.csv $USER@$SERVER:~/var/data && rm /tmp/measure/*.csv
+	scp -i $SSH_KEY /tmp/measure/*.dhcp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).dhcp && rm /tmp/measure/*.dhcp
+	scp -i $SSH_KEY ~/cache/*.event $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).event && rm ~/cache/*.event
+	
+	# Restart modem event watcher
+	bevent modem
+fi
 
