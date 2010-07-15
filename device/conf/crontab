@@ -2,3 +2,4 @@
 */15 * * * * ~/scripts/rshell
 */5  * * * * ~/scripts/measure
 4  */1 * * * ~/scripts/upload
+*/10 * * * * ~/scripts/caching

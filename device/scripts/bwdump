@@ -12,6 +12,10 @@ if ! (/sbin/ifconfig | grep -q ath1) ; then
 	/sbin/ifconfig ath1 up
 fi
 
-# Start airodump and stop after 5 minutes
-airodump-ng --channel $WIFI_CHANNEL -w /tmp/measure/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 2> /dev/null &
+# Start/Restart airodump and stop after 5 minutes
+if [ $(pgrep -n airodump-ng) ]; then
+	killall airodump-ng
+	mv /tmp/${DEVICE_ID}*.csv /tmp/measure
+fi
+airodump-ng --channel $WIFI_CHANNEL -w /tmp/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 2> /dev/null &
 

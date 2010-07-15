@@ -15,9 +15,11 @@ if [ ${DEVICE_ID:0:2} == NB ]; then
 	scp -i $SSH_KEY /tmp/measure/*.t2 $USER@$SERVER:~/var/data && rm /tmp/measure/*.t2
 	scp -i $SSH_KEY /tmp/measure/*.csv $USER@$SERVER:~/var/data && rm /tmp/measure/*.csv
 	scp -i $SSH_KEY /tmp/measure/*.dhcp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).dhcp && rm /tmp/measure/*.dhcp
-	scp -i $SSH_KEY ~/cache/*.event $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).event && rm ~/cache/*.event
+	scp -i $SSH_KEY ~/cache/*.events $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).events && rm ~/cache/*.events
 	
 	# Restart modem event watcher
 	event modem
 fi
 
+# Copy cached files
+scp -i $SSH_KEY ~/cache/*.tgz $USER@$SERVER:~/var/data && rm ~/cache/*.tgz

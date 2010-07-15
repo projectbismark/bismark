@@ -1,0 +1,10 @@
+#!/bin/bash
+# Cache persistently measurements results
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+cd /tmp/measure
+tar --remove-files -czvf ~/cache/${DEVICE_ID}_$(date +%s).tgz *.*
