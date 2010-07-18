@@ -283,6 +283,34 @@ function wait_tunnel()
 	done
 }
 
+# Send notification by email
+# $1 = dev id
+# $2 = message
+function sendmail ()
+{
+	smtp=mail.unina.it
+
+	(
+	cat <<-end
+		ehlo gatech.edu
+		mail from: dp4@cc.gatech.edu
+		rcpt to: walter.dedonato@unina.it
+		data
+	end
+	sleep 1
+	cat <<-end
+		From: "Bismark Server" <dp4@cc.gatech.edu>
+		To: "Walter" <walter.dedonato@unina.it>
+		Subject: Bismark Notification ($1)
+		Date: $(date -R)
+
+		$2
+		.
+		quit
+	end
+	) | nc $smtp 25 > /dev/null
+}
+
 # Set device tunnel entry
 # $1 = dev id
 # $2 = port
@@ -291,6 +319,9 @@ function settunnel()
 	echo -n "Setting tunnel db entry for $1 on port $2..."
 	query $BDM_DB "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
 	echo done
+	
+	# Send notification email
+	sendmail $1 "Recovery tunnel created for $1 on port $2"
 }
 
 ## User command functions ##
