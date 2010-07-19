@@ -42,6 +42,8 @@ function help()
 
 	    For internal use only:
 
+	    blacklist [<dev_id> <on|off>]   Manage devices blacklist
+
 	    settunnel <dev_id> <port>       Set the tunnel entry for <dev_id>
 
 	    setuser   <dev_id> <username>   Set the SSH username for <dev_id>
@@ -114,6 +116,10 @@ function parse()
 	;;
 	readmsg)
 		read_msg
+	;;
+	blacklist)
+		[ $2 ] && { [ $3 ] || { echo -e "Missing parameter: on|off\n"; help blacklist; } }
+		blacklist $2 $3
 	;;
 	upgrade)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help upgrade; }
@@ -610,6 +616,22 @@ function read_msg()
 		done
 	else
 		echo "No incoming messages"
+	fi
+}
+
+# Add remove device from blacklist
+# $1 = dev id
+# $2 = on|off
+function blacklist ()
+{
+	if [ $1 ]; then
+		case $2 in
+		on) query $BDM_DB "INSERT INTO blacklist (id) VALUES('$1');" ;;
+		off) query $BDM_DB "DELETE FROM blacklist WHERE id='$1';" ;;
+		esac	
+	else
+		echo "Blacklisted devices:"
+		query $BDM_DB "SELECT id FROM blacklist;"
 	fi
 }
 

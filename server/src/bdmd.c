@@ -146,6 +146,20 @@ char *do_query(sqlite3 *db, const char *query, const int cb)
 	return out;
 }
 
+int blacklisted(sqlite3 *db, const char *device)
+{
+	char query[MAX_QUERY_LEN]; 		/* Query string buffer */
+	char *row; 				/* Query resulting row */
+
+	/* Check if device is blacklisted */
+	snprintf(query, MAX_QUERY_LEN, "SELECT id FROM blacklist WHERE id='%s';", device);
+	if ((row = do_query(db, query, 1))) {
+		free(row);
+		return 1;
+	} else
+		return 0; 
+}
+
 /*
  * Probe handler thread
  */
@@ -247,9 +261,11 @@ void *doit(void *param)
 			/* Remove row */
 			free(row);
 		} else {
-			/* Set pong reply */
-			reply = malloc(MAX_IP_LEN + MAX_TS_LEN + 7);
-			sprintf(reply, "pong %s %lu\n", ip, ts);
+			if (!blacklisted(bdm_db, probe.id)) {
+				/* Set pong reply */
+				reply = malloc(MAX_IP_LEN + MAX_TS_LEN + 7);
+				sprintf(reply, "pong %s %lu\n", ip, ts);
+			} 
 		}
 		sqlite3_close(msg_db);	
 	} else if (!strncmp(probe.cmd, "log", 3)) {

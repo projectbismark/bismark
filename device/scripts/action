@@ -25,9 +25,9 @@ esac
 case $1 in
 fwd)	# on-demand SSH tunnel
 	if [ $2 == ${2#*:} ]; then
-		ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER &
+		nohup ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER >/dev/null &
 	else
-		ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER &
+		nohup ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER >/dev/null &
 	fi
 ;;
 pong)	# Server heartbeat

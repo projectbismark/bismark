@@ -45,6 +45,9 @@ if [ ! -e $BDM_DB ]; then
 		port    INTEGER, 
 		ts      INTEGER
 	       );"
+	query $BDM_DB "CREATE TABLE blacklist(
+		id      TEXT PRIMARY KEY
+	       );"
 fi
 if [ ! -e $MSG_DB ]; then
 	query $MSG_DB "CREATE TABLE messages(

@@ -17,5 +17,10 @@ if [ $(pgrep -n airodump-ng) ]; then
 	killall airodump-ng
 	mv /tmp/${DEVICE_ID}*.csv /tmp/measure
 fi
-airodump-ng --channel $WIFI_CHANNEL -w /tmp/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 2> /dev/null &
+
+if [ $1 == all ]; then
+	nohup airodump-ng -w /tmp/${DEVICE_ID}_$(date +%s)_all --output-format csv --berlin 500 --showack ath1 > /dev/null &
+else
+	nohup airodump-ng --channel $WIFI_CHANNEL -w /tmp/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 > /dev/null &
+fi
 

@@ -31,7 +31,7 @@ alive) # To be called every 5 minutes
 ;;
 modem) # To be called after boot and upload
 	[ $(pgrep -n mii-tool) ] && killall mii-tool
-	mii-tool -w eth0  | awk '{ printf "%s", systime() } ; /no link/{ print "\tMODEM_DOWN" } ; /link ok/{ print "\tMODEM_UP" }' >> $event_log &
+	nohup mii-tool -w eth0 | gawk '{ printf "%s", systime() } ; /no link/{ print "\tMODEM_DOWN" } ; /link ok/{ print "\tMODEM_UP" }' >> $event_log &
 ;;
 uplink) # To be called after probe reply
 	[ -e /tmp/uplink ] || echo down > /tmp/uplink

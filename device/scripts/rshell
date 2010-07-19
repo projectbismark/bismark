@@ -1,6 +1,5 @@
 #!/bin/bash
 # Starts a recovery shell if unable to probe the server 
-# open a tunnel for 15 minutes each 30 minutes 
 #
 # author: walter.dedonato@unina.it
 
@@ -9,20 +8,19 @@
 
 [ -e /tmp/server_last ] || echo `date +%s` > /tmp/server_last
 
-# Close pre-existing recovery tunnel
-if [ -e /tmp/tunnel ]; then
-	pid=$(cat /tmp/tunnel)
-	kill -9 $pid
-	ps $pid >/dev/null && rm /tmp/tunnel
-	echo `date +%s` > /tmp/server_last
-fi 
-
-# Start new tunnel only if last timestamp is more than 15 minutes old
-if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 900 ]; then
-	RANDOM=$(( `date +%s` % 32767 ))
-	port=$(( RANDOM % 5000 + 5000 ))
-	ssh -i $SSH_KEY $USER@$SERVER "bin/bdm settunnel $DEVICE_ID $port"
-	ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER &
-	echo $! > /tmp/tunnel
+# Start new tunnel if last timestamp is more than 5 minutes old
+if [ $((`date +%s` - `cat /tmp/server_last`)) -gt 300 ]; then
+	if [ -e /tmp/tunnel ]; then
+		# Check pre-existing recovery tunnel
+		pid=$(cat /tmp/tunnel)
+		ps $pid >/dev/null || rm /tmp/tunnel
+	else
+		# Create new recovery tunnel
+		RANDOM=$(( `date +%s` % 32767 ))
+		port=$(( RANDOM % 5000 + 5000 ))
+		ssh -i $SSH_KEY $USER@$SERVER "bin/bdm settunnel $DEVICE_ID $port"
+		nohup ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER > /dev/null &
+		echo $! > /tmp/tunnel
+	fi
 fi
 
