@@ -146,7 +146,6 @@ config)
 				! /^wpa/ && ! /^wep/ && ! /^ssid/ && ! /^channel/ { print }
 				END{ 
 					print "ssid=$WIFI_SSID"
-					print "channel_policy=2"
 					print "channel=$WIFI_CHANNEL"
 					if (sec == "WPA") {
 						print "wpa=1"
@@ -160,14 +159,16 @@ config)
 						print "wpa_pairwise=CCMP"
 					} else if (sec == "WEP") {
 						print "wep_default_key=0"
-						print "wep_key0=$WIFI_PASS"
+						if (${WIFI_PASS:0:1} ~ /[0-9]/)
+							print "wep_key0=$WIFI_PASS"
+						else
+							print "wep_key0=\"$WIFI_PASS\""
 					}
 				}
 			end
 			mv /tmp/hostapd.conf /etc/hostapd/
 			/etc/init.d/hostapd restart
-			#iwconfig $WIF channel $WIFI_CHANNEL
-			#/noxbox/bin/persist_files /etc/hostapd/hostapd.conf
+			iwconfig $WIF channel $WIFI_CHANNEL
 		;;
 		esac
 	fi
