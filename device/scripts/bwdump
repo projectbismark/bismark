@@ -19,8 +19,8 @@ if [ $(pgrep -n airodump-ng) ]; then
 fi
 
 if [ $1 == all ]; then
-	nohup airodump-ng -w /tmp/${DEVICE_ID}_$(date +%s)_all --output-format csv --berlin 500 --showack ath1 > /dev/null &
+	( airodump-ng -w /tmp/${DEVICE_ID}_$(date +%s)_all --output-format csv --berlin 500 --showack ath1 >/dev/null 2>&1 & )
 else
-	nohup airodump-ng --channel $WIFI_CHANNEL -w /tmp/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 > /dev/null &
+	( airodump-ng --channel $WIFI_CHANNEL -w /tmp/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 >/dev/null 2>&1 & )
 fi
 

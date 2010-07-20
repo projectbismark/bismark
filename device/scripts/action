@@ -25,9 +25,9 @@ esac
 case $1 in
 fwd)	# on-demand SSH tunnel
 	if [ $2 == ${2#*:} ]; then
-		nohup ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER >/dev/null &
+		( ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER >/dev/null 2>&1 & )
 	else
-		nohup ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER >/dev/null &
+		( ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER >/dev/null 2>&1 & )
 	fi
 ;;
 pong)	# Server heartbeat
@@ -95,23 +95,25 @@ update)	# Software update
 ;;
 config)
 	# Modify parameters	
-	if [ $2 ]; then
-		# Parse new configuration
-		IFS=$'&'
-		for param in $2; do
-			name=${param%=*}
-			value=${param#*=}
+	if [ $2 ]; then 
+		if [ $2 == "push" ]; then
+			push=1
+		else
+			# Parse new configuration
+			IFS=$'&'
+			for param in $2; do
+				name=${param%=*}
+				value=${param#*=}
 
-			# Check parameter validity
-			grep -q "^$name=" conf/dev.conf local.conf || { echo -e "Invalid option $name\n" ; continue ; }
-			
-			# Assign new value to parameter
-			eval $name=$value
+				# Check parameter validity
+				grep -q "^$name=" conf/dev.conf local.conf || { echo -e "Invalid option $name\n" ; continue ; }
+				
+				# Assign new value to parameter
+				eval $name=$value
 
-			# Check WIFI parameters presence
-			if [ ${name:0:4} == WIFI ]; then
-				wifi=1
-			else
+				# Check WIFI parameters presence
+				[ ${name:0:4} == WIFI ] && push=1
+
 				if [ $value ]; then
 					# Store parameter in local.conf
 					if grep -q "^$name=" local.conf; then
@@ -125,28 +127,49 @@ config)
 					# Remove parameter from local.conf
 					mod_conf local.conf $name
 				fi
-			fi
-		done
-
-		# Push WIFI configuration
-		if [ $wifi ]; then
-			case $DEVICE_ID in
-			LS*) 
-				uci set wireless.wl0.channel=$WIFI_CHANNEL
-				uci set wireless.@wifi-iface[0].ssid=$WIFI_SSID
-				uci set wireless.@wifi-iface[0].key=$WIFI_WPA_PSK
-				uci commit wireless && wifi
-			;;
-			NB*) 
-				mod_conf /etc/hostapd/hostapd.conf channel $WIFI_CHANNEL
-				mod_conf /etc/hostapd/hostapd.conf ssid $WIFI_SSID
-				echo "00:00:00:00:00:00\"$WIFI_WPA_PSK" > /etc/hostapd/wpa_psk
-				/etc/init.d/hostapd restart
-				iwconfig $WIF channel $WIFI_CHANNEL
-				/noxbox/bin/persist_files /etc/hostapd/hostapd.conf /etc/hostapd/wpa_psk
-			;;
-			esac
+			done
 		fi
+	fi
+
+	# Push configuration
+	if [ $push ]; then
+		case $DEVICE_ID in
+		LS*) 
+			uci set wireless.wl0.channel=$WIFI_CHANNEL
+			uci set wireless.@wifi-iface[0].ssid=$WIFI_SSID
+			uci set wireless.@wifi-iface[0].key=$WIFI_PASS
+			uci commit wireless && wifi
+		;;
+		NB*) 
+			awk -f /dev/stdin sec=$WIFI_SEC /etc/hostapd/hostapd.conf > /tmp/hostapd.conf <<-end
+				/^#/ || /^$/{ next }
+				! /^wpa/ && ! /^wep/ && ! /^ssid/ && ! /^channel/ { print }
+				END{ 
+					print "ssid=$WIFI_SSID"
+					print "channel_policy=2"
+					print "channel=$WIFI_CHANNEL"
+					if (sec == "WPA") {
+						print "wpa=1"
+						print "wpa_passphrase=$WIFI_PASS"
+						print "wpa_key_mgmt=WPA-PSK"
+						print "wpa_pairwise=TKIP"
+					} else if (sec == "WPA2") {
+						print "wpa=2"
+						print "wpa_passphrase=$WIFI_PASS"
+						print "wpa_key_mgmt=WPA-PSK"
+						print "wpa_pairwise=CCMP"
+					} else if (sec == "WEP") {
+						print "wep_default_key=0"
+						print "wep_key0=$WIFI_PASS"
+					}
+				}
+			end
+			mv /tmp/hostapd.conf /etc/hostapd/
+			/etc/init.d/hostapd restart
+			#iwconfig $WIF channel $WIFI_CHANNEL
+			#/noxbox/bin/persist_files /etc/hostapd/hostapd.conf
+		;;
+		esac
 	fi
 
 	# Configuration output

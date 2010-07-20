@@ -41,7 +41,7 @@ echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 if [ ${DEVICE_ID:0:2} == NB ]; then
 	# Start/Restart TIE daemon
 	[ -e /tmp/restart ] && ( rm /tmp/restart && killall tie )
-	[ $(pgrep -n tie) ] || nohup tie -n -m c -i any -E $DEVICE_ID -d /tmp/measure/ -P32 >/dev/null &
+	[ $(pgrep -n tie) ] || ( tie -n -m c -i any -E $DEVICE_ID -d /tmp/measure/ -P32 >/dev/null 2>&1 & )
 
 	bwdump		# Start/restart airodump
 	barp		# Dump arp table

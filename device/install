@@ -219,7 +219,7 @@ echo "done"
 # Lynksys only
 if [ $suffix == ls ]; then
 	echo -n "Creating bash to ash wrapper..."
-	ssh $SSH_OPT $user@$1 'echo -e "#!/bin/sh\nash i\$*" > /bin/bash ; chmod +x /bin/bash' 2>/dev/null
+	ssh $SSH_OPT $user@$1 'echo -e "#!/bin/sh\nash \$*" > /bin/bash ; chmod +x /bin/bash' 2>/dev/null
 	echo done
 
 #	linksys_pkg $1 $(grep ^LS ~/conf/packages.conf | cut -f2) 
@@ -242,8 +242,8 @@ fi
 # All but Workstations
 if [ $suffix != "ws" ]; then
 	echo "Configuring wireless:"
-	WPA_PSK=$(md5sum <<< $2 | awk '{ print $1 }')
-	ssh $SSH_OPT $user@$1 'scripts/action config "WIFI_SSID='$2'&WIFI_WPA_PSK='$WPA_PSK'&WIFI_CHANNEL=1"'
+	WPA_PASS=$(md5sum <<< $2 | awk '{ print $1 }')
+	ssh $SSH_OPT $user@$1 'scripts/action config "WIFI_SSID='$2'&WIFI_PASS='$WPA_PASS'"'
 	echo done
 fi
 

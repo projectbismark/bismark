@@ -8,9 +8,8 @@
 
 case $DEVICE_ID in
 NB*)
-	# Configure wireless interface channel
-	grep -q ^channel= /etc/hostapd/hostapd.conf || echo channel=1 >> /etc/hostapd/hostapd.conf
-	iwconfig ath0 channel $(awk -F= '/^channel/{ print $2 }' /etc/hostapd/hostapd.conf)
+	# Configure wireless interface 
+	action config push
 
 	# Setup dhcp log script
 	if ! grep -q ^dhcp-script= /etc/dnsmasq.conf ; then
