@@ -627,13 +627,20 @@ function blacklist ()
 {
 	if [ $1 ]; then
 		case $2 in
-		on) query $BDM_DB "INSERT INTO blacklist (id) VALUES('$1');" ;;
-		off) query $BDM_DB "DELETE FROM blacklist WHERE id='$1';" ;;
+		on) 
+			query $BDM_DB "INSERT INTO blacklist (id) VALUES('$1');"
+			echo -e "Added $1 to blacklist\n"
+		;;
+		off) 
+			query $BDM_DB "DELETE FROM blacklist WHERE id='$1';" 
+			echo -e "Removed $1 from blacklist\n"
+		;;
 		esac	
-	else
-		echo "Blacklisted devices:"
-		query $BDM_DB "SELECT id FROM blacklist;"
 	fi
+
+	echo -e "${WHITE}Blacklisted devices:${RED}"
+	query $BDM_DB "SELECT id FROM blacklist;"
+	echo -ne $NO_COLOR
 }
 
 ## Internal commands ##
