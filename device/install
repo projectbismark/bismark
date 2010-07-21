@@ -13,6 +13,7 @@ PASS="sleep 1; echo $ROOT_PASS;"
 VERSION=$(svn info $SVN_DIR | awk '/^Rev/{ print $2 ; exit }')
 SSH_OPT="-i $SVN_DIR/server/keys/bismark_srv -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SCP_OPT=$SSH_OPT
+PARTITION="hda2"
 DEV_TYPES="LS NB WS"
 
 ## Functions  ##
@@ -76,11 +77,14 @@ function create_pkg()
 }
 
 # Parse options
-while getopts 'kp:' flag; do
+while getopts 'd:kp:' flag; do
 	case $flag in
 	p)
 		SSH_OPT+=" -p $OPTARG"
 		SCP_OPT+=" -P $OPTARG"
+	;;
+	d)
+		PARTITION=$OPTARG
 	;;
 	k)
 		KEYS="on"
@@ -100,6 +104,7 @@ if [ ! $2 ]; then
 	
 		Options:
 		       -p <port>      set SSH port number
+		       -d <partition> set SSH port number
 		       -k             configure SSH public key authentication
 	
 		Device ids:
@@ -165,7 +170,7 @@ if [ $suffix == nb ]; then
 		cat >/tmp/rc.local <<-end
 			$(head -13 /etc/rc.local)
 			# Mount storage partition
-			echo "/dev/hda2 /root ext2 rw,user,noatime,exec 0 0" > /etc/fstab
+			echo "/dev/'$PARTITION' /root ext2 rw,user,noatime,exec 0 0" > /etc/fstab
 			mount -a
 			crontab /root/conf/crontab
 
