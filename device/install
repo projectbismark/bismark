@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # Bismark Devices Installation script
 #
 # author: walter.dedonato@unina.it
@@ -60,8 +60,9 @@ function create_pkg()
 			 cd $SVN_DIR/device
 			 cp VERSION /tmp/pkg/$type
 			 cp -d conf/* /tmp/pkg/$type/conf
+			 sed -i -e "/^DEVICE_ID=/ s/=.*/=$type/" /tmp/pkg/$type/conf/dev.conf
 			 cp -d scripts/* /tmp/pkg/$type/scripts
-			 [ -e bin/$type ] && cp -d bin/$type/* /tmp/pkg/$type/bin
+			 [ -e bin/$type ] && (cd  bin/$type && tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/bin -xf /dev/stdin )
 			 [ -e lib/$type ] && cp -d lib/$type/* /tmp/pkg/$type/lib
 			)
 
@@ -166,12 +167,14 @@ if [ $suffix == nb ]; then
 			# Mount storage partition
 			echo "/dev/hda2 /root ext2 rw,user,noatime,exec 0 0" > /etc/fstab
 			mount -a
+			crontab /root/conf/crontab
 
 			exit 0
 		end
 		chmod +x /tmp/rc.local
 		mv /tmp/rc.local /etc
-		/noxbox/bin/persist_files /etc/rc.local
+		touch /tmp/void && crontab /tmp/void && rm /tmp/void
+		/noxbox/bin/persist_files /etc/rc.local /var/spool/cron/crontabs/root
 		/etc/rc.local
 	' 2>/dev/null
 	echo done
@@ -234,9 +237,8 @@ if [ $suffix == nb ]; then
 	echo "Setting root password:"
 	ssh $SSH_OPT $user@$1 "{ $PASS $PASS } | passwd" 2>/dev/null
 
-
 	echo "Persisting changes to flash memory:" 
-	ssh $SSH_OPT $user@$1 "/noxbox/bin/persist_changes" 2>/dev/null
+	ssh $SSH_OPT $user@$1 "/noxbox/bin/persist_files /etc/shadow" 2>/dev/null
 fi
 
 # All but Workstations

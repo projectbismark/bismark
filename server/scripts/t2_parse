@@ -1,0 +1,73 @@
+#!/bin/bash
+# Parser for TIE netflow data
+#
+# author: walter.dedonato@unina.it
+
+DATA_DIR=~/var/data
+BACKUP_FILE=$DATA_DIR/old/t2_$(date +%s).tar
+count=1
+# Process any .t2 file from DATA dir
+cd $DATA_DIR
+for file in $(find . -name '*.t2') ; do
+	device=$(basename $file)
+	device=${device%%_*}
+
+	# Parse file
+	echo $file
+	gawk -f /dev/stdin $file <<-end
+		/^[0-9]/{
+			# Check flow existence
+			result=""
+			query="mysql -NB -u root -e 'SELECT uid,tsend FROM FLOWS \
+						     WHERE deviceid=\"$device\" AND flowid = " \$1 " \
+						     AND tsstart > " int(\$11) " AND tsstart < " int(\$11) + 1 "' bismark_live_v1" 
+			query | getline result
+			close(query)
+
+			if(result) {
+				# Existing flow
+				split(result, r)
+
+				if (int(r[2]) != int(\$12)) {
+					#print "Updating flow " \$1
+					system("mysql -u root -e ' \
+						UPDATE FLOWS SET tsend="\$12", uppkts=uppkts+"\$8", dwpkts=dwpkts+"\$7",\
+								 upbytes=upbytes+"\$10", dwbytes=dwbytes+"\$9" \
+							WHERE uid="r[1]" \
+						' bismark_live_v1")
+				} else {
+					#print "Duplicate flow " \$1
+				}
+			} else {
+				# New flow
+				#print "Creating flow " \$1
+				system("mysql -u root -e ' \
+					INSERT INTO FLOWS VALUES (NULL,"\$1",\"$device\", \
+						INET_ATON(\""\$2"\"), \
+						INET_ATON(\""\$3"\"), \
+						"\$4","\$5","\$6","\$8","\$7","\$10","\$9","\$11","\$12",\""\$14"\"); \
+					' bismark_live_v1")
+
+				# Get flow uid
+				result=""
+				query="mysql -NB -u root -e 'SELECT uid,flowid FROM FLOWS \
+							     WHERE deviceid=\"$device\" AND flowid = " \$1 " \
+							     AND tsstart > " int(\$11) " AND tsstart < " int(\$11) + 1 "' bismark_live_v1" 
+				query | getline result
+				close(query)
+				split(result, r)
+			}
+
+			#print "Adding flow sample " \$1
+			system("mysql -u root -e ' \
+				INSERT INTO FLOWS_SAMPLES \
+					VALUES ("r[1]", "\$8","\$7","\$10","\$9","\$11","\$12"); \
+				' bismark_live_v1")
+		}
+	end
+
+	tar -rf $BACKUP_FILE --remove-files $file
+done
+
+gzip $BACKUP_FILE
+
