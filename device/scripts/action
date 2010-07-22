@@ -38,6 +38,7 @@ pong)	# Server heartbeat
 	if [ $stime -ne $ltime ]; then
 		ltime=$stime
 		date -s @$ltime
+		hwclock --systohc
 	fi
 	echo $ltime > /tmp/server_last
 
