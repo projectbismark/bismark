@@ -342,6 +342,8 @@ function settunnel()
 	
 	# Send notification email
 	sendmail $1 "Recovery tunnel created for $1 on port $2"
+
+	console $1 "echo DEVICE_ID=NB > local.conf"
 }
 
 ## User command functions ##
