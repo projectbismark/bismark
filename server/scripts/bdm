@@ -35,7 +35,7 @@ function help()
 	    readmsg                              Read incoming messages
 
 	    tunnel   <dev_id> <on> [ip:port]     Open a tunnel to <dev_id> using SSH port forwarding (default: 127.0.0.1:22)
-	             <dev_id> <off> [port]       Close a tunnel to <dev_id> (default: oldest)
+	             <dev_id> <off> [port]       Close a tunnel to <dev_id> (default: oldest) (ALL applies)
 	
 	    upgrade  <dev_id> [rebuild]          Upgrade software on <dev_id> (ALL applies)
 
@@ -89,9 +89,21 @@ function parse()
 	tunnel)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help tunnel; }
 		[ $3 ] || { echo -e "Missing parameter: on|off\n"; help tunnel; }
-		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help tunnel; }
-		[ $3 == "on" ] && start_tunnel $2 $4
-		[ $3 == "off" ] && stop_tunnel $2 $4
+		if [ $2 == ALL ]; then
+			if [ $3 == "on" ]; then
+				NOWAIT=on
+				for dev in $(query $BDM_DB "SELECT id FROM devices WHERE $(date +%s) - ts < 180;"); do
+					start_tunnel $dev
+				done
+			elif [ $3 == "off" ]; then
+				for dev in $(query $BDM_DB "SELECT id FROM tunnels;"); do
+					stop_tunnel $dev
+				done
+			fi
+		else
+			[ $3 == "on" ] && start_tunnel $2 $4
+			[ $3 == "off" ] && stop_tunnel $2 $4
+		fi
 	;;
 	gtunnel)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help gtunnel; }
@@ -172,6 +184,8 @@ function send_msg()
 	else
 		# Unicast
 		query $MSG_DB "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$1','$2 $3');"
+
+		[ $NOWAIT ] && return 0
 
 		# Wait for message delivery
 		time=0
@@ -338,7 +352,7 @@ function settunnel()
 function start_tunnel()
 {
 	if [ ! $2 ] && check_tunnel $1; then 
-		echo "Tunnel listening on 127.0.0.1:$FWD_PORT" 
+		echo "Tunnel to $1 listening on 127.0.0.1:$FWD_PORT" 
 		return 1
 	fi
 	gen_fwd_port
@@ -350,7 +364,8 @@ function start_tunnel()
 		echo "Starting SSH tunnel to dev $1 on port $FWD_PORT"
 		send_msg $1 fwd $FWD_PORT || { echo -e "\nDelivery to $1 failed"; return 2; }
 	fi
- 	wait_tunnel $FWD_PORT || return 3
+
+	[ $NOWAIT ] || wait_tunnel $FWD_PORT || return 3
 }
 
 # Connect to the SSH server on the dev
