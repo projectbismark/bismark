@@ -59,9 +59,8 @@ function create_pkg()
 			# Copy files
 			(
 			 cd $SVN_DIR/device
-			 cp VERSION /tmp/pkg/$type
 			 cp -d conf/* /tmp/pkg/$type/conf
-			 sed -i -e "/^DEVICE_ID=/ s/=.*/=$type/" /tmp/pkg/$type/conf/dev.conf
+			 sed -i -e "/^VERSION=/ s/=.*/=$VERSION/" /tmp/pkg/$type/conf/dev.conf
 			 cp -d scripts/* /tmp/pkg/$type/scripts
 			 [ -e bin/$type ] && (cd  bin/$type && tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/bin -xf /dev/stdin )
 			 [ -e lib/$type ] && cp -d lib/$type/* /tmp/pkg/$type/lib
