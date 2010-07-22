@@ -93,6 +93,7 @@ function parse()
 			if [ $3 == "on" ]; then
 				NOWAIT=on
 				for dev in $(query $BDM_DB "SELECT id FROM devices WHERE $(date +%s) - ts < 180;"); do
+					FWD_PORT=""
 					start_tunnel $dev
 				done
 			elif [ $3 == "off" ]; then
@@ -242,7 +243,6 @@ function gen_fwd_port()
 	fi
 
 	# Find a random available port number
-	RANDOM=$(( `date +%s` % 32767 ))
 	FWD_PORT=$(( RANDOM + 10000 ))
 	while (check_fwd_port $FWD_PORT); do
 		FWD_PORT=$(( RANDOM + 10000 ))
@@ -687,6 +687,9 @@ function clearmsg()
 }
 
 ## Main ##
+
+# Set random seed
+RANDOM=$(( `date +%s` % 32767 ))
 # Parse command-line
 parse $*
 
