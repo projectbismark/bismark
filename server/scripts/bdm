@@ -125,7 +125,7 @@ function parse()
 		console $2 ${p#* * }
 	;;
 	list)	
-		list
+		list $2
 	;;
 	readmsg)
 		read_msg
@@ -342,8 +342,6 @@ function settunnel()
 	
 	# Send notification email
 	sendmail $1 "Recovery tunnel created for $1 on port $2"
-
-	console $1 "echo DEVICE_ID=NB > local.conf"
 }
 
 ## User command functions ##
@@ -549,8 +547,9 @@ function list()
 		off_time=$(( $(date +%s) - $ts ))
 		if [ $off_time -lt 300 ]; then
 			echo -ne $GREEN
-		elif [ $off_time -lt 900 ]; then
+		elif [ $off_time -lt 600 ]; then
 			echo -ne $YELLOW
+			[ $2 ] && sendmail $id "Device $id went offline"
 		else
 			echo -ne $RED
 		fi
