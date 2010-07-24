@@ -42,8 +42,7 @@ function create_pkg()
 {
 	# Update version number
 	svn update $SVN_DIR
-	svn info $SVN_DIR | awk '/^Rev/{ print $2 ; exit }' > $SVN_DIR/device/VERSION
-	VERSION=$(cat $SVN_DIR/device/VERSION)
+	VERSION=$(svn info $SVN_DIR | awk '/^Rev/{ print $2 ; exit }')
 
 	# Create last release packages
 	for type in $DEV_TYPES; do
@@ -103,7 +102,7 @@ if [ ! $2 ]; then
 	
 		Options:
 		       -p <port>      set SSH port number
-		       -d <partition> set SSH port number
+		       -d <partition> set flash card partition (default: hda2)
 		       -k             configure SSH public key authentication
 	
 		Device ids:

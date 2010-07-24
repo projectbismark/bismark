@@ -1,0 +1,116 @@
+#!/bin/bash
+# Bismark Device Installation script - NoxBox 
+#
+# author: walter.dedonato@unina.it
+
+DEVHOST_PUB_KEY=~/.ssh/id_rsa.pub
+SERVER_PUB_KEY="keys/bismark_srv.pub"
+SERVER_PRV_KEY="keys/bismark_srv"
+SERVER_HOST_KEY="keys/known_hosts"
+DEVICE_SSH_KEY="keys/bismark_nb"
+ROOT_PASS=$(md5sum <<< bismark | cut -d" " -f1)
+PASS="sleep 1; echo $ROOT_PASS;"
+SSH_OPT="-i $SERVER_PRV_KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SCP_OPT=$SSH_OPT
+PARTITION="hda2"
+USERNAME=root
+
+
+# Parse options
+while getopts 'd:kp:' flag; do
+	case $flag in
+	p)
+		SSH_OPT+=" -p $OPTARG"
+		SCP_OPT+=" -P $OPTARG"
+	;;
+	d)
+		PARTITION=$OPTARG
+	;;
+	*)
+		echo "Unknown option: $flag $OPTARG"
+		help
+	;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
+# Command line check
+if [ ! $2 ]; then
+	cat <<-end
+		usage: $(basename $0) [options] <address> <dev_id>"
+	
+		Options:
+		       -p <port>      set SSH port number
+		       -d <partition> set flash card partition (default: hda2)
+	
+		Device ids:
+		       NBx = NoxBox (Debian Lenny 5.0.4)
+	end
+	exit
+fi
+
+if [ ${2:0:2} != "NB" ]; then
+	echo 'Device name MUST have NB prefix!'
+	exit
+fi
+
+## Installation ##
+
+echo "Installing Bismark on NoxBox router ($1 $2)..."
+echo "-- if requested insert \"n0xb0xr0x\" password --"
+
+echo -n "Setting rc.local and mounting storage partition..."
+ssh $SSH_OPT $USERNAME@$1 '
+	cat >/tmp/rc.local <<-end
+		$(head -13 /etc/rc.local)
+
+		# Mount storage partition
+		echo "/dev/'$PARTITION' /root ext2 rw,user,noatime,exec 0 0" > /etc/fstab
+		mount -a
+		crontab /root/conf/crontab
+
+		exit 0
+	end
+	chmod +x /tmp/rc.local
+	mv /tmp/rc.local /etc
+	touch /tmp/void && crontab /tmp/void && rm /tmp/void
+	/noxbox/bin/persist_files /etc/rc.local /var/spool/cron/crontabs/root
+	/etc/rc.local
+' 2>/dev/null
+echo done
+
+echo -n "Adding SSH public and host keys..."
+ssh $SSH_OPT $USERNAME@$1 " 
+	mkdir -p .ssh 
+	echo \"$(cat $SERVER_PUB_KEY $DEVHOST_PUB_KEY)\" > ~/.ssh/authorized_keys
+	echo \"$(cat $SERVER_HOST_KEY)\" > ~/.ssh/known_hosts
+" 2>/dev/null
+echo "done"
+
+echo "Copying SSH key pair:"
+chmod 600 ${DEVICE_SSH_KEY}_$suffix
+scp $SCP_OPT ${DEVICE_SSH_KEY}{,.pub} $USERNAME@$1:~/.ssh 2>/dev/null 
+
+echo "Copying & installing package:"
+scp $SCP_OPT dev-${2:0:2}-*.tgz $USERNAME@$1:/tmp/dev.tgz
+ssh $SSH_OPT $USERNAME@$1 'tar -xzvf /tmp/dev.tgz ; rm /tmp/dev.tgz' 
+
+echo -n "Setting device id..."
+ssh $SSH_OPT $USERNAME@$1 "echo $2 > ID" 2>/dev/null
+echo "done"
+
+echo -n "Configuring cronjobs..."
+ssh $SSH_OPT $USERNAME@$1 "crontab conf/crontab" 2>/dev/null
+echo "done"
+
+echo "Setting root password:"
+ssh $SSH_OPT $USERNAME@$1 "{ $PASS $PASS } | passwd" 2>/dev/null
+ssh $SSH_OPT $USERNAME@$1 "/noxbox/bin/persist_files /etc/shadow" 2>/dev/null
+
+echo "Configuring wireless:"
+WPA_PASS=$(md5sum <<< $2 | awk '{ print $1 }')
+ssh $SSH_OPT $USERNAME@$1 'scripts/action config "WIFI_SSID='$2'&WIFI_PASS='$WPA_PASS'"'
+echo done
+
+echo "Installation completed"
+

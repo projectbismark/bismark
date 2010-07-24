@@ -1,0 +1,24 @@
+#!/bin/bash
+# Create NoxBox installation package
+#
+# author: wlater.dedonato@unina.it
+
+TMP_DIR=/tmp/ipkg
+
+# Get package version
+VERSION=$(ls ../dev-NB-*.tgz | awk -F"[-.]" '{ print $5 }' )
+
+# Create temp dir
+mkdir -p $TMP_DIR/keys
+
+# Copy files
+cp ../dev-NB-*.tgz install README $TMP_DIR
+cp ../keys/{bismark_nb*,known_hosts} $TMP_DIR/keys
+cp ../../server/keys/bismark_srv* $TMP_DIR/keys
+
+# Create package
+(
+ DEST_DIR=$(pwd)
+ cd $TMP_DIR 
+ tar -czvf "$DEST_DIR/noxbox_v${VERSION}.tgz" *
+)

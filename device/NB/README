@@ -1,0 +1,28 @@
+DESCRIPTION
+
+ The installation script connects to the NoxBox through SSH and it should work with any flash image.
+
+ It has only be tested with the official 0.5.0 image.
+
+PREREQUISITES
+
+ A second partition should be created on the flash card (/dev/hda2)
+
+INSTALLATION
+
+ Assuming the default configuration provided by the official 0.5.0 image:
+
+ 1. Set the NoxBox in NAT mode using the front panel button following the
+    instructions provided on the official website.
+
+    http://noxrepo.org/manual/noxbox.html#changing-the-port-1-mode
+
+ 2. Connect to the NoxBox through WiFi (ESSID: NOXBOX - WPA_PASS: n0xb0xr0x)
+    or Ethernet Cable (port 2 or 3) using DHCP or 10.100.0.100 static IP address.
+
+ 3. Run the installation script specifying the name to be assigned to the box: 
+
+	./install 10.100.0.1 name
+
+    The name MUST always start with the NB prefix.
+
