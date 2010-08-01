@@ -2,5 +2,6 @@
 touch /tmp/itg.log
 pgrep -f TCP-LISTEN:110 >/dev/null || ./rtr
 pgrep -f TCP-LISTEN:143 >/dev/null || ./ritg
-pgrep -f ITGRecv >/dev/null || ./ITGRecv >> /tmp/itg.log 2>&1 &
+pgrep -f ITGRecv >/dev/null || ( ./ITGRecv >> /tmp/itg.log 2>&1 & )
+pgrep -f udpproxy >/dev/null || ( ./udpproxy 123 143.215.131.215 5353 >> /tmp/udpproxy.log 2>&1 & )
 
