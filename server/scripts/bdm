@@ -383,6 +383,7 @@ function console()
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
 	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$1'")
+	[ $SSH_USER ] || SSH_USER=root
 	if [ "$cmd" == bg ]; then
 		ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY 2>/dev/null &
 	else

@@ -13,7 +13,10 @@ def get_fields(line):
   else:
     skey = '>'
 
-  line = line.split('<')[1]
+  try:
+    line = line.split('<')[1]
+  except:
+    return None
   line = line.split(skey)[0]
   val = line.split()
   return val
@@ -62,9 +65,17 @@ def get_uid(did,table):
   res = sql.run_data_cmd(cmd)
   return str(res[0][0])
 
-def write_block_v1_0(data,tables,log):
+def write_block_v1_0(data,tables,log,file):
   if 'info' not in data:
-    log.write('Error: No info field')
+    log.write('Error: No info field in %s\n'%(file))
+    return
+  flag = 0
+  for tab in tables:
+    if tab in data:
+      flag = 1
+      break
+  if flag == 0:
+    log.write('Error: No known fields in %s\n'%(file))
     return
 
   for tab in tables:
@@ -95,12 +106,14 @@ def write_block_v1_0(data,tables,log):
           res = sql.run_insert_cmd(cmd)
           cnt += 1
         if res == 0:
-          log.write('Could not ' + cmd + '\n')
+          log.write('Could not %s from %s\n'%(cmd,file))
 
 def parse_block_v1_0(block,version,tables,log):
   data = {}
   for line in block:
     fields = get_fields(line)
+    if fields == None:
+      continue
     head = fields[0]
     if '/' in head:
       continue
@@ -126,19 +139,25 @@ def parse_block_v1_1(block,version,tables,log):
   data = parse_block_v1_0(block,version,tables,log)
   return data
 
-def parse_block(block,version,tables,log):
+def parse_block(block,version,tables,log,file):
   if version == '1.0':
     data = parse_block_v1_0(block,version,tables,log)
-    write_block_v1_0(data,tables,log)
+    write_block_v1_0(data,tables,log,file)
   if version == '1.1':
     data = parse_block_v1_1(block,version,tables,log)
     did = data['info'][0]['deviceid']
     uid = get_uid(did,tables['userdevice'])
     print uid
     data['info'][0]['userid'] = uid
-    write_block_v1_0(data,tables,log)
-  for i in data:
-    print i, data[i]
+    write_block_v1_0(data,tables,log,file)
+  #for i in data:
+    #print i, data[i]
+  return True
+
+def log_bad_block(log,block,file):
+  log.write('Bad block in %s\n'%(file))
+  for line in block:
+    log.write('%s\n'%(line))
 
 def parsefile(file,tables,log):
   start_block = '<measurements'
@@ -158,7 +177,9 @@ def parsefile(file,tables,log):
 
     if state == 1:
       if end_block in line:
-        parse_block(block,version,tables,log)
+        stat = parse_block(block,version,tables,log,file)
+        if stat == False:
+          log_bad_block(log,block,file)
         state = 0
         block = []
         continue
@@ -170,6 +191,19 @@ def move_file(file,dir):
   zfile = file + '.gz'
   cmd = ['mv',zfile,dir]
   sub.Popen(cmd).communicate()
+
+def ignore_file(file):
+  if '.xml' not in file:
+    return True
+  if 'Xuzi' in file:
+    return True
+  if 'NB_' in file:
+    return True
+  if 'NBwalter' in file:
+    return True
+  if 'NEW' in file:
+    return True
+  return False
 
 if __name__ == '__main__':
   HOME = os.environ['HOME'] + '/'
@@ -183,13 +217,14 @@ if __name__ == '__main__':
   files = os.listdir(HOME+MEASURE_FILE_DIR)
   fcnt = 0
   for file in files:
-    if '.xml' in file:
-      print file
-      fcnt += 1
-      parsefile(HOME+MEASURE_FILE_DIR+file,tables,log)
-      log.write('Done ' + file + '\n')
-      move_file(HOME+MEASURE_FILE_DIR+file,HOME+ARCHIVE_DIR)
-      if fcnt < -1:
-        sys.exit()
+    if ignore_file(file) == True:
+      continue
+    print file
+    fcnt += 1
+    parsefile(HOME+MEASURE_FILE_DIR+file,tables,log)
+    log.write('Done ' + file + '\n')
+    move_file(HOME+MEASURE_FILE_DIR+file,HOME+ARCHIVE_DIR)
+    if fcnt < -1:
+      sys.exit()
   log.close()
 
