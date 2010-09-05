@@ -7,4 +7,4 @@
 . ~/conf/dev.conf
 
 # Dump arp table 
-arp -n | awk '(NR > 1){ print '$(date +%s)' "\t" $1 "\t" $3}' >> /tmp/measure/${DEVICE_ID}.arp
+arp -n | awk '(NR > 1 && /ether/){ print '$(date +%s)' "\t" $1 "\t" $3}' >> /tmp/measure/${DEVICE_ID}.arp
