@@ -18,9 +18,8 @@ if [ $(pgrep -n airodump-ng) ]; then
 	mv /tmp/${DEVICE_ID}*.csv /tmp/measure
 fi
 
-if [ $1 == all ]; then
-	( airodump-ng -w /tmp/${DEVICE_ID}_$(date +%s)_all --output-format csv --berlin 500 --showack ath1 >/dev/null 2>&1 & )
+if [ "$1" == all ]; then
+	( openvt -w airodump-ng -w /tmp/${DEVICE_ID}_$(date +%s)_all --output-format csv --berlin 500 ath1 & )
 else
-	( airodump-ng --channel $WIFI_CHANNEL -w /tmp/${DEVICE_ID}_$(date +%s) --output-format csv --berlin 500 --showack ath1 >/dev/null 2>&1 & )
+	( openvt -w airodump-ng -w /tmp/${DEVICE_ID}_$(date +%s) --channel $WIFI_CHANNEL --output-format csv --berlin 500 ath1 & )
 fi
-
