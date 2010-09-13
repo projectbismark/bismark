@@ -5,6 +5,7 @@
 
 # Load configuration file
 . ~/conf/dev.conf
+. ~/scripts/functions
 
 # Copy active measurements files
 scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
@@ -17,12 +18,7 @@ if [ ${DEVICE_ID:0:2} == NB ]; then
 	scp -i $SSH_KEY /tmp/measure/*.dhcp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).dhcp && rm /tmp/measure/*.dhcp
 	scp -i $SSH_KEY ~/cache/*.events $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).events && rm ~/cache/*.events
 
-	# Rename features dump files
-	( cd /tmp/measure/
-	  for file in $(find -name "*.dump"); do
-		mv $file ${DEVICE_ID}_$file
-	  done
-	)
+	rename_dump
 	scp -i $SSH_KEY /tmp/measure/*.dump $USER@$SERVER:~/var/data && rm /tmp/measure/*.dump
 
 	# Restart modem event watcher

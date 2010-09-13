@@ -28,3 +28,14 @@ output ()
                 cat
         fi
 }
+
+# Rename dump files
+rename_dump ()
+{
+	# Rename features dump files
+	( cd /tmp/measure/
+	  for file in $(find -name "*.dump"); do
+		mv $file ${DEVICE_ID}_$file
+	  done
+	)
+}

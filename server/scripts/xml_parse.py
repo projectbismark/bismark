@@ -199,8 +199,8 @@ def ignore_file(file):
     return True
   if 'NB_' in file:
     return True
-  if 'NBwalter' in file:
-    return True
+  #if 'NBwalter' in file:
+    #return True
   if 'NEW' in file:
     return True
   return False

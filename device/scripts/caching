@@ -5,6 +5,8 @@
 
 # Load configuration file
 . ~/conf/dev.conf
+. ~/scripts/functions
 
 cd /tmp/measure
+rename_dump
 tar --remove-files -czvf ~/cache/${DEVICE_ID}_$(date +%s).tgz *.*
