@@ -65,10 +65,10 @@ typedef struct {
 /*
  * Constants
  */
-#define BDM_DB "/var/tmp/bismark/db/bdm.db"
-#define MSG_DB "/var/tmp/bismark/db/msg.db"
-#define MSR_DB "/var/tmp/bismark/db/msr.db"
-#define LOG_DIR "/var/tmp/bismark/log/devices"
+#define BDM_DB "/home/bismark/var/db/bdm.db"
+#define MSG_DB "/home/bismark/var/db/msg.db"
+#define MSR_DB "/home/bismark/var/db/msr.db"
+#define LOG_DIR "/home/bismark/var/log/devices"
 
 #define MAX_NUM_THREAD 50
 #define MAX_UDP_PSIZE 1472
