@@ -35,7 +35,7 @@ rename_dump ()
 	# Rename features dump files
 	( cd /tmp/measure/
 	  for file in $(find -name "*.dump"); do
-		mv $file ${DEVICE_ID}_$file
+		mv $file ${DEVICE_ID}_${file:2}
 	  done
 	)
 }
