@@ -9,6 +9,7 @@ TMP_DIR=/tmp/ipkg
 VERSION=$(ls ../dev-NB-*.tgz | awk -F"[-.]" '{ print $5 }' )
 
 # Create temp dir
+rm -rf $TMP_DIR
 mkdir -p $TMP_DIR/keys
 
 # Copy files
