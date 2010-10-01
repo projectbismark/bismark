@@ -100,11 +100,6 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 	fi
 fi
 
-# RTT measurement using PING
-if get_target Bismark PING $ZONE 10 ; then
-	bping $dst | mstats RTT PING $src $dst >> $xml_file
-fi
-
 # Get Gateway IP
 if [ ! "$gwip" ]; then
 	btr "8.8.8.8" > /dev/null
@@ -113,7 +108,12 @@ fi
 
 # Last mile RTT measurement using PING
 if [ "$gwip" ]; then
-	bping $gwip | mstats LMRTT PING $src $gwip >> $xml_file
+	( bping $gwip | mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $xml_file ) &
+fi
+
+# RTT measurement using PING
+if get_target Bismark PING $ZONE 10 ; then
+	bping $dst | mstats RTT PING $src $dst >> $xml_file
 fi
 
 # DNS delay and failure
