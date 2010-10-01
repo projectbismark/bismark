@@ -75,7 +75,7 @@ function create_pkg()
 }
 
 # Parse options
-while getopts 'd:kp:' flag; do
+while getopts 'd:kp:u' flag; do
 	case $flag in
 	p)
 		SSH_OPT+=" -p $OPTARG"
@@ -86,6 +86,10 @@ while getopts 'd:kp:' flag; do
 	;;
 	k)
 		KEYS="on"
+	;;
+	u)
+		create_pkg
+		exit
 	;;
 	*)
 		echo "Unknown option: $flag $OPTARG"
@@ -104,6 +108,7 @@ if [ ! $2 ]; then
 		       -p <port>      set SSH port number
 		       -d <partition> set flash card partition (default: hda2)
 		       -k             configure SSH public key authentication
+		       -u             just create packages
 	
 		Device ids:
 		       LSx = Linksys WRT54GL (OpenWRT Kamikaze 8.09.1)

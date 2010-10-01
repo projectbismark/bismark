@@ -55,7 +55,12 @@ sleep $((RANDOM % 30))
 xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
 
 # Get source IP
-src=$(cat /tmp/ip)
+if [ -e /tmp/ip ]; then
+	src=$(cat /tmp/ip)
+else
+	iface=$(route -n | awk '/^0\.0\.0\.0/{ print $8 }')
+	src=$(ifconfig $iface | awk '/inet:/{ print substr($2,6) }')
+fi
 
 # XML file header
 cat > $xml_file <<-end
@@ -65,11 +70,6 @@ cat > $xml_file <<-end
 end
 
 ## Concurrent measurements ##
-
-# RTT measurement using PING
-if get_target Bismark PING $ZONE 10 ; then
-	bping $dst | mstats RTT PING $src $dst >> $xml_file
-fi
 
 if [ $((count % TR_FQ)) -eq 0 ]; then
 	# Traceroute
@@ -83,6 +83,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 			        </traceroute>
 			end
 		fi
+		gwip=$(cat /tmp/gwip)
 	fi
 
 	# Reverse traceroute
@@ -97,6 +98,22 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 			end
 		fi
 	fi
+fi
+
+# RTT measurement using PING
+if get_target Bismark PING $ZONE 10 ; then
+	bping $dst | mstats RTT PING $src $dst >> $xml_file
+fi
+
+# Get Gateway IP
+if [ ! "$gwip" ]; then
+	btr "8.8.8.8" > /dev/null
+	[ -e /tmp/gwip ] && gwip=$(cat /tmp/gwip)
+fi
+
+# Last mile RTT measurement using PING
+if [ "$gwip" ]; then
+	bping $gwip | mstats LMRTT PING $src $gwip >> $xml_file
 fi
 
 # DNS delay and failure
