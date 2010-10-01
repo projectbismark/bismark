@@ -195,7 +195,7 @@ def move_file(file,dir):
 def ignore_file(file):
   if '.xml' not in file:
     return True
-  if 'Xuzi' in file:
+  if 'Xuzi_' in file:
     return True
   if 'NB_' in file:
     return True
