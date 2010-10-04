@@ -17,7 +17,7 @@ send)
 ;;
 log)
 	echo $cmd - $opt >> /tmp/itg.log
-	./ITGDec $opt -j 1000 $opt.jitter -p 1000 $opt.pktloss -b 1000 $opt.bitrate 22> /dev/null
+	./ITGDec $opt -j 1000 $opt.jitter -p 1000 $opt.pktloss -b 1000 $opt.bitrate 2> /dev/null
 	echo bitrate
 	awk '(NR > 1){ print $3 }' $opt.bitrate
 	echo jitter

@@ -3,5 +3,17 @@ touch /tmp/itg.log
 pgrep -f TCP-LISTEN:110 >/dev/null || ./rtr
 pgrep -f TCP-LISTEN:143 >/dev/null || ./ritg
 pgrep -f ITGRecv >/dev/null || ( ./ITGRecv >> /tmp/itg.log 2>&1 & )
-pgrep -f udpproxy >/dev/null || ( ./udpproxy 123 143.215.131.215 5353 >> /tmp/udpproxy.log 2>&1 & )
+#pgrep -f udpproxy >/dev/null || ( ./udpproxy 123 143.215.131.215 5353 >> /tmp/udpproxy.log 2>&1 & )
+
+# Kill stucked ITGSend processes
+MINUTES=2
+PMATCH='ITGSend'
+
+/usr/bin/find /proc/ \
+        -maxdepth 3 \
+        -name 'cmdline' \
+        -mmin +${MINUTES} \
+        -exec /bin/grep -l ${PMATCH} {} \; | \
+                /usr/bin/cut -d'/' -f3 | \
+                /usr/bin/xargs -n1 -i^ /bin/bash -c '/bin/kill ^ 2>&1 > /dev/null'
 
