@@ -1,0 +1,77 @@
+#!/usr/bin/perl -w 
+# 
+# Reports on devices that haven't been reporting measurements recently.
+#
+# Author: Brian Poole
+
+# The number of hours without any measurements from a device before we alert
+# that they haven't checked in.
+#
+$REPORT_THRESHOLD_IN_HOURS = 12;
+
+# Who to report devices that are MIA to
+#
+@REPORT_EMAILS = ('bpoole@cc.gatech.edu', 'walter.dedonato@unina.it', 'srikanth@gatech.edu');
+
+# Database setup information
+#
+$DB_NAME="bismark_live_v1";
+$DB_HOST="localhost";
+$DB_USER="bismark-ro";
+$DB_PASS="ro-bismark";
+
+use DBI;
+
+sub send_report($);
+
+$dbh = DBI->connect("DBI:mysql:database=$DB_NAME;host=$DB_HOST", $DB_USER, $DB_PASS)
+	or die $DBI::errstr;
+
+$query = "SELECT m.deviceid AS deviceid, min(UNIX_TIMESTAMP() - m.timestamp)/(60*60) AS time_since_reported_in_hrs
+		FROM MEASUREMENTS m, USERDEVICE u
+		WHERE m.deviceid=u.deviceid
+			AND u.end is NULL
+			AND m.deviceid NOT LIKE 'WS%'
+		GROUP BY m.deviceid";
+
+$sth = $dbh->prepare($query)
+	or die $dbh->errstr;
+
+$sth->execute()
+	or die $dbh->errstr;
+
+
+while (my $hash_ref = $sth->fetchrow_hashref) {
+	#print "$hash_ref->{deviceid} -- $hash_ref->{time_since_reported_in_hrs}\n";
+
+	if ($hash_ref->{time_since_reported_in_hrs} >= $REPORT_THRESHOLD_IN_HOURS){
+
+		$message .= "$hash_ref->{deviceid} hasn't reported monitoring data in $hash_ref->{time_since_reported_in_hrs} hours.\n";
+	}
+
+}
+
+send_report($message) if defined $message;
+
+exit;
+
+sub send_report($){
+	my $content = shift;
+	$sendmail = "/usr/sbin/sendmail -t";
+	open(SENDMAIL, "|$sendmail") or die "Cannot open $sendmail: $!";
+	print SENDMAIL "Subject: bismark device status report\n";
+	print SENDMAIL "From: Bismark Device Monitor <do-not-reply\@gtnoise.net>\n";
+	print SENDMAIL "To: ";
+	for ($i = 0; $i <= $#REPORT_EMAILS; $i++){
+		print SENDMAIL $REPORT_EMAILS[$i];
+		if ($i != $#REPORT_EMAILS){
+			print SENDMAIL ", ";
+		} else {
+			print SENDMAIL "\n";
+		}
+	}
+	print SENDMAIL "Content-type: text/plain\n\n";
+	print SENDMAIL $content;
+	print SENDMAIL "\n\n-- $0\n";
+	close(SENDMAIL); 
+}
