@@ -11,6 +11,14 @@ NB*)
 	# Configure wireless interface 
 	action config push
 
+	# Set TCP core parameters
+	ifconfig eth0 txqueuelen 5000
+	sysctl net.ipv4.tcp_congestion_control=reno
+	sysctl net.core.rmem_max=8388608
+	sysctl net.core.wmem_max=8388608
+	sysctl net.ipv4.tcp_rmem="4096 65536 8388608"
+	sysctl net.ipv4.tcp_wmem="4096 65536 8388608"
+
 	# Setup dhcp log script
 	if ! grep -q ^dhcp-script= /etc/dnsmasq.conf ; then
 		echo "dhcp-script=/root/scripts/bdhcp" >> /etc/dnsmasq.conf
