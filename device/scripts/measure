@@ -106,13 +106,14 @@ if [ ! "$gwip" ]; then
 	[ -e /tmp/gwip ] && gwip=$(cat /tmp/gwip)
 fi
 
-# Last mile RTT measurement using PING
-if [ "$gwip" ]; then
-	( bping $gwip | mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $xml_file ) &
-fi
-
-# RTT measurement using PING
+# RTT measurements using PING
 if get_target Bismark PING $ZONE 10 ; then
+    # Last mile RTT
+    if [ "$gwip" ]; then
+	    ( bping $gwip | mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $xml_file ) &
+    fi
+
+    # MServer RTT
 	bping $dst | mstats RTT PING $src $dst >> $xml_file
 fi
 
