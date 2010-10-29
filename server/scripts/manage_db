@@ -1,0 +1,778 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use DBI;
+
+sub doPrompt($$);
+sub doEasyListPrompt($@);
+sub doHardListPrompt($@);
+
+sub menuMain();
+sub menuAddUser();
+sub menuShowUsers();
+sub menuModifyUser();
+sub menuAddDevice();
+sub menuModifyDevice();
+sub menuExit();
+
+sub extractMenuChoices(@);
+sub dispatchFromMenuChoice($@);
+
+sub catchSIGINT();
+
+# Disable stdout buffering
+$| = 1;
+
+our ($sigint_called) = 0;
+
+# Database setup information
+#
+my $DB_NAME="bismark_dev_v1";
+my $DB_HOST="localhost";
+my $DB_USER="bismark-dev";
+my $DB_PASS="HereIsARandomDevPass4BMD";
+
+our $dbh = DBI->connect("DBI:mysql:database=$DB_NAME;host=$DB_HOST", $DB_USER, $DB_PASS, { RaiseError => 1, AutoCommit => 0 } )
+        or die $DBI::errstr;
+our $inTrans = 0;
+
+# Setup SIG INT handler
+$SIG{'INT'} = \&catchSIGINT;
+
+menuMain();
+
+$dbh->disconnect;
+
+exit;
+
+sub menuMain (){
+	# Dispatch list, each list has the prompt we want for the menu and the function to
+	# call if that option is chosen.
+	my @menuDescription = (	['Add a user', \&menuAddUser],
+				['Modify a user', \&menuModifyUser],
+				['Show current users', \&menuShowUsers],
+				['Add a device', \&menuAddDevice],
+				['Modify a device', \&menuModifyDevice],
+				['Quit', \&menuExit],
+			);
+	my $option;
+
+	while (1){
+		# Present the menu and grab the index of the user's choice
+		$option = doEasyListPrompt("\n== MAIN MENU ==\n", @menuDescription);
+
+		# Dispatch to new function
+		$menuDescription[$option][1]();
+
+		# Make sure the transaction flag has been cleared and any uncommited 
+		# changes are discared.
+		$inTrans = 0;
+		$dbh->rollback();
+	}
+
+	return;
+}
+
+
+sub menuAddUser(){
+	my @menuDescription = (	['Name', \&doPrompt, 'User\'s name', ''],
+				['Email', \&doPrompt, 'User\'s email', ''],
+				['Address', \&doPrompt, 'User\'s home address', ''],
+				['Phone', \&doPrompt, 'User\'s phone number', ''],
+				['SLA', \&menuAssociateSLA, '', ''],
+				['Device', \&menuAssociateDevice, '', ''],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);	
+
+	my $verified = 0;
+	my $option;
+
+	# Let subfunctions know we are in the midst of a transaction and they shouldn't
+	# commit.
+	$inTrans = 1;
+
+	do {
+		$option = doHardListPrompt("\n== ADD USER ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			$dbh->rollback();
+			return;
+		}
+
+		$verified = 1;
+		for (my $i = 0; $i <= $#menuDescription; $i++){
+
+			if (defined $menuDescription[$i][3] and $menuDescription[$i][3] eq ''){
+				$verified = 0;
+				print "ERROR: ", $menuDescription[$i][0], " not entered\n";
+			}
+		}
+
+
+	} until ($verified);
+
+	#
+	# INSERT USER RECORD
+	#
+	my $insert = "INSERT INTO USERS (name, email, address, phone) VALUES (?,?,?,?)";
+	my $sth = $dbh->prepare($insert)
+		or die $dbh->errstr;
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $menuDescription[2][3]);
+	$sth->bind_param(4, $menuDescription[3][3]);
+
+	$sth->execute()
+		or die "error during insert: " . $dbh->errstr;
+	
+	my $userid = $dbh->{"mysql_insertid"};
+
+	$sth->finish();
+
+	#
+	# INSERT USERSLA MAPPING
+	#
+	$insert = "INSERT INTO USERSLA (userid, slaid, start) VALUES (?,?,?)";
+	$sth = $dbh->prepare($insert)
+		or die $dbh->errstr;
+	
+	$sth->bind_param(1, $userid);
+	$sth->bind_param(2, $menuDescription[4][3]);
+	$sth->bind_param(3, scalar time());
+
+	$sth->execute()
+		or die "error during insert: " . $dbh->errstr;
+	$sth->finish();
+
+	#
+	# INSERT USERDEVICE MAPPING
+	#
+	$insert = "INSERT INTO USERDEVICE (userid, deviceid, start) VALUES (?,?,?)";
+	$sth = $dbh->prepare($insert)
+		or die $dbh->errstr;
+	
+	$sth->bind_param(1, $userid);
+	$sth->bind_param(2, $menuDescription[5][3]);
+	$sth->bind_param(3, scalar time());
+
+	$sth->execute()
+		or die "error during insert: " . $dbh->errstr;
+	$sth->finish();
+
+	# Looks good? Commit!
+	$dbh->commit();
+}
+
+sub menuModifyUser(){
+	# 
+	# First, figure out what user they want to modify
+	# 
+	my $query = "SELECT name,userid FROM USERS ORDER BY name";
+	my %userids;
+	my @menuDescription = ();
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+		$userids{$hash_ref->{name}} = $hash_ref->{userid};
+		push @menuDescription, [$hash_ref->{name}];
+	}
+	push @menuDescription, ["Exit without selecting a user"];
+
+	$sth->finish;
+
+	my $option = doEasyListPrompt("== SELECT USER ==", @menuDescription);
+
+	if ($menuDescription[$option][0] eq "Exit without selecting a user"){
+		return;
+	}
+
+	#
+	# Pull this particular user's information.
+	#
+	$query = "SELECT name,email,address,phone,userid FROM USERS WHERE userid = " .  $userids{$menuDescription[$option][0]};
+	$sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	my $user_info = $sth->fetchrow_hashref;
+	$sth->finish;
+
+	#
+	# Give them the ability to modify the data
+	#
+	@menuDescription = (	['Name', \&doPrompt, 'User\'s name', $user_info->{name}],
+				['Email', \&doPrompt, 'User\'s email', $user_info->{email}],
+				['Address', \&doPrompt, 'User\'s home address', $user_info->{address}],
+				['Phone', \&doPrompt, 'User\'s phone number', $user_info->{phone}],
+				['SLA', \&menuAssociateSLA, '', $user_info->{slaid}],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);
+
+	my $verified = 0;
+	$inTrans = 1;
+
+	do {
+		$option = doHardListPrompt("\n== MODIFY USER ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			$dbh->rollback();
+			return;
+		}
+
+		$verified = 1;
+		for (my $i = 0; $i <= $#menuDescription; $i++){
+
+			if (defined $menuDescription[$i][3] and $menuDescription[$i][3] eq ''){
+				$verified = 0;
+				print "ERROR: ", $menuDescription[$i][0], " not entered\n";
+			}
+		}
+
+	} until ($verified);
+
+	#
+	# Save the data back to the database
+	#
+	$query = "UPDATE USERS SET name = ?, email = ?, address = ?, phone = ? WHERE userid = ?";
+	$sth = $dbh->prepare($query);
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $menuDescription[2][3]);
+	$sth->bind_param(4, $menuDescription[3][3]);
+	$sth->bind_param(5, $user_info->{userid});
+
+	$sth->execute()
+		or die "error during update: " . $dbh->errstr;
+
+	$dbh->commit();
+}
+
+sub menuShowUsers(){
+
+	my $query = "SELECT name FROM USERS ORDER BY name";
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	print "\nCurrent users in database:\n";
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+		print $hash_ref->{name}, "\n";
+
+	}
+
+	print "\n";
+
+	$sth->finish;
+
+	return;
+}
+
+sub menuAssociateSLA(){
+	my %sla;
+	my @menuDescription = ();
+	my $query = "SELECT slaid,isp,sla,dl,ul FROM SLA ORDER BY isp, sla";
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	push @menuDescription, ["Add a new SLA"];
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+		my $desc = $hash_ref->{isp} . " " . $hash_ref->{sla} . " dl: " . $hash_ref->{dl} . " ul: " . $hash_ref->{ul};
+		$sla{$desc} = $hash_ref->{slaid};
+		push @menuDescription, [$desc];
+	}
+	push @menuDescription, ["Exit without selecting a SLA"];
+
+	$sth->finish;
+
+	my $option = doEasyListPrompt("== SELECT SLA ==", @menuDescription);
+
+	if ($menuDescription[$option][0] eq "Exit without selecting a SLA"){
+		return '';
+	} elsif ($menuDescription[$option][0] eq "Add a new SLA"){
+		return menuAddSLA();
+	} else {
+		return $sla{$menuDescription[$option][0]};
+	}
+
+}
+
+sub menuAddSLA(){
+	my @menuDescription = (	['ISP', \&doPrompt, 'ISP\'s name', ''],
+				['SLA Name', \&doPrompt, 'SLA\'s name', ''],
+				['Download speed', \&doPrompt, 'Download speed in Kbit/sec', ''],
+				['Upload speed', \&doPrompt, 'Upload speed in Kbit/sec', ''],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);	
+
+	my $verified = 0;
+	my $option;
+
+	do {
+		$option = doHardListPrompt("\n== ADD SLA ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			return;
+		}
+
+		$verified = 1;
+		for (my $i = 0; $i <= $#menuDescription; $i++){
+
+			if (defined $menuDescription[$i][3] and $menuDescription[$i][3] eq ''){
+				$verified = 0;
+				print "ERROR: ", $menuDescription[$i][0], " not entered\n";
+			}
+		}
+
+
+	} until ($verified);
+
+	my $insert = "INSERT INTO SLA (isp, sla, dl, ul) VALUES (?,?,?,?)";
+	my $sth = $dbh->prepare($insert);
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $menuDescription[2][3]);
+	$sth->bind_param(4, $menuDescription[3][3]);
+
+	$sth->execute()
+		or die "error during insert: " . $dbh->errstr;
+
+	# We don't commit here if we are part of a larger function
+	if (!$inTrans){
+		$dbh->commit();
+	}
+
+	return $dbh->{"mysql_insertid"};
+}
+
+sub menuAssociateDevice(){
+reprompt:
+	my %devices;
+	my %owners;
+	my @menuDescription = ();
+	my $query = "SELECT d.deviceid, d.type, d.os, d.version, d.macid, u.name, u.userid"
+			. " FROM DEVICES d LEFT OUTER JOIN USERDEVICE ud ON d.deviceid=ud.deviceid AND ud.end IS NULL"
+				. " LEFT JOIN USERS u ON ud.userid = u.userid"
+			. " ORDER BY d.deviceid";
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	push @menuDescription, ["Add a new device"];
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+
+		my $desc = $hash_ref->{deviceid} . ": " . $hash_ref->{type} . " running " . $hash_ref->{os} . " version " . $hash_ref->{version};
+
+		if (defined $hash_ref->{name}){
+			$desc .= " (Currently assigned to " . $hash_ref->{name} . ")";
+			$owners{$hash_ref->{deviceid}} = $hash_ref->{userid};
+		} else {
+			$desc .= " (unassigned)";
+		}
+		
+		$devices{$desc} = $hash_ref->{deviceid};
+		push @menuDescription, [$desc];
+	}
+	push @menuDescription, ["Exit without selecting a device"];
+
+	$sth->finish;
+
+	my $option = doEasyListPrompt("== SELECT DEVICE ==", @menuDescription);
+
+	if ($menuDescription[$option][0] eq "Exit without selecting a device"){
+		return '';
+	} elsif ($menuDescription[$option][0] eq "Add a new device"){
+		return menuAddDevice();
+	} else {
+		my $deviceID = $devices{$menuDescription[$option][0]};
+		if (exists $owners{$deviceID}){
+			my $userID = $owners{$deviceID};
+			my $confirmation;
+			do {
+				$confirmation = doPrompt('no', "Please verify (yes/no) that you wish to reassign " . $deviceID . " from its current user " . $userID);
+			} until ($confirmation =~ /^(?:yes)|(?:no)$/i);
+			
+			goto reprompt if ($confirmation =~ /no/i);
+
+			my $update = "UPDATE USERDEVICE SET end = ? WHERE userid = ? AND deviceid = ? AND end IS NULL";
+			my $update_sth = $dbh->prepare($update);
+
+			$update_sth->bind_param(1, scalar time());
+			$update_sth->bind_param(2, $userID);
+			$update_sth->bind_param(3, $deviceID);
+			$update_sth->execute()
+				or die "error during update: " . $dbh->errstr;
+		}
+		return $devices{$menuDescription[$option][0]};
+	}
+}
+
+sub menuAddDevice(){
+	my @menuDescription = (	['Device Name', \&doPrompt, 'Device\'s name', ''],
+				['Device Type', \&menuSelectDeviceType, '', ''],
+				['OS Type', \&menuSelectOSType, '', ''],
+				['OS Version', \&doPrompt, 'OS\'s version', ''],
+				['MAC Address', \&getMACAddress, 'Device\'s MAC address', ''],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);	
+
+	my $verified = 0;
+	my $option;
+
+	do {
+		$option = doHardListPrompt("\n== ADD DEVICE ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			return;
+		}
+
+		$verified = 1;
+		for (my $i = 0; $i <= $#menuDescription; $i++){
+
+			if (defined $menuDescription[$i][3] and $menuDescription[$i][3] eq ''){
+				$verified = 0;
+				print "ERROR: ", $menuDescription[$i][0], " not entered\n";
+			}
+		}
+
+	} until ($verified);
+
+	my $insert = "INSERT INTO DEVICES (deviceid, type, os, version, macid) VALUES (?,?,?,?,?)";
+	my $sth = $dbh->prepare($insert);
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $menuDescription[2][3]);
+	$sth->bind_param(4, $menuDescription[3][3]);
+	$sth->bind_param(5, $menuDescription[4][3]);
+
+	$sth->execute()
+		or die "error during insert: " . $dbh->errstr;
+
+	# We don't commit here if we are part of a larger function
+	if (!$inTrans){
+		$dbh->commit();
+	}
+
+	return $dbh->{"mysql_insertid"};
+}
+
+sub getMACAddress {
+	my ($default, $prompt) = @_;
+	my $macAddr;
+	my $verified = 0;
+
+	do {
+		$macAddr = doPrompt($default, $prompt);
+	
+		if ($macAddr =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i or
+	  	    $macAddr =~ /^[0-9a-f]{12}$/i){
+			$verified = 1;
+		} else {
+			print "ERROR: MAC address does not appear properly formatted (xx:xx:xx:xx:xx:xx)\n";
+		}
+	} until ($verified);
+	
+	return $macAddr;
+}
+		
+
+sub menuSelectDeviceType {
+	my @menuDescription = ();
+	my $query = "SELECT DISTINCT type FROM DEVICES ORDER BY type";
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	push @menuDescription, ["Add a new device type"];
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+		push @menuDescription, [$hash_ref->{type}];
+	}
+	push @menuDescription, ["Exit without selecting a device type"];
+
+	$sth->finish;
+
+	my $option = doEasyListPrompt("== SELECT DEVICE TYPE ==", @menuDescription);
+
+	if ($menuDescription[$option][0] eq "Exit without selecting a device type"){
+		return '';
+	} elsif ($menuDescription[$option][0] eq "Add a new device type"){
+		return doPrompt('', "Please enter the new device type you would like to use");
+	} else {
+		return $menuDescription[$option][0];
+	}
+}
+
+sub menuSelectOSType {
+	my @menuDescription = ();
+	my $query = "SELECT DISTINCT os FROM DEVICES ORDER BY os";
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	push @menuDescription, ["Add a new device OS"];
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+		push @menuDescription, [$hash_ref->{os}];
+	}
+	push @menuDescription, ["Exit without selecting a device OS"];
+
+	$sth->finish;
+
+	my $option = doEasyListPrompt("== SELECT DEVICE OS ==", @menuDescription);
+
+	if ($menuDescription[$option][0] eq "Exit without selecting a device OS"){
+		return '';
+	} elsif ($menuDescription[$option][0] eq "Add a new device OS"){
+		return doPrompt('', "Please enter the new device OS you would like to use");
+	} else {
+		return $menuDescription[$option][0];
+	}
+}
+
+sub menuModifyDevice(){
+	# 
+	# First, figure out what user they want to modify
+	# 
+	my $query = "SELECT deviceid FROM DEVICES ORDER BY deviceid";
+	my %deviceids;
+	my @menuDescription = ();
+
+	my $sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	while (my $hash_ref = $sth->fetchrow_hashref) {
+		$deviceids{$hash_ref->{deviceid}} = 1;
+		push @menuDescription, [$hash_ref->{deviceid}];
+	}
+	push @menuDescription, ["Exit without selecting a device"];
+
+	$sth->finish;
+
+	my $option = doEasyListPrompt("== SELECT DEVICE ==", @menuDescription);
+
+	if ($menuDescription[$option][0] eq "Exit without selecting a device"){
+		return;
+	}
+
+	#
+	# Pull this particular device's information.
+	#
+	$query = "SELECT deviceid,type,os,version,macid FROM DEVICES WHERE deviceid = \"" .  $menuDescription[$option][0] . "\"";
+	$sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	my $dev_info = $sth->fetchrow_hashref;
+	$sth->finish;
+
+	#
+	# Give them the ability to modify the data EXCEPT deviceid (primary key of the table.. changing
+	# this is more complicated and not yet supported.)
+	#
+	@menuDescription = (    ['Device Type', \&menuSelectDeviceType, '', $dev_info->{type}],
+				['OS Type', \&menuSelectOSType, '', $dev_info->{os}],
+				['OS Version', \&doPrompt, 'OS\'s version', $dev_info->{version}],
+				['MAC Address', \&getMACAddress, 'Device\'s MAC address', $dev_info->{macid}],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);
+
+	my $verified = 0;
+	$inTrans = 1;
+
+	do {
+		$option = doHardListPrompt("\n== MODIFY DEVICE ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			return;
+		}
+
+		$verified = 1;
+		for (my $i = 0; $i <= $#menuDescription; $i++){
+
+			if (defined $menuDescription[$i][3] and $menuDescription[$i][3] eq ''){
+				$verified = 0;
+				print "ERROR: ", $menuDescription[$i][0], " not entered\n";
+			}
+		}
+
+	} until ($verified);
+
+	#
+	# Save the data back to the database
+	#
+	$query = "UPDATE DEVICES SET type = ?, os = ?, version = ?, macid = ? WHERE deviceid= ?";
+	$sth = $dbh->prepare($query);
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $menuDescription[2][3]);
+	$sth->bind_param(4, $menuDescription[3][3]);
+	$sth->bind_param(5, $dev_info->{deviceid});
+
+	$sth->execute()
+		or die "error during update: " . $dbh->errstr;
+
+	$dbh->commit();
+}
+
+# XXX: This is a hack. 
+sub menuExit(){ exit; }
+
+
+sub doEasyListPrompt ($@){
+	my ($prompt, @menuDescription) = @_;
+	my ($answer, $acceptableAnswer);
+	my @choices = extractMenuChoices(@menuDescription);
+
+	# do/until we get valid input 
+	do { 
+		print "$prompt\n";
+	
+		# provide prompt
+		for (my $i = 0; $i <= $#choices; $i++){
+			# Make choices start from 1 and go up to be userfriendly
+			print $i+1, ") ", $choices[$i], "\n";
+		}
+		print "\nPlease enter your choice: ";
+		
+		# Get answer, can newline
+		$answer = <>;
+		chomp $answer;
+
+		# Check for valid input
+		if ($answer !~ /^\d+$/){
+			$acceptableAnswer = 0;
+		} elsif ($answer < 1 or $answer > ($#choices+1)){
+			$acceptableAnswer = 0;
+		} else {
+			$acceptableAnswer = 1;
+		}
+
+		# Handle any errors
+		if (!$acceptableAnswer){
+			print "ERROR: that doesn't seem to be a valid choice; please try again.\n\n";
+		}
+
+	} until ($acceptableAnswer);
+
+	# Return the user's answer as an index to the array they passed us
+	return(($answer - 1));
+}
+
+sub doHardListPrompt ($@){
+	my ($prompt, @menuDescription) = @_;
+	my ($option, $curVal, $newVal);
+	my ($commitAnswer) = 0;
+
+	# Add the default/current answer bit to the description
+	for (my $i = 0; $i <= $#menuDescription; $i++){
+		if (defined $menuDescription[$i][3]){
+			$menuDescription[$i][0] .= " [" . $menuDescription[$i][3] . "]";
+		}
+	}
+
+        do {
+                $option = doEasyListPrompt($prompt, @menuDescription);
+
+                if (defined $menuDescription[$option][1]){
+                        if ($menuDescription[$option][0] =~ /\[(.*?)\]/){
+                                $curVal = $1;
+                        } else {
+                                $curVal = "";
+                        }
+                        $newVal = $menuDescription[$option][1]($curVal, $menuDescription[$option][2]);
+                        $menuDescription[$option][0] =~ s/\[.*?\]/\[$newVal\]/g;
+                        $menuDescription[$option][3] = $newVal;
+                } else {
+                        $commitAnswer = 1;
+                }
+
+        } until ($commitAnswer);
+
+	# Remove the default/current answer bit from the description
+	for (my $i = 0; $i <= $#menuDescription; $i++){
+		$menuDescription[$i][0] =~ s/ \[.*?\]$//g;
+	}
+
+	return($option);
+}
+
+# doPrompt displays a user specified prompt with an offered default.
+# returns what the user entered at the prompt.
+sub doPrompt ($$){
+	my ($default, $prompt) = @_;
+	my $answer;
+
+	# Provide prompt
+	print "$prompt [$default]: ";
+
+	# Get answer, can newline
+	$answer = <>;
+	chomp $answer;
+
+	# Return the user's answer, handling default entry if necessary
+	if ($answer eq ""){
+		return $default;
+	} else {
+		return $answer;
+	}
+}
+
+sub extractMenuChoices(@){
+	my @menuDescription = @_;
+	my @menuChoices = ();
+
+	# Extract the first element (the choice's description) from the array
+	# and put it in a new array. Return that array.
+	for (my $i=0; $i <= $#menuDescription; $i++){
+		push @menuChoices, @{ $menuDescription[$i] }[0];
+	}
+	return @menuChoices;
+}
+
+sub catchSIGINT(){
+	if (time() - $sigint_called < 5){
+		$dbh->rollback();
+		exit;
+	}
+
+	print "\nWARNING: Ctrl-C may cause unhandled behavior in this application. Hit it again quickly if you really want to exit.\n";
+
+	$sigint_called = time();
+}

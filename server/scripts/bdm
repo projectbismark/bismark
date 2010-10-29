@@ -308,27 +308,17 @@ function wait_tunnel()
 # $2 = message
 function sendmail ()
 {
-	smtp=mail.unina.it
-
-	(
-	cat <<-end
-		ehlo gatech.edu
-		mail from: dp4@cc.gatech.edu
-		rcpt to: walter.dedonato@unina.it
-		data
-	end
-	sleep 1
-	cat <<-end
-		From: "Bismark Server" <dp4@cc.gatech.edu>
-		To: "Walter" <walter.dedonato@unina.it>
-		Subject: Bismark Notification ($1)
+	/usr/sbin/sendmail -t <<-end
+		From: "Bismark Device Manager" <do-not-reply@gtnoise.net>
+		To: "Walter" <walter.dedonato@unina.it>, "Brian" <bpoole@cc.gatech.edu>, "Srikanth" <srikanth@gatech.edu>
+		Subject: Recovery Tunnel Notification ($1)
 		Date: $(date -R)
+		Content-type: text/plain
 
 		$2
-		.
-		quit
+
+		-- BDM
 	end
-	) | nc $smtp 25 > /dev/null
 }
 
 # Set device tunnel entry

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+types="dump arp dhcp csv events"
+ts=$(date +%s)
+
+cd ~/var/data
+for t in $types; do 
+	find -name '*.'$t > /tmp/${t}_list 
+	arc="../tbp/${ts}_${t}.tgz"
+	tar --remove-files -czf $arc -T /tmp/${t}_list
+	chmod 444 $arc
+done
+

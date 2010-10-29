@@ -1,0 +1,167 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+sub gen_conf($);
+sub cleanup_files();
+
+my $PROD_USER="root";
+my $PROD_PASS="";
+my $PROD_DB="bismark_live_v1";
+
+my $DEV_USER="bismark-dev";
+my $DEV_PASS="HereIsARandomDevPass4BMD";
+my $DEV_DB="bismark_dev_v1";
+
+# Tables we want to copy all rows (not just schema) to dev db.
+#
+my %DATA_TABLES = (
+	DEVICES => 1,
+	SLA => 1,
+	USERDEVICE => 1,
+	USERS => 1,
+	USERSLA => 1,
+	);
+
+our $TMP_DIR="/data/tmp";
+our @CLEANUP = ();
+
+
+# Initialize with a safe umask
+umask(0077);
+
+$SIG{INT} = \&cleanup_files;
+
+# Our temporary place to put this file.
+my $dump_file = "$TMP_DIR/clone_prod_db." . rand(1000000000) . ".sql";
+push @CLEANUP, $dump_file;
+
+my $opt_file = "";
+if ($PROD_PASS ne ""){
+	$opt_file = gen_conf($PROD_PASS);
+}
+
+my $cmd = "/usr/bin/mysql ";
+$cmd .= " --defaults-extra-file=$opt_file " unless $PROD_PASS eq "";
+$cmd .= " -u$PROD_USER -D$PROD_DB -e 'SHOW TABLES\\G' |";
+open TABLES, $cmd
+	or die "Unable to open mysql to get tables: $!\n";
+my @all_tables;
+while (<TABLES>){
+	if (/^Tables_in_.*?: (.+)$/){
+		push @all_tables, $1;
+	}	
+}
+close TABLES;
+
+open DUMP_FILE, ">$dump_file"
+	or die "Unable to open $dump_file: $!\n";
+
+# Generate the dump command
+$cmd = "/usr/bin/mysqldump ";
+$cmd .= " --defaults-extra-file=$opt_file " unless $PROD_PASS eq "";
+$cmd .= " -u$PROD_USER ";
+$cmd .= " $PROD_DB ";
+foreach my $tbl (keys %DATA_TABLES){
+	$cmd .= " $tbl";
+}
+$cmd .= " |";
+
+warn $cmd;
+<>;
+
+open MYSQLDUMP, $cmd
+	or die "Unable to open mysqldump: $!\n";
+
+while (<MYSQLDUMP>){
+	s#^/\*\!50013 DEFINER=`$PROD_USER`#/*!50013 DEFINER=`$DEV_USER`#;
+	print DUMP_FILE;
+}
+
+close MYSQLDUMP;
+
+if (${^CHILD_ERROR_NATIVE} != 0){
+	print "mysqldump returned ${^CHILD_ERROR_NATIVE}, exiting without cloning database.\n";
+	exit 1;
+}
+
+# Generate the dump command
+$cmd = "/usr/bin/mysqldump ";
+$cmd .= " --defaults-extra-file=$opt_file " unless $PROD_PASS eq "";
+$cmd .= " -u$PROD_USER --no-data";
+$cmd .= " $PROD_DB ";
+foreach my $tbl (@all_tables){
+	$cmd .= " $tbl" unless defined $DATA_TABLES{$tbl};
+}
+$cmd .= " |";
+
+warn $cmd;
+<>;
+
+print "Dumping production database now..\n";
+open MYSQLDUMP, $cmd
+	or die "Unable to open mysqldump: $!\n";
+
+while (<MYSQLDUMP>){
+	s#^/\*\!50013 DEFINER=`$PROD_USER`#/*!50013 DEFINER=`$DEV_USER`#;
+	print DUMP_FILE;
+}
+
+close MYSQLDUMP;
+
+if (${^CHILD_ERROR_NATIVE} != 0){
+	print "mysqldump returned ${^CHILD_ERROR_NATIVE}, exiting without cloning database.\n";
+	exit 1;
+}
+
+
+close DUMP_FILE;
+
+if ($DEV_PASS ne ""){
+	$opt_file = gen_conf($DEV_PASS);
+} else {
+	$opt_file = "";
+}
+
+$cmd = "/usr/bin/mysql ";
+$cmd .= " --defaults-extra-file=$opt_file " unless $DEV_PASS eq "";
+$cmd .= " -u$DEV_USER";
+$cmd .= " $DEV_DB < $dump_file";
+
+warn $cmd;
+<>;
+
+print "Restoring production database to dev now..\n";
+
+system($cmd);
+if (${^CHILD_ERROR_NATIVE} != 0){
+	print "mysql returned ${^CHILD_ERROR_NATIVE}, please inspect results manually.\n"
+}
+
+exit 0;
+
+sub gen_conf($){
+	my $password = shift;
+	my $filename = $TMP_DIR . "/cnf." . rand(100000000);
+
+	open F, ">$filename"
+		or die "Unable to open $filename: $!\n";
+	push @CLEANUP, $filename;
+	print F "[client]\n";
+	print F 'password="' . $password . "\"\n";
+	close F
+		or die "Unable to close $filename: $!\n";
+
+	return $filename;
+}
+
+sub cleanup_files(){
+	my $file;
+	foreach $file (@CLEANUP){
+		unlink $file;
+	}
+	exit;
+}
+END {
+	cleanup_files();
+}
