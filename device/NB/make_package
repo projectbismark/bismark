@@ -20,6 +20,7 @@ cp ../../server/keys/bismark_srv* $TMP_DIR/keys
 # Create package
 (
  DEST_DIR=$(pwd)
+ rm $DEST_DIR/*.tgz
  cd $TMP_DIR 
  tar -czvf "$DEST_DIR/noxbox_v${VERSION}.tgz" *
 )

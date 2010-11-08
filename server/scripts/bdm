@@ -475,6 +475,13 @@ function upgrade()
 		fi
 	done
 
+	# Publish latest NB installation package
+	(
+	 cd ~/bismark/device/NB
+	 ./make_package
+	 cp noxbox_v$VERSION.tgz ~/www/noxbox_latest.tgz
+	)
+
 	# Start upgrade script
 	echo "Executing upgrade:"
 	if check_tunnel $1; then
