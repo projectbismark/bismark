@@ -134,12 +134,16 @@ if [ ! -e /tmp/mlock ]; then
 			if get_target Bismark HTTPDL $ZONE $HTTP_DURATION ; then
 				sleep $wait
 				bcurl "http://$dst$info" dw $HTTP_DURATION $DW_KBPS | mstats BITRATE CURL $dst $src | grep -v nan >> $xml_file
+				cut -f1 /tmp/curl_avg_rates | mstats AGGL3BITRATE IFACE $dst $src >> $xml_file
+				cut -f2 /tmp/curl_avg_rates | mstats FILEBITRATE CURL $dst $src >> $xml_file
 			fi
 
 			# Upstream bitrate using curl and HTTP
 			if get_target Bismark HTTPUL $ZONE $HTTP_DURATION ; then
 				sleep $wait
 				bcurl "http://$dst$info" up $HTTP_DURATION $UP_KBPS | mstats BITRATE CURL $src $dst | grep -v nan >> $xml_file
+				cut -f1 /tmp/curl_avg_rates | mstats AGGL3BITRATE IFACE $src $dst >> $xml_file
+				cut -f2 /tmp/curl_avg_rates | mstats FILEBITRATE CURL $src $dst >> $xml_file
 			fi
 		else
 			# Downstream bitrate using DITG

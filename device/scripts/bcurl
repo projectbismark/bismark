@@ -14,29 +14,61 @@
 parse_kbps () {
 	gawk -v "RS=[\r\n]" '(NR > 4){ 
 		if ($12 ~ /k/) print $12 * 8;
-		else if ($12 ~ /M/) print $12 * 1000 * 8;
-		else print ($12 / 1000) * 8; 
+		else if ($12 ~ /M/) print $12 * 8000;
+		else print $12 / 125; 
 		split($10, t, ":");
 		if ((t[1]*3600 + t[2]*60 + t[3]) >= '$1') exit 
 	}'
 }
 
+# Ausiliary files
+f_time="/tmp/curl/time"
+f_rates="/tmp/curl/rates"
+mkdir -p /tmp/curl
+
 # Select direction
+length=$(( $3 * ($4 / 8) * 1000 ))
 case $2 in
 up)  
-	length=$(( $3 * ($4 / 8) * 1000 ))
 	chunk_size=1460
 	chunks=$(( (length / chunk_size) + 1 ))
 
-	awk 'BEGIN{ 
+	# Take wan iface TX bytes before
+	b_before=$(awk -F '[ \t:]+' '/'$WAN_IF':/{ print $11 }' /proc/net/dev)
+
+	# Start transfer
+	gawk 'BEGIN{
 		for(i=0; i<('$chunk_size'/10); i++) str = str "dummyload_"; 
-		for(i=0; i<'$chunks'; i++) printf "%s", str; 
+		for(i=0; i<'$chunks'; i++) { 
+			printf "%s", str;
+		}
 	}' |\
-	curl -X PUT -H "Expect:" -H "Content-length: $length" -T - $1 -o /dev/null --stderr - | parse_kbps $3
+	~/bin/time -f %e -o $f_time curl -X PUT -H "Expect:" -H "Content-length: $length" -T - $1 -o /dev/null --stderr - | parse_kbps $3
+
+	# Take wan iface TX bytes after
+	b_after=$(awk -F '[ \t:]+' '/'$WAN_IF':/{ print $11 }' /proc/net/dev)
 ;;
 dw)
-	curl "$1?duration=$3&kbps=$4" -o /dev/null --stderr - | parse_kbps $3
+	# Take wan iface RX bytes before
+	b_before=$(awk -F '[ \t:]+' '/'$WAN_IF':/{ print $3 }' /proc/net/dev)
+
+	# Start transfer
+	~/bin/time -f %e -o $f_time curl "$1?duration=$3&kbps=$4" -o /dev/null --stderr - | parse_kbps $3
+
+	# Take wan iface RX bytes after
+	b_after=$(awk -F '[ \t:]+' '/'$WAN_IF':/{ print $3 }' /proc/net/dev)
 ;;
 esac
 
+duration=$(cat $f_time)
+
+# Compute aggregate and file bitrate
+if [ $b_before -le $b_after ]; then
+	bytes=$(( b_after - b_before ))
+else
+	bytes=$(( b_after + (2 << 32) - b_before ))
+fi
+agg_kbps=$(awk "BEGIN{ print (($bytes/125)/$duration) }")
+file_kbps=$(awk "BEGIN{ print (($length/125)/$duration) }")
+echo -e "$agg_kbps\t$file_kbps" > $f_rates
 
