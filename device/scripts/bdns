@@ -43,7 +43,7 @@ LS*)
 	[ -e $pipe ] || mkfifo $pipe
 	
 	# Compute DNS delay (output to stderr)
-	mdns 2>$pipe | mstats DNSDELAY MDNS $src_ip $dns_server >&2 | mstats DNSFAIL MDNS $src_ip $dns_server <$pipe >&2
+	mdns 2>$pipe | mstats DNSDELAY MDNS $src $dds >&2 | mstats DNSFAIL MDNS $src $dds <$pipe >&2
 ;;
 esac
 
