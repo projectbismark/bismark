@@ -14,13 +14,14 @@ get_ip
 # Cycle DNS servers (default and OpenDNS)
 mkdir -p /tmp/host
 for s in "$dds" "8.8.8.8"; do
-	rm /tmp/host/delays*
 
 	# Cycle cache no-cache 
 	for m in NC C; do
 		# Cycle top 10 hosts list
 		fail=0
 		count=0
+        rm /tmp/host/delays
+
 		IFS=$'\n'
 		for h in $(cat ~/conf/hosts.list); do
 			~/bin/time -f %e --append -o /tmp/host/delays host $h $s >/dev/null || : $((fail++))
@@ -29,8 +30,8 @@ for s in "$dds" "8.8.8.8"; do
 
 		# Output
 		[ $s ] || s="127.0.0.1"
-		cat /tmp/host/delays | mstats DNSDELAY$m HOST $src_ip $s
-		echo $(( (fail/count) * 100 )) | mstats DNSFAIL$m HOST $src_ip $s
+		grep '^[0-9]' /tmp/host/delays | mstats DNSDELAY$m HOST $src $s
+		awk 'BEGIN{ print ('$fail'/'$count') * 100 }' | mstats DNSFAIL$m HOST $src $s
 	done
 done
 
