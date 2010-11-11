@@ -11,27 +11,39 @@
 get_ip
 [ -e /etc/resolv.conf ] && dds=$(awk '/^nameserver/{ print $2 ; exit }' /etc/resolv.conf)
 
-# Cycle DNS servers (default and OpenDNS)
-mkdir -p /tmp/host
-for s in "$dds" "8.8.8.8"; do
+case $DEVICE_ID in
+NB*|WS*)
+	# Cycle DNS servers (default and OpenDNS)
+	mkdir -p /tmp/host
+	for s in "$dds" "8.8.8.8"; do
 
-	# Cycle cache no-cache 
-	for m in NC C; do
-		# Cycle top 10 hosts list
-		fail=0
-		count=0
-        rm /tmp/host/delays
+		# Cycle cache no-cache 
+		for m in NC C; do
+			# Cycle top 10 hosts list
+			fail=0
+			count=0
+		rm /tmp/host/delays
 
-		IFS=$'\n'
-		for h in $(cat ~/conf/hosts.list); do
-			~/bin/time -f %e --append -o /tmp/host/delays host $h $s >/dev/null || : $((fail++))
-			: $((count++))
+			IFS=$'\n'
+			for h in $(cat ~/conf/hosts.list); do
+				~/bin/time -f %e --append -o /tmp/host/delays host $h $s >/dev/null || : $((fail++))
+				: $((count++))
+			done
+
+			# Output
+			[ $s ] || s="127.0.0.1"
+			grep '^[0-9]' /tmp/host/delays | mstats DNSDELAY$m HOST $src $s
+			awk 'BEGIN{ print ('$fail'/'$count') * 100 }' | mstats DNSFAIL$m HOST $src $s
 		done
-
-		# Output
-		[ $s ] || s="127.0.0.1"
-		grep '^[0-9]' /tmp/host/delays | mstats DNSDELAY$m HOST $src $s
-		awk 'BEGIN{ print ('$fail'/'$count') * 100 }' | mstats DNSFAIL$m HOST $src $s
 	done
-done
+;;
+LS*)
+	# Create named pipe
+	pipe=/tmp/dns.fifo
+	[ -e $pipe ] || mkfifo $pipe
+	
+	# Compute DNS delay (output to stderr)
+	mdns 2>$pipe | mstats DNSDELAY MDNS $src_ip $dns_server >&2 | mstats DNSFAIL MDNS $src_ip $dns_server <$pipe >&2
+;;
+esac
 
