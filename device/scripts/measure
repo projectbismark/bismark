@@ -5,6 +5,7 @@
 
 # Load configuration file
 . ~/conf/dev.conf
+. ~/scripts/functions
 
 # Measure message generator
 # $1 = options
@@ -55,12 +56,7 @@ sleep $((RANDOM % 30))
 xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
 
 # Get source IP
-if [ -e /tmp/ip ]; then
-	src=$(cat /tmp/ip)
-else
-	iface=$(route -n | awk '/^0\.0\.0\.0/{ print $8 }')
-	src=$(ifconfig $iface | awk '/inet:/{ print substr($2,6) }')
-fi
+get_ip
 
 # XML file header
 cat > $xml_file <<-end

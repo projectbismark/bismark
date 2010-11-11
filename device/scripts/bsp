@@ -5,9 +5,10 @@
 
 # Load configuration file
 . ~/conf/dev.conf
+. ~/scripts/functions
 
 # Get measure info 
-src=$(cat /tmp/ip)
+get_ip
 tstamp=$(date +%s)
 
 prober | awk '

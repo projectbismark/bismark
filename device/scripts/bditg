@@ -5,6 +5,7 @@
 
 # Load configuration file
 . ~/conf/dev.conf
+. ~/scripts/functions
 
 # Help screen
 [ $6 ] || { 
@@ -24,7 +25,7 @@ filter='
 # Change path
 cd /tmp
 [ -e itgfifo ] || mkfifo itgfifo
-src=$(cat /tmp/ip)
+get_ip
 tstamp=$(date +%s)
 
 # Select protocol

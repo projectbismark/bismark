@@ -5,14 +5,32 @@
 
 # Load configuration files
 . ~/conf/dev.conf
+. ~/scripts/functions
 
-# Get IP and DNS server
-src_ip=$(cat /tmp/ip)
-dns_server=$(awk '/^nameserver/{ print $2 ; exit }' /etc/resolv.conf)
+# Get IP and default DNS server
+get_ip
+[ -e /etc/resolv.conf ] && dds=$(awk '/^nameserver/{ print $2 ; exit }' /etc/resolv.conf)
 
-# Create named pipe
-pipe=/tmp/dns.fifo
-[ -e $pipe ] || mkfifo $pipe
+# Cycle DNS servers (default and OpenDNS)
+mkdir -p /tmp/host
+for s in "$dds" "8.8.8.8"; do
+	rm /tmp/host/delays*
 
-# Compute DNS delay (output to stderr)
-mdns 2>$pipe | mstats DNSDELAY MDNS $src_ip $dns_server >&2 | mstats DNSFAIL MDNS $src_ip $dns_server <$pipe >&2
+	# Cycle cache no-cache 
+	for m in NC C; do
+		# Cycle top 10 hosts list
+		fail=0
+		count=0
+		IFS=$'\n'
+		for h in $(cat ~/conf/hosts.list); do
+			~/bin/time -f %e --append -o /tmp/host/delays host $h $s >/dev/null || : $((fail++))
+			: $((count++))
+		done
+
+		# Output
+		[ $s ] || s="127.0.0.1"
+		cat /tmp/host/delays | mstats DNSDELAY$m HOST $src_ip $s
+		echo $(( (fail/count) * 100 )) | mstats DNSFAIL$m HOST $src_ip $s
+	done
+done
+
