@@ -203,10 +203,11 @@ def ignore_file(file):
     #return True
   if 'NEW' in file:
     return True
-  if '109' in file:
-    return True
-  if '119' in file:
-    return True
+  #if '109' in file:
+    #return True
+  #if '119' in file:
+    #return True
+
   return False
 
 if __name__ == '__main__':

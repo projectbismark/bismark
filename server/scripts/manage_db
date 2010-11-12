@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use DBI;
+use Time::Local;
 
 sub doPrompt($$);
 sub doEasyListPrompt($@);
@@ -28,17 +29,24 @@ our ($sigint_called) = 0;
 
 # Database setup information
 #
-my $DB_NAME="bismark_dev_v1";
 my $DB_HOST="localhost";
-my $DB_USER="bismark-dev";
-my $DB_PASS="HereIsARandomDevPass4BMD";
 
-our $dbh = DBI->connect("DBI:mysql:database=$DB_NAME;host=$DB_HOST", $DB_USER, $DB_PASS, { RaiseError => 1, AutoCommit => 0 } )
+my $DB_NAME="bismark_live_v1";
+my $DB_USER="root";
+my $DB_PASS="";
+
+#my $DB_NAME="bismark_dev_v1";
+#my $DB_USER="bismark-dev";
+#my $DB_PASS="HereIsARandomDevPass4BMD";
+
+our $dbh = DBI->connect("DBI:mysql:database=$DB_NAME;host=$DB_HOST", $DB_USER, $DB_PASS, { AutoCommit => 1 } )
         or die $DBI::errstr;
-our $inTrans = 0;
 
 # Setup SIG INT handler
 $SIG{'INT'} = \&catchSIGINT;
+
+# Place to store some stateful information between functions
+our %state = ();
 
 menuMain();
 
@@ -65,10 +73,8 @@ sub menuMain (){
 		# Dispatch to new function
 		$menuDescription[$option][1]();
 
-		# Make sure the transaction flag has been cleared and any uncommited 
-		# changes are discared.
-		$inTrans = 0;
-		$dbh->rollback();
+		# Clear any state
+		%state = ();
 	}
 
 	return;
@@ -79,9 +85,11 @@ sub menuAddUser(){
 	my @menuDescription = (	['Name', \&doPrompt, 'User\'s name', ''],
 				['Email', \&doPrompt, 'User\'s email', ''],
 				['Address', \&doPrompt, 'User\'s home address', ''],
-				['Phone', \&doPrompt, 'User\'s phone number', ''],
+				['Phone', \&getPhone, 'User\'s phone number (###-###-####)', ''],
 				['SLA', \&menuAssociateSLA, '', ''],
+				['SLA Start Time', \&getTime, 'Please enter the time you want the SLA to begin its association (mm/dd/yyyy hh:mm or unixts)',time()],
 				['Device', \&menuAssociateDevice, '', ''],
+				['Device Start Time', \&getTime, 'Please enter the time you want the device to begin its association (mm/dd/yyyy hh:mm or unixts)',time()],
 				['Exit without saving changes', , , ],
 				['Save changes', , , ],
 			);	
@@ -89,15 +97,10 @@ sub menuAddUser(){
 	my $verified = 0;
 	my $option;
 
-	# Let subfunctions know we are in the midst of a transaction and they shouldn't
-	# commit.
-	$inTrans = 1;
-
 	do {
 		$option = doHardListPrompt("\n== ADD USER ==\n", @menuDescription);
 
 		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
-			$dbh->rollback();
 			return;
 		}
 
@@ -141,7 +144,7 @@ sub menuAddUser(){
 	
 	$sth->bind_param(1, $userid);
 	$sth->bind_param(2, $menuDescription[4][3]);
-	$sth->bind_param(3, scalar time());
+	$sth->bind_param(3, $menuDescription[5][3]);
 
 	$sth->execute()
 		or die "error during insert: " . $dbh->errstr;
@@ -155,15 +158,13 @@ sub menuAddUser(){
 		or die $dbh->errstr;
 	
 	$sth->bind_param(1, $userid);
-	$sth->bind_param(2, $menuDescription[5][3]);
-	$sth->bind_param(3, scalar time());
+	$sth->bind_param(2, $menuDescription[6][3]);
+	$sth->bind_param(3, $menuDescription[7][3]);
 
 	$sth->execute()
 		or die "error during insert: " . $dbh->errstr;
 	$sth->finish();
 
-	# Looks good? Commit!
-	$dbh->commit();
 }
 
 sub menuModifyUser(){
@@ -171,7 +172,6 @@ sub menuModifyUser(){
 	# First, figure out what user they want to modify
 	# 
 	my $query = "SELECT name,userid FROM USERS ORDER BY name";
-	my %userids;
 	my @menuDescription = ();
 
 	my $sth = $dbh->prepare($query)
@@ -181,8 +181,7 @@ sub menuModifyUser(){
 		or die "error during select: " . $dbh->errstr;
 
 	while (my $hash_ref = $sth->fetchrow_hashref) {
-		$userids{$hash_ref->{name}} = $hash_ref->{userid};
-		push @menuDescription, [$hash_ref->{name}];
+		push @menuDescription, [$hash_ref->{name} . " (userid: " . $hash_ref->{userid} . ")"];
 	}
 	push @menuDescription, ["Exit without selecting a user"];
 
@@ -194,10 +193,17 @@ sub menuModifyUser(){
 		return;
 	}
 
+	# Store the userid in state (may be used by subfunctions)
+	if ($menuDescription[$option][0] =~ /\(userid: (\d+)\)/){
+		$state{userid} = $1;
+	} else {
+		die "error: unable to match userid in choice\n";
+	}
+
 	#
 	# Pull this particular user's information.
 	#
-	$query = "SELECT name,email,address,phone,userid FROM USERS WHERE userid = " .  $userids{$menuDescription[$option][0]};
+	$query = "SELECT name,email,address,phone,userid FROM USERS WHERE userid = " .  $state{userid};
 	$sth = $dbh->prepare($query)
 		or die $dbh->errstr;
 
@@ -207,32 +213,59 @@ sub menuModifyUser(){
 	my $user_info = $sth->fetchrow_hashref;
 	$sth->finish;
 
+	$query = "SELECT slaid,start,end FROM USERSLA WHERE userid = " .  $state{userid} . " ORDER BY end is not null, end desc";
+	$sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+
+	my $sla_info = $sth->fetchrow_hashref;
+	$state{slaid} = $sla_info->{slaid};
+	$sth->finish;
+
+	my $orig_slaid = $sla_info->{slaid};
+
+	$query = "SELECT deviceid,start,end FROM USERDEVICE WHERE userid = " .  $state{userid} . " ORDER BY end is not null, end desc";
+	$sth = $dbh->prepare($query)
+		or die $dbh->errstr;
+	$sth->execute()
+		or die "error during select: " . $dbh->errstr;
+	my $dev_info = $sth->fetchrow_hashref;
+	$state{deviceid} = $dev_info->{deviceid};
+	$sth->finish;
+
+	my $orig_deviceid = $sla_info->{deviceid};
+
+	# Makes sure data is consistent..
+	checkForAssociatedDevice();
+	checkForAssociatedSLA();
+
 	#
 	# Give them the ability to modify the data
 	#
 	@menuDescription = (	['Name', \&doPrompt, 'User\'s name', $user_info->{name}],
 				['Email', \&doPrompt, 'User\'s email', $user_info->{email}],
 				['Address', \&doPrompt, 'User\'s home address', $user_info->{address}],
-				['Phone', \&doPrompt, 'User\'s phone number', $user_info->{phone}],
-				['SLA', \&menuAssociateSLA, '', $user_info->{slaid}],
+				['Phone', \&getPhone, 'User\'s phone number (###-###-####)', $user_info->{phone}],
+				['SLA', \&menuAssociateSLA, '', $sla_info->{slaid}],
+				['SLA Dates', \&menuSLADates, '', 'submenu'],
+				['Device', \&menuAssociateDevice, '', $dev_info->{deviceid}],
+				['Device Dates', \&menuDeviceDates, '', 'submenu'],
 				['Exit without saving changes', , , ],
 				['Save changes', , , ],
 			);
 
 	my $verified = 0;
-	$inTrans = 1;
 
 	do {
 		$option = doHardListPrompt("\n== MODIFY USER ==\n", @menuDescription);
 
-		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
-			$dbh->rollback();
+		if ($menuDescription[$option][0] eq "Exit without saving changes"){
 			return;
 		}
 
 		$verified = 1;
 		for (my $i = 0; $i <= $#menuDescription; $i++){
-
 			if (defined $menuDescription[$i][3] and $menuDescription[$i][3] eq ''){
 				$verified = 0;
 				print "ERROR: ", $menuDescription[$i][0], " not entered\n";
@@ -245,8 +278,8 @@ sub menuModifyUser(){
 	# Save the data back to the database
 	#
 	$query = "UPDATE USERS SET name = ?, email = ?, address = ?, phone = ? WHERE userid = ?";
-	$sth = $dbh->prepare($query);
-
+	$sth = $dbh->prepare($query)
+		or die $dbh->errstr;
 	$sth->bind_param(1, $menuDescription[0][3]);
 	$sth->bind_param(2, $menuDescription[1][3]);
 	$sth->bind_param(3, $menuDescription[2][3]);
@@ -255,8 +288,8 @@ sub menuModifyUser(){
 
 	$sth->execute()
 		or die "error during update: " . $dbh->errstr;
+	$sth->finish;
 
-	$dbh->commit();
 }
 
 sub menuShowUsers(){
@@ -285,17 +318,25 @@ sub menuShowUsers(){
 sub menuAssociateSLA(){
 	my %sla;
 	my @menuDescription = ();
-	my $query = "SELECT slaid,isp,sla,dl,ul FROM SLA ORDER BY isp, sla";
+	my ($default, $prompt) = @_;
 
+	# Prevent continuing if the user already has an associated SLA
+	if (checkForAssociatedSLA()){
+		warn "Please set an end date for the currently associated SLA before attempting to change to a new SLA.\n";
+		return $default;
+	}
+
+	# Pull all available SLA info down
+	my $query = "SELECT slaid,isp,sla,dl,ul FROM SLA ORDER BY isp, sla";
 	my $sth = $dbh->prepare($query)
 		or die $dbh->errstr;
-
 	$sth->execute()
 		or die "error during select: " . $dbh->errstr;
 
+
 	push @menuDescription, ["Add a new SLA"];
 	while (my $hash_ref = $sth->fetchrow_hashref) {
-		my $desc = $hash_ref->{isp} . " " . $hash_ref->{sla} . " dl: " . $hash_ref->{dl} . " ul: " . $hash_ref->{ul};
+		my $desc = $hash_ref->{isp} . " " . $hash_ref->{sla} . " dl: " . $hash_ref->{dl} . " ul: " . $hash_ref->{ul} . " (slaid " . $hash_ref->{slaid} . ")";
 		$sla{$desc} = $hash_ref->{slaid};
 		push @menuDescription, [$desc];
 	}
@@ -305,16 +346,158 @@ sub menuAssociateSLA(){
 
 	my $option = doEasyListPrompt("== SELECT SLA ==", @menuDescription);
 
+	my $newSLA;
 	if ($menuDescription[$option][0] eq "Exit without selecting a SLA"){
-		return '';
+		return $default;
 	} elsif ($menuDescription[$option][0] eq "Add a new SLA"){
-		return menuAddSLA();
+		$newSLA = menuAddSLA();
 	} else {
-		return $sla{$menuDescription[$option][0]};
+		$newSLA = $sla{$menuDescription[$option][0]};
 	}
 
+	$state{slaid} = $newSLA if defined $newSLA;
+
+	if (defined $state{userid}){
+		$query = "INSERT INTO USERSLA (userid, slaid, start, end) VALUES (?,?,?,?)";
+		$sth = $dbh->prepare($query)
+			or die $dbh->errstr;
+		$sth->bind_param(1, $state{userid});
+		$sth->bind_param(2, $newSLA);
+		$sth->bind_param(3, time());
+		$sth->bind_param(4, undef);
+
+		$sth->execute()
+			or die "error during select: " . $dbh->errstr;
+		$sth->finish;
+	}
+
+	return $newSLA;
 }
 
+sub menuSLADates(){
+
+	my $sla_info;
+	if (defined $state{userid}){
+		my $query = "SELECT slaid,start,end FROM USERSLA WHERE userid = " .  $state{userid} . " ORDER BY end is not null, end desc";
+		my $sth = $dbh->prepare($query)
+			or die $dbh->errstr;
+
+		$sth->execute()
+			or die "error during select: " . $dbh->errstr;
+
+		$sla_info = $sth->fetchrow_hashref;
+	
+		$sla_info->{end} = '' if not defined $sla_info->{end};
+		$sth->finish;
+	}
+
+	# Fill in default info if we don't have an associated user/sla
+	if (not defined $sla_info){
+		$sla_info->{start} = time();
+		$sla_info->{end} = '';
+	}
+
+	my @menuDescription = ( ['SLA Start Time', \&getTime, 'Please enter the time you want the SLA to begin its association (mm/dd/yyyy hh:mm or unixts)', $sla_info->{start}],
+				['SLA End Time', \&getTime, 'Please enter the time you want the SLA to end its association (mm/dd/yyyy hh:mm or unixts)', $sla_info->{end}],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);
+
+	my $verified = 0;
+	my $option;
+
+	do {
+		$option = doHardListPrompt("\n== SLA DATES ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			return;
+		}
+
+		$verified = 1;
+		if (defined $menuDescription[0][3] and $menuDescription[0][3] eq ''){
+			$verified = 0;
+			print "ERROR: ", $menuDescription[0][0], " not entered\n";
+		}
+		if ($menuDescription[1][3] eq ''){
+			$menuDescription[1][3] = undef;
+		}
+
+	} until ($verified);
+
+	my $update = "UPDATE USERSLA SET start = ?, end = ? WHERE userid = ? AND slaid = ? AND start = ?";
+	my $sth = $dbh->prepare($update);
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $state{userid});
+	$sth->bind_param(4, $state{slaid});
+	$sth->bind_param(5, $sla_info->{start});
+	$sth->execute()
+		or die "error during update: " . $dbh->errstr;
+
+	return 'submenu';
+}
+sub menuDeviceDates(){
+		
+	my $dev_info;
+	if (defined $state{userid}){
+		my $query = "SELECT deviceid,start,end FROM USERDEVICE WHERE userid = " .  $state{userid} . "  ORDER BY end is not null, end desc";
+		my $sth = $dbh->prepare($query)
+			or die $dbh->errstr;
+		$sth->execute()
+			or die "error during select: " . $dbh->errstr;
+		$dev_info = $sth->fetchrow_hashref;
+		$dev_info->{end} = '' if not defined $dev_info->{end};
+		$sth->finish;
+	}
+
+	# Fill in default info if we don't have an associated user/dev
+	if (not defined $dev_info){
+		$dev_info->{start} = time();
+		$dev_info->{end} = '';
+	}
+
+	my @menuDescription = ( ['Device Start Time', \&getTime, 'Please enter the time you want the device to begin its association (mm/dd/yyyy hh:mm or unixts)', $dev_info->{start}],
+				['Device End Time', \&getTime, 'Please enter the time you want the device to end its association (mm/dd/yyyy hh:mm or unixts)', $dev_info->{end}],
+				['Exit without saving changes', , , ],
+				['Save changes', , , ],
+			);
+
+	my $verified = 0;
+	my $option;
+
+	do {
+		$option = doHardListPrompt("\n== DEVICE DATES ==\n", @menuDescription);
+
+		if ($menuDescription[$option][0] eq 'Exit without saving changes'){
+			return;
+		}
+
+		$verified = 1;
+		if (defined $menuDescription[0][3] and $menuDescription[0][3] eq ''){
+			$verified = 0;
+			print "ERROR: ", $menuDescription[0][0], " not entered\n";
+		}
+		if ($menuDescription[1][3] eq ''){
+			$menuDescription[1][3] = undef;
+		}
+
+	} until ($verified);
+
+	my $update = "UPDATE USERDEVICE SET start = ?, end = ? WHERE userid = ? AND deviceid = ? AND start = ?";
+	my $sth = $dbh->prepare($update);
+
+	$sth->bind_param(1, $menuDescription[0][3]);
+	$sth->bind_param(2, $menuDescription[1][3]);
+	$sth->bind_param(3, $state{userid});
+	$sth->bind_param(4, $state{deviceid});
+	$sth->bind_param(5, $dev_info->{start});
+	$sth->execute()
+		or die "error during update: " . $dbh->errstr;
+
+	return 'submenu';
+}
+	
 sub menuAddSLA(){
 	my @menuDescription = (	['ISP', \&doPrompt, 'ISP\'s name', ''],
 				['SLA Name', \&doPrompt, 'SLA\'s name', ''],
@@ -357,11 +540,6 @@ sub menuAddSLA(){
 	$sth->execute()
 		or die "error during insert: " . $dbh->errstr;
 
-	# We don't commit here if we are part of a larger function
-	if (!$inTrans){
-		$dbh->commit();
-	}
-
 	return $dbh->{"mysql_insertid"};
 }
 
@@ -370,14 +548,21 @@ reprompt:
 	my %devices;
 	my %owners;
 	my @menuDescription = ();
+	my ($default, $prompt) = @_;
+
+	# Prevent continuing if the user already has an associated SLA
+	if (checkForAssociatedDevice()){
+		warn "Please set an end date for the currently associated device before attempting to change to a new device.\n";
+		return $default;
+	}
+
+	# Pull down all the device info
 	my $query = "SELECT d.deviceid, d.type, d.os, d.version, d.macid, u.name, u.userid"
 			. " FROM DEVICES d LEFT OUTER JOIN USERDEVICE ud ON d.deviceid=ud.deviceid AND ud.end IS NULL"
 				. " LEFT JOIN USERS u ON ud.userid = u.userid"
 			. " ORDER BY d.deviceid";
-
 	my $sth = $dbh->prepare($query)
 		or die $dbh->errstr;
-
 	$sth->execute()
 		or die "error during select: " . $dbh->errstr;
 
@@ -402,32 +587,49 @@ reprompt:
 
 	my $option = doEasyListPrompt("== SELECT DEVICE ==", @menuDescription);
 
+	my $newDevice;
 	if ($menuDescription[$option][0] eq "Exit without selecting a device"){
-		return '';
+		return $default;
 	} elsif ($menuDescription[$option][0] eq "Add a new device"){
-		return menuAddDevice();
+		$newDevice = menuAddDevice();
 	} else {
-		my $deviceID = $devices{$menuDescription[$option][0]};
-		if (exists $owners{$deviceID}){
-			my $userID = $owners{$deviceID};
+		$newDevice = $devices{$menuDescription[$option][0]};
+		if (exists $owners{$newDevice}){
+			my $userID = $owners{$newDevice};
 			my $confirmation;
 			do {
-				$confirmation = doPrompt('no', "Please verify (yes/no) that you wish to reassign " . $deviceID . " from its current user " . $userID);
+				$confirmation = doPrompt('no', "Please verify (yes/no) that you wish to reassign " . $newDevice. " from its current user " . $userID);
 			} until ($confirmation =~ /^(?:yes)|(?:no)$/i);
 			
 			goto reprompt if ($confirmation =~ /no/i);
 
+			my $endtime = getTime(time(), 'Please enter the time you want the device to end its association with the old user (mm/dd/yyyy hh:mm or unixts)');
+
 			my $update = "UPDATE USERDEVICE SET end = ? WHERE userid = ? AND deviceid = ? AND end IS NULL";
 			my $update_sth = $dbh->prepare($update);
 
-			$update_sth->bind_param(1, scalar time());
+			$update_sth->bind_param(1, $endtime);
 			$update_sth->bind_param(2, $userID);
-			$update_sth->bind_param(3, $deviceID);
+			$update_sth->bind_param(3, $newDevice);
 			$update_sth->execute()
 				or die "error during update: " . $dbh->errstr;
 		}
-		return $devices{$menuDescription[$option][0]};
 	}
+	$state{deviceid} = $newDevice if defined $newDevice;
+
+	if (defined $state{userid}){
+		$query = "INSERT INTO USERDEVICE (userid, deviceid, start, end) VALUES (?,?,?,?)";
+		$sth = $dbh->prepare($query)
+			or die $dbh->errstr;
+		$sth->bind_param(1, $state{userid});
+		$sth->bind_param(2, $newDevice);
+		$sth->bind_param(3, time());
+		$sth->bind_param(4, undef);
+
+		$sth->execute()
+			or die "error during insert: " . $dbh->errstr;
+	}
+	return $newDevice;
 }
 
 sub menuAddDevice(){
@@ -473,12 +675,7 @@ sub menuAddDevice(){
 	$sth->execute()
 		or die "error during insert: " . $dbh->errstr;
 
-	# We don't commit here if we are part of a larger function
-	if (!$inTrans){
-		$dbh->commit();
-	}
-
-	return $dbh->{"mysql_insertid"};
+	return $menuDescription[0][3];
 }
 
 sub getMACAddress {
@@ -490,7 +687,8 @@ sub getMACAddress {
 		$macAddr = doPrompt($default, $prompt);
 	
 		if ($macAddr =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i or
-	  	    $macAddr =~ /^[0-9a-f]{12}$/i){
+	  	    $macAddr =~ /^[0-9a-f]{12}$/i or 
+ 		    $macAddr eq "Unknown"){
 			$verified = 1;
 		} else {
 			print "ERROR: MAC address does not appear properly formatted (xx:xx:xx:xx:xx:xx)\n";
@@ -499,9 +697,50 @@ sub getMACAddress {
 	
 	return $macAddr;
 }
-		
+
+sub getPhone {
+	my ($default, $prompt) = @_;
+	my $phone;
+	my $verified = 0;
+
+	do {
+		$phone = doPrompt($default, $prompt);
+	
+		if ($phone =~ /^(?:\d\d\d-\d\d\d-\d\d\d\d)$/i or
+		    $phone eq "Unknown"){
+			$verified = 1;
+		} else {
+			print "ERROR: phone number does not appear to be properly formatted (###-###-####)\n";
+		}
+	} until ($verified);
+	
+	return $phone;
+}
+
+sub getTime {
+	my ($default, $prompt) = @_;
+	my $time;
+	my $verified = 0;
+
+	do {
+		$time = doPrompt($default, $prompt);
+	
+		if ($time =~ /^\d+$/){
+			$verified = 1;
+		} elsif ($time =~ /^(\d+)\/(\d+)\/(\d+) (\d+):(\d+)$/){
+			$time = timelocal(0, $5, $4, $2, $1-1, $3);
+			print "Date converted to " . scalar(localtime($time)) . ", please reenter if that is incorrect.\n";
+			$verified = 1;
+		} else {
+			print "ERROR: Date does not look properly formatted (mm/dd/yy hh:mm or unix ts)\n";
+		}
+	} until ($verified);
+	
+	return $time;
+}
 
 sub menuSelectDeviceType {
+	my ($default, $prompt) = @_;
 	my @menuDescription = ();
 	my $query = "SELECT DISTINCT type FROM DEVICES ORDER BY type";
 
@@ -522,7 +761,7 @@ sub menuSelectDeviceType {
 	my $option = doEasyListPrompt("== SELECT DEVICE TYPE ==", @menuDescription);
 
 	if ($menuDescription[$option][0] eq "Exit without selecting a device type"){
-		return '';
+		return $default;
 	} elsif ($menuDescription[$option][0] eq "Add a new device type"){
 		return doPrompt('', "Please enter the new device type you would like to use");
 	} else {
@@ -532,6 +771,7 @@ sub menuSelectDeviceType {
 
 sub menuSelectOSType {
 	my @menuDescription = ();
+	my ($default, $prompt) = @_;
 	my $query = "SELECT DISTINCT os FROM DEVICES ORDER BY os";
 
 	my $sth = $dbh->prepare($query)
@@ -551,7 +791,7 @@ sub menuSelectOSType {
 	my $option = doEasyListPrompt("== SELECT DEVICE OS ==", @menuDescription);
 
 	if ($menuDescription[$option][0] eq "Exit without selecting a device OS"){
-		return '';
+		return $default;
 	} elsif ($menuDescription[$option][0] eq "Add a new device OS"){
 		return doPrompt('', "Please enter the new device OS you would like to use");
 	} else {
@@ -613,7 +853,6 @@ sub menuModifyDevice(){
 			);
 
 	my $verified = 0;
-	$inTrans = 1;
 
 	do {
 		$option = doHardListPrompt("\n== MODIFY DEVICE ==\n", @menuDescription);
@@ -648,12 +887,10 @@ sub menuModifyDevice(){
 	$sth->execute()
 		or die "error during update: " . $dbh->errstr;
 
-	$dbh->commit();
 }
 
 # XXX: This is a hack. 
 sub menuExit(){ exit; }
-
 
 sub doEasyListPrompt ($@){
 	my ($prompt, @menuDescription) = @_;
@@ -768,7 +1005,6 @@ sub extractMenuChoices(@){
 
 sub catchSIGINT(){
 	if (time() - $sigint_called < 5){
-		$dbh->rollback();
 		exit;
 	}
 
@@ -776,3 +1012,54 @@ sub catchSIGINT(){
 
 	$sigint_called = time();
 }
+
+sub checkForAssociatedDevice(){
+	my $assocDevice = 0;
+
+	# Don't let users with an active associated SLA select a new one.
+	if (defined $state{userid}){
+
+		my $query = "SELECT deviceid FROM USERDEVICE WHERE userid = " . $state{userid} . " AND end IS NULL";
+		my $sth = $dbh->prepare($query)
+			or die $dbh->errstr;
+
+		$sth->execute()
+			or die "error during select: " . $dbh->errstr;
+		while (my $hash_ref = $sth->fetchrow_hashref) {
+			if ($assocDevice == 1){
+				die "error: userid " . $state{userid} . " has more than 1 unterminated associated device. Please fix manually before proceeding.\n";
+			} else {
+				$assocDevice = 1;
+			}
+		}
+		$sth->finish;
+	}
+
+	return $assocDevice;
+}
+
+sub checkForAssociatedSLA(){
+	my $assocSLA = 0;
+
+	# Don't let users with an active associated SLA select a new one.
+	if (defined $state{userid}){
+
+		my $query = "SELECT slaid FROM USERSLA WHERE userid = " . $state{userid} . " AND end IS NULL";
+		my $sth = $dbh->prepare($query)
+			or die $dbh->errstr;
+
+		$sth->execute()
+			or die "error during select: " . $dbh->errstr;
+		while (my $hash_ref = $sth->fetchrow_hashref) {
+			if ($assocSLA == 1){
+				die "error: userid " . $state{userid} . " has more than 1 unterminated associated SLA. Please fix manually before proceeding.\n";
+			} else {
+				$assocSLA = 1;
+			}
+		}
+		$sth->finish;
+	}
+
+	return $assocSLA;
+}
+

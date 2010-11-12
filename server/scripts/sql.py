@@ -25,7 +25,7 @@ def sqlconn():
 
 def run_insert_cmd(cmd):
   conn,cursor = sqlconn()
-  print cmd
+  #print cmd
   try:
     cursor.execute(cmd)
   except:
