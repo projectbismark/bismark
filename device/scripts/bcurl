@@ -60,7 +60,7 @@ dw)
 ;;
 esac
 
-duration=$(cat $f_time)
+duration=$(grep '^[0-9]' $f_time)
 
 # Compute aggregate and file bitrate
 if [ $b_before -le $b_after ]; then
