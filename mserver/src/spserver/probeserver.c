@@ -258,7 +258,7 @@ int main(int argc, char *argv[], char **env)
 	char tracefile[256], filename[256];
 	struct timeval tv;
 	struct sockaddr_in from;
-	FILE *fp;
+	FILE *fp=0;
 	extern double TB_RATE_AVG_INTERVAL;
 	int clientversion = 0;
 
@@ -278,7 +278,7 @@ while(1)
 
 	tcpclientsock = handle_clients(tcpsock, udpsockcap);
 	CHKRET(tcpclientsock);
-	close(tcpsock);
+	//close(tcpsock);
 
 	begintimer();
 
@@ -290,8 +290,8 @@ while(1)
 
 	printf("\nEstimating capacity:\n");
 
-	fp = openLog(filename, inet_ntoa(saddr.sin_addr), tv); //assume this opens a fp
-	fprintf(fp, "sleep time resolution: %.2f ms.\n", sleepRes*1000);
+	//fp = openLog(filename, inet_ntoa(saddr.sin_addr), tv); //assume this opens a fp
+	//fprintf(fp, "sleep time resolution: %.2f ms.\n", sleepRes*1000);
 
 	CHKRET(preprocess_newclient(tcpclientsock, udpsockcap, &clientversion,
 				&upcap, &downcap, &from, tracefile, fp));
@@ -305,9 +305,9 @@ while(1)
 	printf("recvrates: up %f, down %f Kbps\n", measupcap, measdowncap);
 	upcap = measupcap; downcap = measdowncap;
 
-	fprintf(fp, "upstream capacity: %.2f Kbps.\n", upcap);
-	fprintf(fp, "downstream capacity: %.2f Kbps.\n", downcap);
-	fprintf(fp, "### UPSTREAM ###\n");
+	//fprintf(fp, "upstream capacity: %.2f Kbps.\n", upcap);
+	//fprintf(fp, "downstream capacity: %.2f Kbps.\n", downcap);
+	//fprintf(fp, "### UPSTREAM ###\n");
 	printf("upstream capacity: %.2f Kbps.\n", upcap);
 	printf("downstream capacity: %.2f Kbps.\n", downcap);
 	if(upcap > 100000) { upcap = 95000; } //else { upcap *= 0.95; }
@@ -327,16 +327,16 @@ while(1)
 //	if(clientversion > 1) //backwards-compatibility
 //	mflowSender(tcpclientsock, udpsockcap, &from, (tbresult == 1) ? tbrate : downcap/2.0, sleepRes);
 	printShaperResult(tbresult, tbmindepth, tbmaxdepth, tbrate, 1, fp);
-	recvData(tcpclientsock, fp, 1 /*0 up 1 down*/);
+//	recvData(tcpclientsock, fp, 1 /*0 up 1 down*/);
 
-	fclose(fp);
+	//fclose(fp);
 	close(udpsockcap);
 	close(tcpclientsock);
 
-	break;
+//	break;
 }
 
-	execl("/bin/bzip2", "/bin/bzip2", filename, NULL);
+//	execl("/bin/bzip2", "/bin/bzip2", filename, NULL);
 
 	return(0);
 }

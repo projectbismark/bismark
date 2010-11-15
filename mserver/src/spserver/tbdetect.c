@@ -177,7 +177,7 @@ int tbdetectSender(int tcpsock, int udpsock, struct sockaddr_in *from,
 		if(bwperiod > bp) {bwperiod = bp; trainlength = c;}
 	}
 	gap *= trainlength;
-	fprintf(fp, "server trainlength: %d\n", trainlength);
+	//fprintf(fp, "server trainlength: %d\n", trainlength);
 
 	gettimeofday(&startts, NULL); start0 = startts.tv_sec+startts.tv_usec*1e-6;
 	gapts.tv_sec = floor(gap);
@@ -573,7 +573,7 @@ inline int tbLogRateLoss(double sendtstamp, double timestamp, int size,
 	{
 		rateEstimate = (*bucketbytes) * 0.008/TB_RATE_LOG_INTERVAL;
 
-		fprintf(fp, "%f %f %ld %ld\n", timestamp, rateEstimate, 
+		//fprintf(fp, "%f %f %ld %ld\n", timestamp, rateEstimate, 
 						*totrecvd, maxseq - *lastseq + 1);
 
 		*bucketbytes = size;
@@ -587,7 +587,7 @@ inline int tbLogRateLoss(double sendtstamp, double timestamp, int size,
 		*bucketbytes += size;
 	}
 #else
-	fprintf(fp, "%f %f %ld %d\n", sendtstamp, timestamp, seq, TB);
+	//fprintf(fp, "%f %f %ld %d\n", sendtstamp, timestamp, seq, TB);
 #endif
 
 	return 0;
@@ -628,7 +628,7 @@ int tbdetectReceiver(int tcpsock, int udpsock,
 	double sendtstamp = 0;
 	int ULSZ = sizeof(unsigned long);
 
-	fprintf(fp, "### DATA ###\n");
+	//fprintf(fp, "### DATA ###\n");
 
 	ret = readwrapper(tcpsock, (char *)&startpkt,
 			sizeof(struct _tbdetectstart));
@@ -738,9 +738,9 @@ int tbdetectReceiver(int tcpsock, int udpsock,
 				if(contHiLossWnds > TB_NPOSTERIOR+2 ||
 				   contLoLossWnds > TB_NTOTLOSSPOSTERIOR)
 				{
-					fprintf(fp, 
-						"aborting due to high loss rate: Hi:%ld Lo:%ld\n", 
-						contHiLossWnds, contLoLossWnds);
+					//fprintf(fp, 
+						//"aborting due to high loss rate: Hi:%ld Lo:%ld\n", 
+						//contHiLossWnds, contLoLossWnds);
 					*abortflag = 1;
 					endpkt.abortflag = htonl(1);
 					//for(ret = 0; ret < index; ret++)
@@ -814,23 +814,23 @@ int tbdetectReceiver(int tcpsock, int udpsock,
 void printShaperResult(unsigned int tbresult, unsigned int tbmindepth,
 			unsigned int tbmaxdepth, double tbrate, int dir, FILE *fp)
 {
-	if(dir == 0)
-	fprintf(fp, "Upstream: ");
-	else
-	fprintf(fp, "Downstream: ");
+	//if(dir == 0)
+	//fprintf(fp, "Upstream: ");
+	//else
+	//fprintf(fp, "Downstream: ");
 
 	if(tbresult == 0)
 	{
-		fprintf(fp, "No shaper detected.\n");
-		fprintf(fp, "Median received rate: %d Kbps.\n", (int)tbrate);
+		//fprintf(fp, "No shaper detected.\n");
+		//fprintf(fp, "Median received rate: %d Kbps.\n", (int)tbrate);
 		return;
 	}
 
-	if(tbmindepth == tbmaxdepth)
-	fprintf(fp, "Burst size: %d KB; ", tbmindepth);
-	else
-	fprintf(fp, "Burst size: %d-%d KB; ", tbmindepth, tbmaxdepth);
+	//if(tbmindepth == tbmaxdepth)
+	//fprintf(fp, "Burst size: %d KB; ", tbmindepth);
+	//else
+	//fprintf(fp, "Burst size: %d-%d KB; ", tbmindepth, tbmaxdepth);
 
-	fprintf(fp, "Shaping rate: %d Kbps.\n", (int)tbrate);
+	//fprintf(fp, "Shaping rate: %d Kbps.\n", (int)tbrate);
 }
 

@@ -460,7 +460,7 @@ double capacityEstimation(int tcpsock, int udpsock0, struct sockaddr_in *from, F
 			}
 		}
 
-		fprintf(fp, "### TRAIN ###\n");
+		/*fprintf(fp, "### TRAIN ###\n");
 		for(count = 0; count < TRAIN_LENGTH; count++)
 		{
 			fprintf(fp, "%f %f %d\n", 
@@ -468,7 +468,7 @@ double capacityEstimation(int tcpsock, int udpsock0, struct sockaddr_in *from, F
 					trecv[count].tv_sec+trecv[count].tv_usec*1e-6,
 					seq[count]);
 		}
-		fprintf(fp, "\n");
+		fprintf(fp, "\n");*/
 
 		gap = timeval_diff(tend, tstart); //s
 		if(sz != -1 && gap != 0)

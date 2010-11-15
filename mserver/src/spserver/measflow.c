@@ -174,7 +174,7 @@ int mflowReceiver(int tcpsock, int udpsock, double *recvrate, FILE *fp)
 	double sendtstamp = 0;
 	int ULSZ = sizeof(unsigned long);
 
-	fprintf(fp, "### MEAS ###\n");
+	//fprintf(fp, "### MEAS ###\n");
 
 	ret = readwrapper(tcpsock, (char *)&startpkt,
 			sizeof(struct _mflowstart));
@@ -245,7 +245,7 @@ int mflowReceiver(int tcpsock, int udpsock, double *recvrate, FILE *fp)
 			sendtstamp = ntohl(*(unsigned long *)((char *)buf+ULSZ));
 			sendtstamp += ntohl(*(unsigned long *)((char *)buf+2*ULSZ))*1e-6;
 
-			fprintf(fp, "%f %f %ld %d\n", sendtstamp, ts.tv_sec + ts.tv_usec*1e-6, seq, MEAS);
+			//fprintf(fp, "%f %f %ld %d\n", sendtstamp, ts.tv_sec + ts.tv_usec*1e-6, seq, MEAS);
 		}
 
 		nrecvd++;
