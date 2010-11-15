@@ -162,22 +162,25 @@ if [ ! -e /tmp/mlock ]; then
 
 	# Jitter & Packet loss using DITG
 	if [ $((count % UDP_FQ)) -eq 0 ]; then
-			# Downstream 
-			if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
-				sleep $wait
-				bditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $xml_file
-			fi
+		# Downstream 
+		if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
+			sleep $wait
+			bditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $xml_file
+		fi
 
-			# Upstream
-			if get_target Bismark ITGUL $ZONE $UDP_DURATION ; then
-				sleep $wait
-				bditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $xml_file
-			fi
+		# Upstream
+		if get_target Bismark ITGUL $ZONE $UDP_DURATION ; then
+			sleep $wait
+			bditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $xml_file
+		fi
 	fi
 
 	# Shaper probe
 	if [ $((count % SP_FQ)) -eq 0 ]; then
-		bsp >> $xml_file
+		if get_target Bismark SP $ZONE 150 ; then
+			sleep $wait
+			bsp >> $xml_file
+		fi
 	fi
 
 	# Release measure lock
