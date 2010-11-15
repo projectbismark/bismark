@@ -216,8 +216,8 @@ int prober_config_load(int argc, char **argv, char *tracefile, int *fileid)
   int c = 0;
   opterr = 0;
 
-  //serverip = htonl(str2ip("143.215.129.100"));
-  serverip = htonl(str2ip("38.102.0.111"));
+  serverip = htonl(str2ip("143.215.131.173"));
+  //serverip = htonl(str2ip("38.102.0.111"));
 
   while ((c = getopt (argc, argv, "vh")) != -1)
   {
@@ -321,8 +321,8 @@ int main(int argc, char *argv[])
 
   sleepRes = prober_sleep_resolution();
 
-  //tcpsock = connect2server(serverip, fileid);
-  tcpsock = selectServer(fileid);
+  tcpsock = connect2server(serverip, fileid);
+  //tcpsock = selectServer(fileid);
   if(tcpsock <= 0) printf("Server busy. Please try again later.\n");
   CHKRET(tcpsock);
 
