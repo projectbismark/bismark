@@ -179,7 +179,7 @@ if [ ! -e /tmp/mlock ]; then
 	if [ $((count % SP_FQ)) -eq 0 ]; then
 		if get_target Bismark SP $ZONE 150 ; then
 			sleep $wait
-			bsp >> $xml_file
+			bsp $dst >> $xml_file
 		fi
 	fi
 
