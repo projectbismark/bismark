@@ -51,6 +51,7 @@ dw)
 
 	# Start transfer
 	~/bin/time -f %e -o $f_time curl "$1?duration=$3&kbps=$4" -o /dev/null --stderr - | parse_kbps $3
+	echo $length > $f_bytes # TODO
 
 	# Take wan iface RX bytes after
 	b_after=$(awk -F '[ \t:]+' '/'$WAN_IF':/{ print $3 }' /proc/net/dev)
