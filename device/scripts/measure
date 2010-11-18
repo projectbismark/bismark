@@ -115,7 +115,7 @@ fi
 
 # DNS delay and failure
 if [ $((count % DNS_FQ)) -eq 0 ]; then
-	bdns 2>> $xml_file
+	bdns >> $xml_file
 fi
 
 ## Serial measurements ##
