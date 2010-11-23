@@ -152,10 +152,16 @@ config)
 					}
 				;;
 				WEP) 
-					echo ${#WIFI_PASS} | grep -q '5\|13\|16\|10\|26\|32' || { 
-						echo -e "When using WEP, WIFI_PASS must be a string (5, 13, or 16 characters) or hexadecimal digits (10, 26, or 32 digits)\n"
-						error=1
-					}
+					echo $WIFI_PASS | gawk '
+						{ 
+							len=length($0) 
+							if (len ~ /^5$|^13$|^16$/){ exit 0 }
+							if (len ~ /^10$|^26$|^32$/ && /^[0-9a-f]+$/){ exit 0 } 
+							exit 1 
+						}' || { 
+							echo -e "When using WEP, WIFI_PASS must be a string (5, 13, or 16 characters) or hexadecimal digits (10, 26, or 32 digits)\n"
+							error=1
+						}
 				;;
 				esac
 			fi
