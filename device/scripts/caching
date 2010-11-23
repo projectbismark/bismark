@@ -8,5 +8,7 @@
 . ~/scripts/functions
 
 cd /tmp/measure
+[ $PRIVACY_MODE ] && t2_filter
+wifi_filter
 rename_dump
 tar --remove-files -czvf ~/cache/${DEVICE_ID}_$(date +%s).tgz *.*
