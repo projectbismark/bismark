@@ -55,8 +55,8 @@ wifi_filter ()
 {
         ( cd /tmp/measure/
 	  [ $PRIVACY_MODE ] && OPT="-v priv=on"
-          for file in $(find -name "*.csv"); do
-                gawk $OPT -F", |," -f /dev/stdin $file > /tmp/csv_filtered <<-end
+          for file in $(find -name "*.csv" -a ! -name "*.filt.*"); do
+                gawk $OPT -F", |," -f /dev/stdin $file > ${file%.*}.filt.csv <<-end
 			function tstamp(d,ts){
 				cmd = "date -d \"" d "\" +%s"
 				cmd | getline ts
@@ -71,7 +71,7 @@ wifi_filter ()
 			}
 			/^BSSID/{ 
 				sec = 1
-				printf "%-18s %-11s %-11s %-2s %-5s %-8s %-10s %-4s %-5s %-7s %-4s %-5s %s\n",\
+				printf "%-18s %-11s %-11s %-2s %-5s %-8s %-10s %-4s %-5s %-7s %-7s %-5s %s\n",\
 				"BSSID", "First", "Last", "Ch", "Speed", "Privacy", "Cipher", "Auth", "Power", "Beacons", "IVs", "IDlen", "ESSID" 
 			}
 			/^Station/{ 
@@ -86,21 +86,22 @@ wifi_filter ()
 					\$2 = tstamp(\$2)
 					\$3 = tstamp(\$3)
 					if (sec == 1) {
+						if (\$6 ~ /[A-Za-z0-9]+/) { gsub(/ /,"+",\$6); sub(/+$/,"",\$6) } else { \$6 = "-" }
 						if (\$7 ~ /[A-Za-z0-9]+/) { gsub(/ /,"+",\$7) } else { \$7 = "-" }
 						if (\$8 ~ /[A-Za-z0-9]+/) { gsub(/ /,"+",\$8) } else { \$8 = "-" }
 						if (\$14 ~ /[A-Za-z0-9]+/) { if (priv == "on") \$14 = hash(\$14) } else { \$14 = "-" }
-						printf "%-18s %-11u %-11u %-2u %-5d %-8s %-10s %-4s %-5u %-7u %-4u %-5u %s\n",\
+						printf "%-18s %-11u %-11u %-2u %-5d %-8s %-10s %-4s %-5d %-7u %-7u %-5u %s\n",\
 							\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$13, \$14 
 					} else  if ( sec == 2 ) { 
 						if (\$6 ~ /^..:/) { if (priv == "on") \$6 = substr(\$6,1,8) ":00:00:00" } else { \$6 = "-" }
 						if (\$7 ~ /[a-zA-Z0-9]+/) { if (priv == "on") \$7 = hash(\$7) } else { \$7 = "-"}
-						printf "%-18s %-11u %-11u %-5u %-7d %-18s %s\n",\
+						printf "%-18s %-11u %-11u %-5d %-7d %-18s %s\n",\
 							\$1, \$2, \$3, \$4, \$5, \$6, \$7 
 					}
 				} 
 			}
 		end
-		mv /tmp/csv_filtered $file
+		rm $file
           done
         )
 }
@@ -109,8 +110,8 @@ wifi_filter ()
 t2_filter ()
 {
         ( cd /tmp/measure/
-          for file in $(find -name "*.t2"); do
-                gawk -f /dev/stdin $file > /tmp/t2_filtered <<-end
+          for file in $(find -name "*.t2" -a ! -name "*.filt.*"); do
+                gawk -f /dev/stdin $file > ${file%.*}.filt.t2 <<-end
 			function anon(ip,d){
 				split(ip,d,".")
 				return d[1]"."d[2]"."d[3]".0" 
@@ -126,7 +127,7 @@ t2_filter ()
 				}
 			}
 		end
-		mv /tmp/t2_filtered $file
+		rm $file
           done
         )
 	
