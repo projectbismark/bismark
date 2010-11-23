@@ -9,9 +9,9 @@
 # $3 = value
 mod_conf ()
 {
-	if [ $3 ]; then
+	if [ "$3" ]; then
 		# Modify value
-		sed -i -e "/^$2=/ s/=.*/=$3/" $1
+		sed -i -e "/^$2=/ s/=.*/=\"$3\"/" $1
 	else
 		# Remove option
 		sed -i -e "/^$2=/ d" $1
