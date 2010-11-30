@@ -79,8 +79,11 @@ update)	# Software update
 	# startup
 	touch /tmp/restart
 
-	# Check installed packages
+	# Dev type specific actions
 	case $DEVICE_ID in
+	NB*)
+		chown nobody www/nobody
+	;;
 	LS*)
 		opkg update
 		pkgs=$(grep ^LS ~/conf/packages.conf | cut -f2)

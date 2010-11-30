@@ -469,8 +469,6 @@ function upgrade()
 				mkdir /tmp/pkg/$type/www
 				cd www 
 				tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/www -xf /dev/stdin
-				chown root:root /tmp/pkg/$type/www/nobody/action_file
-				chown nobody:nobody /tmp/pkg/$type/www/nobody
 			 )
 			)
 
