@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
+cd /root/www
 while : ; do
-    /root/www/action.py > /dev/null 2>/dev/null 
-    sleep 2
+	/root/www/action.py > /dev/null 2>/dev/null 
+	sleep 2
 done
 
