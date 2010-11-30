@@ -7,7 +7,7 @@
 . ~/conf/dev.conf
 
 # Help screen
-[ $1 ] || { echo "usage: $(basename $0) start|stop|restart"; exit ; }
+[ $1 ] || { echo "usage: $(basename $0) start|stop|restart|status"; exit ; }
 
 server_pid=$(pgrep -f server.py)
 action_pid=$(pgrep -f action.py)

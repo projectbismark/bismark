@@ -215,7 +215,7 @@ config)
 	fi
 
 	# Configuration output
-	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' conf/dev.conf - | output $1
+	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' ~/conf/dev.conf - | output $1
 ;;
 esac
 
