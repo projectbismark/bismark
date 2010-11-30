@@ -32,6 +32,9 @@ NB*)
 	# Set boot event and start modem monitor
 	event boot
 	event modem
+
+	# Start web interface
+	pyweb start
 ;;
 LS*)
 	# Create bin and lib directories on ramdisk
