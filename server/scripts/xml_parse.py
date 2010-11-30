@@ -102,7 +102,7 @@ def write_block_v1_0(data,tables,log,file):
         cnt = 0
         while ((res == 0) and (cnt < 5)):
           print "res ", res
-          time.sleep(5)   
+          time.sleep(.1)   
           res = sql.run_insert_cmd(cmd)
           cnt += 1
         if res == 0:
@@ -205,8 +205,8 @@ def ignore_file(file):
     return True
   #if '109' in file:
     #return True
-  #if '119' in file:
-    #return True
+  if '115' in file:
+    return True
 
   return False
 
