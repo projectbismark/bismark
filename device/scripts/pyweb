@@ -1,0 +1,28 @@
+#!/bin/bash
+# Transfers files to the bismark server
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Help screen
+[ $1 ] || { echo "usage: $(basename $0) start|stop|restart"; exit ; }
+
+case $1 in
+start)
+	echo 'Starting web service...'
+	/root/www/pyserverd & 
+	/root/www/pyactiond &
+;;
+stop)
+	echo 'Stopping web service...'
+	killall pyserverd
+	killall pyactiond 
+;;
+restart)
+	$0 stop
+	sleep 1
+	$0 start
+;;
+esac

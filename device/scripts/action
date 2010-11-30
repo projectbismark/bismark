@@ -101,23 +101,23 @@ config)
 
 			# Parse new configuration
 			IFS=$'&'
-			for param in "$2"; do
+			for param in $2; do
 				name=${param%=*}
 				value="${param#*=}"
 
 				# Check generic parameter validity
-				grep -q "^$name=" conf/dev.conf local.conf || { echo -e "Invalid option $name\n" ; continue ; }
+				grep -q "^$name=" conf/dev.conf local.conf || { echo -e "Invalid option $name\n" >&2; continue ; }
 
 				# Check specific parameters validity
 				case $name in
 				WIFI_CHANNEL) 
-					[ "$value" -ge 1 -a "$value" -le 11 ] || { echo -e "WIFI_CHANNEL must be an integer from 1 to 11\n" ; continue ; }
+					[ "$value" -ge 1 -a "$value" -le 11 ] || { echo -e "WIFI_CHANNEL must be an integer from 1 to 11" >&2; continue ; }
 				;;
 				WIFI_SSID) 
-					[ ${#value} -ge 1 -a ${#value} -le 32 ] || { echo -e "WIFI_SSID must be a string from 1 to 32 characters\n" ; continue ; }
+					[ ${#value} -ge 1 -a ${#value} -le 32 ] || { echo -e "WIFI_SSID must be a string from 1 to 32 characters" >&2; continue ; }
 				;;
 				WIFI_SEC)
-					echo "$value" | grep -q '^WPA$\|^WPA2$\|^WEP$\|^NONE$' || { echo -e "WIFI_SEC must be a one of NONE,WEP,WPA,WPA2\n" ; continue ; }
+					echo "$value" | grep -q '^WPA$\|^WPA2$\|^WEP$\|^NONE$' || { echo -e "WIFI_SEC must be a one of NONE,WEP,WPA,WPA2" >&2; continue ; }
 				;;
 				esac
 
@@ -147,7 +147,7 @@ config)
 				case $WIFI_SEC in
 				WPA|WPA2)
 					[ ${#WIFI_PASS} -ge 8 -a ${#WIFI_PASS} -le 64 ] || { 
-						echo -e "When using WPA/WPA2, WIFI_PASS must be a string from 8 to 64 characters\n"
+						echo -e "When using WPA/WPA2, WIFI_PASS must be a string from 8 to 64 characters" >&2
 						error=1
 					}
 				;;
@@ -159,7 +159,7 @@ config)
 							if (len ~ /^10$|^26$|^32$/ && /^[0-9a-f]+$/){ exit 0 } 
 							exit 1 
 						}' || { 
-							echo -e "When using WEP, WIFI_PASS must be a string (5, 13, or 16 characters) or hexadecimal digits (10, 26, or 32 digits)\n"
+							echo -e "When using WEP, WIFI_PASS must be a string (5, 13, or 16 characters) or hexadecimal digits (10, 26, or 32 digits)" >&2
 							error=1
 						}
 				;;

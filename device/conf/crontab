@@ -1,3 +1,4 @@
+@reboot	     ~/scripts/pyweb start
 */1  * * * * ~/scripts/probe
 */5  * * * * ~/scripts/rshell
 */5  * * * * ~/scripts/measure

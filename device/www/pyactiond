@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+while : ; do
+    /root/www/action.py > /dev/null 2>/dev/null 
+    sleep 2
+done
+
