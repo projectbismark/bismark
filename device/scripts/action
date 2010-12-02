@@ -168,7 +168,7 @@ config)
 				;;
 				esac
 			fi
-			[ $error ] && { push= ; rm /tmp/local.conf ; } || mv /tmp/local.conf ~
+			[ $error ] && { push= ; rm /tmp/local.conf ; } || { mv /tmp/local.conf ~ ; cp ~/local.conf{,.bkp} ; }
 		fi
 	fi
 
