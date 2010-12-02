@@ -205,7 +205,9 @@ def ignore_file(file):
     return True
   #if '109' in file:
     #return True
-  if '115' in file:
+  if '111' in file:
+    return True
+  if '108' in file:
     return True
 
   return False
