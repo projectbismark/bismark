@@ -4,7 +4,7 @@
 # author: walter.dedonato@unina.it
 
 # Avoid multiple instances
-[ $(pgrep -f t2_parse) ] && exit
+[ $(pgrep t2_parse) ] && exit
 
 # Settings
 [ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/data

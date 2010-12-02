@@ -11,3 +11,8 @@ for t in $types; do
 	chmod 444 $arc
 done
 
+cd ~/var/data/old
+find -name '*.xml.gz' > /tmp/xml_list 
+tar --remove-files -czf  ~/var/backup/${ts}_xml.tgz -T /tmp/xml_list
+chmod 444 ~/var/backup/${ts}_xml.tgz
+
