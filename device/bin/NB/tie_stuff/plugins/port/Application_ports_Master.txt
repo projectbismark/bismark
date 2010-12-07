@@ -517,7 +517,7 @@ url: 	http://www.shoutcast.com/download/serve.phtml
 description:	Backbone Radio
 name:	BACKBONE_RADIO
 group:	Streaming
-sport:	2048,7070,8080
+sport:	2048,7070
 dport:	*
 sym:	1
 protocol:	6
