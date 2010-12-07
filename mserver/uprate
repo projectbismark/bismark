@@ -1,0 +1,47 @@
+#!/bin/bash
+
+if [ ! $1 ]; then
+        ( sudo socat TCP-LISTEN:777,fork,reuseaddr EXEC:"$0 run",su-d=bismark2,pipes ) &
+        exit
+fi
+
+ip=$SOCAT_PEERADDR
+
+# Parse input
+read cmd opt
+
+case $cmd in
+start)
+	( sudo /usr/sbin/tcpdump -tt -n -i eth1 tcp and ip src $ip and dst port 8080 >/tmp/$ip.rate 2>/dev/null ) &
+	echo $!
+;;
+stop)
+	sudo kill $opt
+
+	awk '
+	BEGIN{ 
+		stime=0
+		bytes=0  
+	} 
+	{ 
+		if ($1 > 0) 
+			ltime=$1
+		if (stime == 0) 
+			stime=ltime
+		if (ltime - stime > 1) { 
+			print bytes/125
+			bytes=0
+			stime=ltime
+		}
+		bytes += $21
+		print bytes " " ltime - stime
+	}
+	END{
+		if (ltime - stime > 0)
+			print ((bytes/125) / (ltime - stime))
+	}' /tmp/$ip.rate
+	#rm /tmp/$ip.rate
+;;
+esac
+
+

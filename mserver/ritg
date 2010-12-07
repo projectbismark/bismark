@@ -24,6 +24,6 @@ log)
 	awk '(NR > 1){ print $3 }' $opt.jitter
 	echo pktloss
 	awk '(NR > 1){ print $3 }' $opt.pktloss
-	rm $opt $opt.*
+	sudo rm $opt $opt.*
 ;;
 esac
