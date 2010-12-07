@@ -6,6 +6,5 @@
 # 
 # Comment out the plugins to disable them
 
-dummy
-port
 nbc2.5
+port
