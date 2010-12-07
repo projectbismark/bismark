@@ -1,6 +1,6 @@
 <?php
 
-$logname = "/tmp/" . $_REQUEST['id'];
+$logname = "/tmp/stats";
 
 /* PUT data comes in on the stdin stream */
 $putdata = fopen("php://input", "r");
@@ -17,9 +17,11 @@ while ($data = fread($putdata, 1420)) {
 	}
 	$bytes += strlen($data);
 }
-
-fprintf($stats, "%u\n", ($bytes * 8)/(microtime(true) - $int_start) );
+$end = microtime(true);
+fprintf($stats, "%f %f - %u %u\n", $int_start, $end, $bytes, ($bytes * 8)/($end - $int_start) );
 
 fclose($putdata);
 fclose($stats);
+
+Header("HTTP/1.1 201 Created");
 ?>

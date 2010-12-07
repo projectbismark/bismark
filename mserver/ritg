@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ ! $1 ]; then
-	sudo socat TCP-LISTEN:143,fork,reuseaddr EXEC:"$0 run",pipes &
+	sudo socat TCP-LISTEN:143,fork,reuseaddr EXEC:"$0 run",su-d=bismark2,pipes &
 	exit
 fi
 
