@@ -1,9 +1,25 @@
 <?php
+
+$logname = "/tmp/" . $_REQUEST['id'];
+
 /* PUT data comes in on the stdin stream */
 $putdata = fopen("php://input", "r");
+$stats = fopen($logname, "w");
 
 /* Read the data 1 packet at a time */
-while ($data = fread($putdata, 1478));
+$int_start = microtime(true);
+$bytes = 0;
+while ($data = fread($putdata, 1420)) {
+	if (($curr = microtime(true)) > ($int_start + 1)) {
+		fprintf($stats, "%u\n", $bytes * 8);
+		$int_start = $curr;
+		$bytes = 0;
+	}
+	$bytes += strlen($data);
+}
+
+fprintf($stats, "%u\n", ($bytes * 8)/(microtime(true) - $int_start) );
 
 fclose($putdata);
+fclose($stats);
 ?>
