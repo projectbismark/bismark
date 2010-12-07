@@ -2,6 +2,7 @@
 1	0	6	U	0	1	0	0	HEA
 1	0	6	U	0	1	0	0	POS
 1	0	6	U	0	1	0	0	MOV
+1	0	6	U	0	1	0	0	PUT
 1	0	6	U	0	1	0	0	PRO
 1	0	6	D	0	1	0	0	HTT
 1	0	6	D	0	1	0	0	GIF
