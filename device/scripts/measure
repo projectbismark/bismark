@@ -143,9 +143,11 @@ if [ ! -e /tmp/mlock ]; then
 			if get_target Bismark HTTPUL $ZONE $HTTP_DURATION ; then
 				sleep $wait
 				( sleep 3 ; bping $dst | mstats ULRTTUP PING $src $dst >> $xml_file ) &
+			pid=$(echo "start" | nc $dst 777)
 				bcurl "http://$dst$info" up $HTTP_DURATION $UP_KBPS | mstats BITRATE CURL $src $dst | grep -v nan >> $xml_file
 				cut -f1 /tmp/curl/rates | mstats AGGL3BITRATE IFACE $src $dst >> $xml_file
 				cut -f2 /tmp/curl/rates | mstats FILEBITRATE CURL $src $dst >> $xml_file
+				echo "stop $pid" | nc $dst 777 | mstats BITRATE TCPDUMP $src $dst >> $xml_file
 			fi
 		else
 			# Downstream bitrate using DITG
