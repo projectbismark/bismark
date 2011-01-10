@@ -113,8 +113,14 @@ if get_target Bismark PING $ZONE 10 ; then
 		( bping $gwip | mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $xml_file ) &
 	fi
 
+	# Geo-distributed servers RTT
+	mkdir -p /tmp/gdrtt
+	for srv in $(grep -v ^# ~/conf/gd.list); do
+		( bping $srv | mstats RTT PING $src $srv > /tmp/gdrtt/$srv ; cat /tmp/gdrtt/$srv >> $xml_file ) &
+	done
+
 	# MServer RTT
-	bping $dst | mstats RTT PING $src $dst >> $xml_file
+	bping $dst | mstats RTT PING $src $dst >> $xml_file 
 fi
 
 # DNS delay and failure
@@ -207,6 +213,7 @@ cat >> $xml_file <<-end
 end
 
 # Move file to measure folder
+sleep 2
 mv $xml_file /tmp/measure
 
 
