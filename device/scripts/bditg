@@ -11,6 +11,7 @@
 [ $6 ] || { 
 	echo "usage: $(basename $0) tcp <target> <port> <up|dw> <duration> <kbps>"
 	echo "       $(basename $0) udp <target> <port> <up|dw> <duration> <pps>" 
+	echo "       $(basename $0) udpflood <target> <port> <up|dw> <duration> <kbps>" 
 	exit
 }
 
@@ -69,6 +70,26 @@ udp)
 		ITGRecv -H $2 -Sp $port -l itgfifo 2>/dev/null | ITGDec itgfifo -p 1000 -j 1000 > /dev/null 2>&1
 		awk '(NR > 1){ print $3 }' jitter.dat | mstats JITTER DITG $2 $src | grep -v nan
 		awk '(NR > 1){ print $3 }' packetloss.dat | mstats PKTLOSS DITG $2 $src | grep -v nan
+	;;
+	esac
+;;
+udpflood)
+	pkt_size=1472
+	pkt_rate=$(( ((${6}000 / 8) / $pkt_size) + 1 ))
+
+	# Select direction
+	case $4 in
+	up)  
+		ITGSend -a $2 -rp 0 -T UDP -c $pkt_size -C $pkt_rate -t ${5}000 -x /tmp/${DEVICE_ID}_$tstamp.log  >/dev/null 2>&1 
+		echo "log /tmp/${DEVICE_ID}_$tstamp.log" | nc -n $2 $3 | awk "$filter"
+		cat bitrate.dat | mstats UDPBITRATE DITG $src $2 | grep -v nan
+	;;
+	dw)
+		RANDOM=$(( `date +%s` % 32767 ))
+		port=$(( RANDOM % 5000 + 10000 ))
+		{ echo "send -H -Ssp $port -rp 0 -T UDP -c $pkt_size -C $pkt_rate -t ${5}000" ; sleep 1 ; } | nc $NC_OPTS $2 $3
+		ITGRecv -H $2 -Sp $port -l itgfifo 2>/dev/null | ITGDec itgfifo -b 1000 > /dev/null 2>&1
+		awk '(NR > 1){ print $3 }' bitrate.dat | mstats UDPBITRATE DITG $2 $src | grep -v nan
 	;;
 	esac
 ;;
