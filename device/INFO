@@ -1,0 +1,16 @@
+# OpenWrt_i586
+# distribution: OpenWrt Backfire 10.03
+# installed on: Netgate ALIX.2D13
+system image: http://downloads.openwrt.org/backfire/10.03/x86/openwrt-x86-rootfs.tgz
+
+# OpenWrt_mips 
+# distribution: OpenWrt Kamizake 8.09
+# installed on: Linksys WRT54GL
+system image: http://downloads.openwrt.org/kamikaze/8.09.1/brcm-2.4/openwrt-wrt54g-squashfs.bin
+help: http://wiki.openwrt.org/oldwiki/openwrtdocs/hardware/linksys/wrt54gl
+
+# noxbox_i586 
+# distribution: Noxbox 0.5.0
+# installed on: Netgate ALIX.2D13
+system image: http://noxrepo.org/current_noxbox.img.bz2
+help: http://noxrepo.org/manual/noxbox.html
