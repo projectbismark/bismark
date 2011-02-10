@@ -1,0 +1,5 @@
+*/1  * * * * bash -x ~/scripts/probe >> /tmp/probe.log 2>&1
+*/5  * * * * bash -x ~/scripts/rshell >> /tmp/rshell.log 2>&1
+*/5  * * * * bash -x ~/scripts/measure >> /tmp/measure.log 2>&1
+4  */1 * * * bash -x ~/scripts/upload >> /tmp/upload.log 2>&1
+*/10 * * * * bash -x ~/scripts/caching >> /tmp/caching.log 2>&1

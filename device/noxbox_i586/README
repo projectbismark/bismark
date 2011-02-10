@@ -2,7 +2,7 @@ DESCRIPTION
 
  The installation script connects to the NoxBox through SSH and it should work with any flash image.
 
- It has only be tested with the official 0.5.0 image.
+ It has only been tested with the official 0.5.0 image.
 
 PREREQUISITES
 

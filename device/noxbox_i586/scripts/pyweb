@@ -1,0 +1,42 @@
+#!/bin/bash
+# Manages web interface service
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Help screen
+[ $1 ] || { echo "usage: $(basename $0) start|stop|restart|status"; exit ; }
+
+server_pid=$(pgrep -f server.py)
+action_pid=$(pgrep -f action.py)
+s_loop_pid=$(pgrep -f pyserverd)
+a_loop_pid=$(pgrep -f pyactiond)
+
+case $1 in
+start)
+	echo -n 'Starting web service...'
+	[ $s_loop_pid ] || /root/www/pyserverd & 
+	[ $a_loop_pid ] || /root/www/pyactiond &
+	echo ok
+;;
+stop)
+	echo -n 'Stopping web service...'
+	kill $s_loop_pid $a_loop_pid
+	kill $action_pid $server_pid 
+	echo ok
+;;
+restart)
+	echo -n 'Restarting web service...'
+	kill $action_pid $server_pid
+	echo ok
+;;
+status)
+	if [ $action_pid -a $server_pid ]; then
+		echo "Web server running (pids $action_pid, $server_pid)"
+	else
+		echo "Web server not running"
+	fi
+;;
+esac

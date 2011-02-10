@@ -1,0 +1,31 @@
+#!/bin/bash
+# Upload measurements to the bismark server
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+. ~/scripts/functions
+
+# Copy active measurements files
+scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
+
+# Copy passive measurements files
+scp -i $SSH_KEY /tmp/measure/*.arp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).arp && rm /tmp/measure/*.arp
+if [ ${DEVICE_ID:0:2} == NB ]; then
+	[ $PRIVACY_MODE ] && t2_filter
+	scp -i $SSH_KEY /tmp/measure/*.t2 $USER@$SERVER:~/var/data && rm /tmp/measure/*.t2
+	wifi_filter
+	scp -i $SSH_KEY /tmp/measure/*.csv $USER@$SERVER:~/var/data && rm /tmp/measure/*.csv
+	scp -i $SSH_KEY /tmp/measure/*.dhcp $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).dhcp && rm /tmp/measure/*.dhcp
+	scp -i $SSH_KEY ~/cache/*.events $USER@$SERVER:~/var/data/${DEVICE_ID}_$(date +%s).events && rm ~/cache/*.events
+
+	rename_dump
+	scp -i $SSH_KEY /tmp/measure/*.dump $USER@$SERVER:~/var/data && rm /tmp/measure/*.dump
+
+	# Restart modem event watcher
+	event modem
+fi
+
+# Copy cached files
+scp -i $SSH_KEY ~/cache/*.tgz $USER@$SERVER:~/var/data && rm ~/cache/*.tgz

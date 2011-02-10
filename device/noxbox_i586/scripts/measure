@@ -1,0 +1,219 @@
+#!/bin/bash
+# Executes a measurement cycle
+# 
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+. ~/scripts/functions
+
+# Measure message generator
+# $1 = options
+msg () 
+{
+	echo "$DEVICE_ID measure $1"
+	sleep 3
+}
+
+# Get target info
+# $1 = category
+# $2 = type
+# $3 = zone
+# $4 = duration
+get_target ()
+{
+	# Send message
+	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/mreply
+
+	# Get reply
+	read dst info wait < /tmp/mreply
+	[ $dst ] || return 1 
+}
+
+# Create dirs and files
+mkdir -p /tmp/measure
+[ -e /tmp/measure/counter ] || echo 0 > /tmp/measure/counter
+
+# Get and update count
+count=$(cat /tmp/measure/counter)
+echo $(( (count + 1) % 288 )) > /tmp/measure/counter
+
+# Launch continous measurements
+if [ ${DEVICE_ID:0:2} == NB ]; then
+	# Start/Restart TIE daemon
+	[ $PRIVACY_MODE ] || plstream="-S1400"
+	ptime=`~/www/cgi-bin/sql.py 'SELECT valint FROM val WHERE valid="privend"'| sed -e 's/[(),]//g'`
+	[ -e /tmp/restart ] && ( rm /tmp/restart && killall tie )
+	if [ $(date +%s) -gt $ptime ]; then 
+		[ $(pgrep -n tie) ] || ( tie -n -m c -i any -E $DEVICE_ID -d /tmp/measure/ -P32 $plstream -f prttstat,plstat,iptstat >/dev/null 2>&1 & )
+	fi
+
+	bwdump		# Start/restart airodump
+	barp		# Dump arp table
+	event alive	# Update alive TS
+fi
+
+# Random wait
+sleep $((RANDOM % 30))
+
+# Globals
+xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
+
+# Get source IP
+get_ip
+
+# XML file header
+cat > $xml_file <<-end
+	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+	<measurements version="1.1">
+	        <info deviceid=$DEVICE_ID />
+end
+
+## Concurrent measurements ##
+
+if [ $((count % TR_FQ)) -eq 0 ]; then
+	# Traceroute
+	if get_target Bismark TR $ZONE 0 ; then
+		hops=$(btr $dst)
+		hops_cnt=$(echo "$hops" | wc -l)
+		if [ $hops_cnt -gt 1 ]; then
+			cat >> $xml_file <<-end
+			        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
+				$(echo "$hops" | awk '{ print "                " $0 }')
+			        </traceroute>
+			end
+		fi
+		gwip=$(cat /tmp/gwip)
+	fi
+
+	# Reverse traceroute
+	if get_target Bismark RTR $ZONE 0 ; then
+		hops=$(brtr $dst $info)
+		hops_cnt=$(echo "$hops" | wc -l)
+		if [ $hops_cnt -gt 1 ]; then
+			cat >> $xml_file <<-end
+			        <traceroute srcip=$dst dstip=$src timestamp=$(date +%s) hops=$hops_cnt>
+				$(echo "$hops" | awk '{ print "                " $0 }')
+			        </traceroute>
+			end
+		fi
+	fi
+fi
+
+# Get Gateway IP
+if [ ! "$gwip" ]; then
+	btr "8.8.8.8" > /dev/null
+	[ -e /tmp/gwip ] && gwip=$(cat /tmp/gwip)
+fi
+
+# RTT measurements using PING
+if get_target Bismark PING $ZONE 10 ; then
+	# Last mile RTT
+	if [ "$gwip" ]; then
+		( bping $gwip | mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $xml_file ) &
+	fi
+
+	# Geo-distributed servers RTT
+	mkdir -p /tmp/gdrtt
+	for srv in $(grep -v ^# ~/conf/gd.list); do
+		( bping $srv | mstats RTT PING $src $srv > /tmp/gdrtt/$srv ; cat /tmp/gdrtt/$srv >> $xml_file ) &
+	done
+
+	# MServer RTT
+	bping $dst | mstats RTT PING $src $dst >> $xml_file 
+fi
+
+# DNS delay and failure
+if [ $((count % DNS_FQ)) -eq 0 ]; then
+	bdns >> $xml_file
+fi
+
+## Serial measurements ##
+if [ ! -e /tmp/mlock ]; then 
+	# Set measure lock
+	echo $(date +%s) > /tmp/mlock
+
+	# Bitrate
+	if [ $((count % BR_FQ)) -eq 0 ]; then
+		if [ ${DEVICE_ID:0:2} != LS ]; then 
+			# Downstream bitrate using curl and HTTP
+			if get_target Bismark HTTPDL $ZONE $HTTP_DURATION ; then
+				sleep $wait
+				( sleep 3 ; bping $dst | mstats ULRTTDW PING $src $dst >> $xml_file ) &
+				bcurl "http://$dst$info" dw $HTTP_DURATION $DW_KBPS | mstats BITRATE CURL $dst $src | grep -v nan >> $xml_file
+				cut -f1 /tmp/curl/rates | mstats AGGL3BITRATE IFACE $dst $src >> $xml_file
+				cut -f2 /tmp/curl/rates | mstats FILEBITRATE CURL $dst $src >> $xml_file
+			fi
+
+			# Upstream bitrate using curl and HTTP
+			if get_target Bismark HTTPUL $ZONE $HTTP_DURATION ; then
+				sleep $wait
+				( sleep 3 ; bping $dst | mstats ULRTTUP PING $src $dst >> $xml_file ) &
+			pid=$(echo "start" | nc $dst 777)
+				bcurl "http://$dst$info" up $HTTP_DURATION $UP_KBPS | mstats BITRATE CURL $src $dst | grep -v nan >> $xml_file
+				cut -f1 /tmp/curl/rates | mstats AGGL3BITRATE IFACE $src $dst >> $xml_file
+				cut -f2 /tmp/curl/rates | mstats FILEBITRATE CURL $src $dst >> $xml_file
+				echo "stop $pid" | nc $dst 777 | mstats BITRATE TCPDUMP $src $dst >> $xml_file
+			fi
+		else
+			# Downstream bitrate using DITG
+			if get_target Bismark ITGDL $ZONE $HTTP_DURATION ; then
+				sleep $wait
+				( sleep 3 ; bping $dst | mstats ULRTTDW PING $src $dst >> $xml_file ) &
+				bditg tcp $dst $info dw $HTTP_DURATION $DW_KBPS >> $xml_file
+			fi
+
+			# Upstream bitrate using DITG
+			if get_target Bismark ITGUL $ZONE $HTTP_DURATION ; then
+				sleep $wait
+				( sleep 3 ; bping $dst | mstats ULRTTUP PING $src $dst >> $xml_file ) &
+				bditg tcp $dst $info up $HTTP_DURATION $UP_KBPS >> $xml_file
+			fi
+		fi
+	fi
+
+	# Jitter & Packet loss using DITG
+	if [ $((count % UDP_FQ)) -eq 0 ]; then
+		# Downstream 
+		if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
+			sleep $wait
+			bditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $xml_file
+		fi
+
+		# Upstream
+		if get_target Bismark ITGUL $ZONE $UDP_DURATION ; then
+			sleep $wait
+			bditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $xml_file
+		fi
+	fi
+
+	# Shaper probe
+	if [ $((count % SP_FQ)) -eq 0 ]; then
+		if get_target Bismark SP $ZONE 150 ; then
+			sleep $wait
+			bsp $dst >> $xml_file
+		fi
+	fi
+
+	# Release measure lock
+	rm /tmp/mlock
+else
+	# Check lock
+	locktime=$(cat /tmp/mlock)
+	currtime=$(date +%s)
+	if [ $((currtime - locktime)) -gt 400  ]; then
+		killall curl prober ITGRecv ITGSend
+		rm /tmp/mlock
+	fi
+fi
+
+# XML file footer
+cat >> $xml_file <<-end
+	</measurements>
+end
+
+# Move file to measure folder
+sleep 2
+mv $xml_file /tmp/measure
+
+
