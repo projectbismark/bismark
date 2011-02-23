@@ -51,6 +51,7 @@ def form_insert_cmd(table,fids,vals):
     cmd += nval + ","
   cmd = cmd[0:len(cmd)-1]
   #cmd += 
+  print cmd
   return cmd
 
 def get_id_from_table(table,did,ts):
@@ -117,7 +118,7 @@ def parse_block_v1_0(block,version,tables,log):
     head = fields[0]
     if '/' in head:
       continue
-    #print head
+    print head
     if head not in data:
       data[head] = []
 
@@ -203,11 +204,7 @@ def ignore_file(file):
     #return True
   if 'NEW' in file:
     return True
-  #if '109' in file:
-    #return True
-  if '111' in file:
-    return True
-  if '108' in file:
+  if 'NBukyhomenetlab' in file:
     return True
 
   return False
@@ -218,8 +215,10 @@ if __name__ == '__main__':
   MEASURE_FILE_DIR = 'var/data/'
   LOG_DIR = 'var/log/'
   ARCHIVE_DIR = 'var/data/old'
+  FILE_LOG = 'var/log/xml_parse_files'
   tables = {'measurement':'MEASUREMENTS','traceroute':'TRACEROUTES','hop':'TRACEROUTE_HOPS','userdevice':'USERDEVICE'}
 
+  filelog = open(HOME+FILE_LOG,'w')
   log = gz.open(HOME+LOG_DIR+'insert.log.gz','ab')
   files = os.listdir(HOME+MEASURE_FILE_DIR)
   fcnt = 0
@@ -227,6 +226,7 @@ if __name__ == '__main__':
     if ignore_file(file) == True:
       continue
     print file
+    filelog.write("%s\n"%(file))
     fcnt += 1
     parsefile(HOME+MEASURE_FILE_DIR+file,tables,log)
     log.write('Done ' + file + '\n')
@@ -234,4 +234,5 @@ if __name__ == '__main__':
     if fcnt < -1:
       sys.exit()
   log.close()
+  filelog.close()
 

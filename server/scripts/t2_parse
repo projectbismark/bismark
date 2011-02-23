@@ -3,15 +3,22 @@
 #
 # author: walter.dedonato@unina.it
 
+PATH=/home/bismark/bin:/sbin:/usr/sbin:/home/bismark/bin:/home/bismark/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/bin:/bin
+
 # Avoid multiple instances
-[ $(pgrep t2_parse) ] && exit
+[ -e /tmp/t2_parser/lock ] && exit
+
+# Set lock file
+mkdir -p /tmp/t2_parser
+touch /tmp/t2_parser/lock
 
 # Settings
 [ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/data
-BACKUP_DIR=$DATA_DIR/old
+BACKUP_DIR=$DATA_DIR/../processed
 BACKUP_FILE=t2_$(date +%s).tar
 AGGR_TABLE="FLOWS"
 SMPL_TABLE="FLOWS_SAMPLES"
+SQL_FILE="/tmp/t2_parser/flows.sql"
 
 # Create backup dir
 mkdir -p $BACKUP_DIR 
@@ -19,15 +26,15 @@ mkdir -p $BACKUP_DIR
 # Process any .t2 file from DATA dir
 cd $DATA_DIR
 for file in $(find . -name '*.t2') ; do
-	device=$(basename $file)
-	device=${device%%_*}
+	device="$(basename $file)"
+	device="${device%%_*}"
 
 	# Parse file
-	echo $file
-	gawk -f /dev/stdin $file > /tmp/flows.sql <<-end
+	echo "=== $(date) - $file" | tee -a /tmp/t2_parser/parser.log
+	gawk -f /dev/stdin "$file" > $SQL_FILE <<-end
 		/^[0-9]/{
-			ts = \$11 * 1000000
-			te = \$12 * 1000000
+			ts = \$11 
+			te = \$12 
 			print	"INSERT INTO $AGGR_TABLE VALUES (NULL,"\$1",\"$device\", \
 					INET_ATON(\""\$2"\"), \
 					INET_ATON(\""\$3"\"), \
@@ -38,9 +45,12 @@ for file in $(find . -name '*.t2') ; do
 					VALUES (LAST_INSERT_ID(), "\$8","\$7","\$10","\$9","ts","te");"
 		}
 	end
-	mysql -NB -u root bismark_live_v1 < /tmp/flows.sql 2>> /tmp/t2_parse.log 
-	tar -rf $BACKUP_DIR/$BACKUP_FILE --remove-files $file
+	mysql -NB -u root bismark_live_v1 < $SQL_FILE 2>> /tmp/t2_parser/parser.log 
+	tar -rf $BACKUP_DIR/$BACKUP_FILE --remove-files "$file"
 done
 
 gzip $BACKUP_DIR/$BACKUP_FILE
+
+# Unset lock file
+rm /tmp/t2_parser/lock
 

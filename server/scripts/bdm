@@ -136,7 +136,8 @@ function parse()
 	;;
 	upgrade)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help upgrade; }
-		upgrade $2 $3 
+		# upgrade $2 $3 
+		echo "Upgrade function currently disabled"
 	;;
 	config)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }

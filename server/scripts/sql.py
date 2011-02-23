@@ -29,7 +29,7 @@ def run_insert_cmd(cmd):
   try:
     cursor.execute(cmd)
   except:
-    #print "Couldn't run %s\n"%(cmd)
+    print "Couldn't run %s\n"%(cmd)
     return 0 
   #cursor.fetchall()
   return 1 
