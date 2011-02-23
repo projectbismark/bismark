@@ -44,7 +44,7 @@ echo $(( (count + 1) % 288 )) > /tmp/measure/counter
 ptime=`~/www/cgi-bin/sql.py 'SELECT valint FROM val WHERE valid="privend"'| sed -e 's/[(),]//g'`
 [ -e /tmp/restart ] && ( rm /tmp/restart && killall tie )
 if [ $(date +%s) -gt $ptime ]; then 
-	[ $(pgrep -n tie) ] || ( tie -n -m c -i any -E $DEVICE_ID -d /tmp/measure/ -P32 $plstream -f prttstat,plstat,iptstat >/dev/null 2>&1 & )
+	[ $(pgrep -n tie) ] || ( tie -x -n -m c -i any -E $DEVICE_ID -d /tmp/measure/ -P32 $plstream -f prttstat,plstat,iptstat >/dev/null 2>&1 & )
 fi
 bwdump		# Start/restart airodump
 barp		# Dump arp table
