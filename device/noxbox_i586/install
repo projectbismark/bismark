@@ -92,8 +92,10 @@ crontab conf/crontab
 echo "done"
 
 echo "Setting root password:"
-cmd="{ $PASS $PASS }" 
-$cmd | passwd 2>/dev/null
+( 
+	sleep 1; echo $ROOT_PASS
+	sleep 1; echo $ROOT_PASS
+) | passwd 2>/dev/null
 /noxbox/bin/persist_files /etc/shadow 2>/dev/null
 
 echo "Configuring wireless:"
