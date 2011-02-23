@@ -28,7 +28,7 @@ done
 shift $(( OPTIND - 1 ))
 
 # Command line check
-if [ ! $2 ]; then
+if [ ! $1 ]; then
 	cat <<-end
 		usage: $(basename $0) [options] <dev_id>"
 	
@@ -38,7 +38,7 @@ if [ ! $2 ]; then
 	exit
 fi
 
-if [ ${#2} -gt 15 ]; then
+if [ ${#1} -gt 15 ]; then
 	echo 'ERROR: Device name longer than 15 characters!'
 	exit
 fi
@@ -73,13 +73,13 @@ cd /root
 
 echo -n "Adding SSH public and host keys..."
 mkdir -p .ssh 
-ln -s $AUTHORIZED_KEYS ~/.ssh/authorized_keys
-ln -s $KNOWN_HOSTS ~/.ssh/known_hosts
+ln -sf $AUTHORIZED_KEYS ~/.ssh/authorized_keys
+ln -sf $KNOWN_HOSTS ~/.ssh/known_hosts
 echo "done"
 
 echo -n "Copying SSH key pair..."
 chmod 600 ${DEVICE_SSH_KEY}
-ln -s ${DEVICE_SSH_KEY}{,.pub} ~/.ssh
+ln -sf ${DEVICE_SSH_KEY}{,.pub} ~/.ssh
 echo "done"
 
 echo -n "Setting device id and profile..."
@@ -92,7 +92,8 @@ crontab conf/crontab
 echo "done"
 
 echo "Setting root password:"
-{ $PASS $PASS } | passwd 2>/dev/null
+cmd="{ $PASS $PASS }" 
+$cmd | passwd 2>/dev/null
 /noxbox/bin/persist_files /etc/shadow 2>/dev/null
 
 echo "Configuring wireless:"

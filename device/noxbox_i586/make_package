@@ -4,8 +4,8 @@
 # author: walter.dedonato@unina.it
 
 PLATFORM="noxbox_i586"
-UPDATE_PKG="$(pwd)/${PLATFORM}_update.tgz"
-INSTALL_PKG="~/www/${PLATFORM}_install.tgz"
+UPDATE_PKG=$(pwd)/${PLATFORM}_update.tgz
+INSTALL_PKG=~/www/${PLATFORM}_install.tgz
 
 [ $1 ] || { echo "syntax: $(basename $0) <update|install>" ; exit ; }
 [ -e $(basename $0) ] || { echo "ERROR: the script MUST be launched from $(dirname $0)" ; exit ; }
