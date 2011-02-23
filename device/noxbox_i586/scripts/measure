@@ -182,7 +182,7 @@ else
 	# Check lock
 	locktime=$(cat /tmp/mlock)
 	currtime=$(date +%s)
-	if [ $((currtime - locktime)) -gt 400  ]; then
+	if [ $((currtime - locktime)) -gt 3600  ]; then
 		killall curl prober ITGRecv ITGSend
 		rm /tmp/mlock
 	fi
