@@ -1,0 +1,28 @@
+#!/bin/bash
+# Transfers files to the bismark server
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration file
+. ~/conf/dev.conf
+
+# Help screen
+[ $2 ] || { echo "usage: $(basename $0) <up|dw> <file1> [...]" ; exit ; }
+
+TAG=$(uname -nm | tr ' ' '_')
+
+# Copy files using scp
+case $1 in
+up)
+	shift
+	for file in $*; do
+		scp -i $SSH_KEY $file $USER@$SERVER:~/bismark/device/$TAG/$file
+	done
+;;
+dw)
+	shift
+	for file in $*; do
+		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$TAG/$file $file
+	done
+;;
+esac
