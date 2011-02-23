@@ -4,11 +4,10 @@
 # author: walter.dedonato@unina.it
 
 DEVHOST_PUB_KEY=~/.ssh/id_rsa.pub
-AUTHORIZED_KEYS="../keys/authorized_keys"
-KNOWN_HOSTS="../keys/known_hosts"
-DEVICE_SSH_KEY="../keys/bismark"
+AUTHORIZED_KEYS="keys/authorized_keys"
+KNOWN_HOSTS="keys/known_hosts"
+DEVICE_SSH_KEY="keys/bismark"
 ROOT_PASS=$(md5sum <<< bismark | cut -d" " -f1)
-PASS="sleep 1; echo $ROOT_PASS;"
 PARTITION="hda2"
 USERNAME=root
 PLATFORM=$(uname -nm | tr ' ' '_')
@@ -73,13 +72,13 @@ cd /root
 
 echo -n "Adding SSH public and host keys..."
 mkdir -p .ssh 
-ln -sf $AUTHORIZED_KEYS ~/.ssh/authorized_keys
-ln -sf $KNOWN_HOSTS ~/.ssh/known_hosts
+ln -sf ../$AUTHORIZED_KEYS ~/.ssh/authorized_keys
+ln -sf ../$KNOWN_HOSTS ~/.ssh/known_hosts
 echo "done"
 
 echo -n "Copying SSH key pair..."
-chmod 600 ${DEVICE_SSH_KEY}
-ln -sf ${DEVICE_SSH_KEY}{,.pub} ~/.ssh
+ln -sf ../${DEVICE_SSH_KEY}{,.pub} ~/.ssh
+chmod 600 ~/${DEVICE_SSH_KEY}
 echo "done"
 
 echo -n "Setting device id and profile..."
