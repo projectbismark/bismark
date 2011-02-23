@@ -1,26 +1,67 @@
 #!/bin/bash
-# Create NoxBox installation package
+# Create noxbox_i586 packages
 #
-# author: wlater.dedonato@unina.it
+# author: walter.dedonato@unina.it
 
-TMP_DIR=/tmp/ipkg
+PLATFORM="noxbox_i586"
+UPDATE_PKG="$(pwd)/${PLATFORM}_update.tgz"
+INSTALL_PKG="~/www/${PLATFORM}_install.tgz"
 
-# Get package version
-VERSION=$(ls ../dev-NB-*.tgz | awk -F"[-.]" '{ print $5 }' )
+[ $1 ] || { echo "syntax: $(basename $0) <update|install>" ; exit ; }
+[ -e $(basename $0) ] || { echo "ERROR: the script MUST be launched from $(dirname $0)" ; exit ; }
 
-# Create temp dir
-rm -rf $TMP_DIR
-mkdir -p $TMP_DIR/keys
+case $1 in
+update)
+	TMP_DIR="/tmp/pkg/$PLATFORM"
 
-# Copy files
-cp ../dev-NB-*.tgz install README $TMP_DIR
-cp ../keys/{bismark_nb*,known_hosts} $TMP_DIR/keys
-cp ../../server/keys/bismark_srv* $TMP_DIR/keys
+	# Update and get version number
+	svn update ~/bismark
+	VERSION=$(svn info ~/bismark | awk '/^Rev/{ print $2 ; exit }')
 
-# Create package
-(
- DEST_DIR=$(pwd)
- rm $DEST_DIR/*.tgz
- cd $TMP_DIR 
- tar -czvf "$DEST_DIR/noxbox_v${VERSION}.tgz" *
-)
+	echo "Creating NoxBox package version $VERSION:"
+
+	# Clean & create package tree
+	rm -rf $TMP_DIR $UPDATE_PKG
+	mkdir -p $TMP_DIR
+	mkdir $TMP_DIR/{conf,scripts,bin,lib,www,common,keys,share}
+
+	# Copy files
+	(
+	 cd ~/bismark/device/$PLATFORM
+	 cp -d conf/* $TMP_DIR/conf
+	 sed -i -e "/^VERSION=/ s/=.*/=$VERSION/" $TMP_DIR/conf/dev.conf
+	 cp -d scripts/* $TMP_DIR/scripts
+	 cp -d lib/* $TMP_DIR/lib
+	 cp -d keys/* $TMP_DIR/keys
+	 ( cd bin && tar -cf /dev/stdout --exclude=.svn . | tar -C $TMP_DIR/bin -xf /dev/stdin )
+	 ( cd www && tar -cf /dev/stdout --exclude=.svn . | tar -C $TMP_DIR/www -xf /dev/stdin )
+	 ( cd common && tar -cf /dev/stdout --exclude=.svn . | tar -C $TMP_DIR/common -xf /dev/stdin )
+	 ( cd share && tar -cf /dev/stdout --exclude=.svn . | tar -C $TMP_DIR/share -xf /dev/stdin )
+	)
+
+	# Create tgz archive
+	(
+	 cd $TMP_DIR
+	 tar -czvf $UPDATE_PKG *
+	)
+;;
+install)
+	TMP_DIR="/tmp/ipkg/$PLATFORM"
+	
+	# Clean & create package tree
+	rm -rf $TMP_DIR $INSTALL_PKG
+	mkdir -p $TMP_DIR
+
+	# Copy files
+	cp $UPDATE_PKG install README $TMP_DIR
+
+	# Create package
+	(
+	 cd $TMP_DIR
+	 tar -czvf $INSTALL_PKG *
+	)
+;;
+esac
+
+
+

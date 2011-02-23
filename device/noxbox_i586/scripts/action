@@ -15,11 +15,7 @@
 # Help screen
 [ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }
 
-# Platform depending options
-case $DEVICE_ID in
-LS*) WIF="wl0"  ;;
-NB*) WIF="ath0" ;;
-esac
+WIF="ath0"
 
 # Perform action
 case $1 in
@@ -52,17 +48,13 @@ update)	# Software update
 	[ $2 ] && [ $VERSION -eq $2 ] && { echo "Device up to date" | output $1 ; exit ; }
 
 	# Get new bismark package
-	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/dev-${DEVICE_ID:0:2}-*.tgz /tmp/dev.tgz
+	scp -q -i $SSH_KEY $USER@$SERVER:~/bismark/device/device-${PLATFORM}*.tgz /tmp/dev.tgz
 
 	# Remove old scripts and configuration files
 	find * -path "conf/*" | sort > /tmp/old
 	find * -path "scripts/*" | sort >> /tmp/old
 	tar -tzf /tmp/dev.tgz | sort > /tmp/new
-	case $DEVICE_ID in
-	LS*) rm -f $(diff /tmp/old /tmp/new | awk -F- '/^-[a-zA-Z]/{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe') ;;
-	NB*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe') ;;
-	WS*) rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe') ;;
-	esac
+	rm -f $(diff /tmp/old /tmp/new | awk '/^</{ print $2 }' | grep -v 'dev.conf\|rshell\|action\|probe')
 
 	# Extract new package
 	tar -xzf /tmp/dev.tgz
@@ -76,22 +68,10 @@ update)	# Software update
 	rm /tmp/old /tmp/new
 
 	# Call startup script and set restart flag
-	# startup
 	touch /tmp/restart
 
 	# Dev type specific actions
-	case $DEVICE_ID in
-	NB*)
-		chown nobody www/nobody
-	;;
-	LS*)
-		opkg update
-		pkgs=$(grep ^LS ~/conf/packages.conf | cut -f2)
-		for pkg in $pkgs; do
-			opkg list_installed | grep -q $pkg || opkg install $pkg 
-		done
-	;;
-	esac
+	chown nobody www/nobody
 ;;
 config)
 	# Modify parameters	
@@ -174,44 +154,34 @@ config)
 
 	# Push configuration
 	if [ $push ]; then
-		case $DEVICE_ID in
-		LS*) 
-			uci set wireless.wl0.channel=$WIFI_CHANNEL
-			uci set wireless.@wifi-iface[0].ssid=$WIFI_SSID
-			uci set wireless.@wifi-iface[0].key=$WIFI_PASS
-			uci commit wireless && wifi
-		;;
-		NB*) 
-			awk -f /dev/stdin sec=$WIFI_SEC /etc/hostapd/hostapd.conf > /tmp/hostapd.conf <<-end
-				/^#/ || /^$/{ next }
-				! /^wpa/ && ! /^wep/ && ! /^ssid/ && ! /^channel/ { print }
-				END{ 
-					print "ssid=$WIFI_SSID"
-					print "channel=$WIFI_CHANNEL"
-					if (sec == "WPA") {
-						print "wpa=1"
-						print "wpa_passphrase=$WIFI_PASS"
-						print "wpa_key_mgmt=WPA-PSK"
-						print "wpa_pairwise=TKIP"
-					} else if (sec == "WPA2") {
-						print "wpa=2"
-						print "wpa_passphrase=$WIFI_PASS"
-						print "wpa_key_mgmt=WPA-PSK"
-						print "wpa_pairwise=CCMP"
-					} else if (sec == "WEP") {
-						print "wep_default_key=0"
-						if (${WIFI_PASS:0:1} ~ /[0-9]/)
-							print "wep_key0=$WIFI_PASS"
-						else
-							print "wep_key0=\"$WIFI_PASS\""
-					}
+		awk -f /dev/stdin sec=$WIFI_SEC /etc/hostapd/hostapd.conf > /tmp/hostapd.conf <<-end
+			/^#/ || /^$/{ next }
+			! /^wpa/ && ! /^wep/ && ! /^ssid/ && ! /^channel/ { print }
+			END{ 
+				print "ssid=$WIFI_SSID"
+				print "channel=$WIFI_CHANNEL"
+				if (sec == "WPA") {
+					print "wpa=1"
+					print "wpa_passphrase=$WIFI_PASS"
+					print "wpa_key_mgmt=WPA-PSK"
+					print "wpa_pairwise=TKIP"
+				} else if (sec == "WPA2") {
+					print "wpa=2"
+					print "wpa_passphrase=$WIFI_PASS"
+					print "wpa_key_mgmt=WPA-PSK"
+					print "wpa_pairwise=CCMP"
+				} else if (sec == "WEP") {
+					print "wep_default_key=0"
+					if (${WIFI_PASS:0:1} ~ /[0-9]/)
+						print "wep_key0=$WIFI_PASS"
+					else
+						print "wep_key0=\"$WIFI_PASS\""
 				}
-			end
-			mv /tmp/hostapd.conf /etc/hostapd/
-			/etc/init.d/hostapd restart
-			iwconfig $WIF channel $WIFI_CHANNEL
-		;;
-		esac
+			}
+		end
+		mv /tmp/hostapd.conf /etc/hostapd/
+		/etc/init.d/hostapd restart
+		iwconfig $WIF channel $WIFI_CHANNEL
 	fi
 
 	# Configuration output

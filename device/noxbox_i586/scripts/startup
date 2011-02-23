@@ -6,42 +6,30 @@
 # Load configuration
 . ~/conf/dev.conf
 
-case $DEVICE_ID in
-NB*)
-	# Configure wireless interface 
-	action config push
+# Configure wireless interface 
+action config push
 
-	# Set TCP core parameters
-	ifconfig eth0 txqueuelen 5000
-	ifconfig eth0 mtu 1500
-	sysctl net.ipv4.tcp_congestion_control=reno
-	sysctl net.core.rmem_max=8388608
-	sysctl net.core.wmem_max=8388608
-	sysctl net.ipv4.tcp_rmem="4096 65536 8388608"
-	sysctl net.ipv4.tcp_wmem="4096 65536 8388608"
+# Set TCP core parameters
+ifconfig eth0 txqueuelen 5000
+ifconfig eth0 mtu 1500
+sysctl net.ipv4.tcp_congestion_control=reno
+sysctl net.core.rmem_max=8388608
+sysctl net.core.wmem_max=8388608
+sysctl net.ipv4.tcp_rmem="4096 65536 8388608"
+sysctl net.ipv4.tcp_wmem="4096 65536 8388608"
 
-	# Setup dhcp log script
-	if ! grep -q ^dhcp-script= /etc/dnsmasq.conf ; then
-		echo "dhcp-script=/root/scripts/bdhcp" >> /etc/dnsmasq.conf
-		/etc/init.d/dnsmasq restart
-	fi
+# Setup dhcp log script
+if ! grep -q ^dhcp-script= /etc/dnsmasq.conf ; then
+	echo "dhcp-script=/root/scripts/bdhcp" >> /etc/dnsmasq.conf
+	/etc/init.d/dnsmasq restart
+fi
 
-	# Set local time
-	ln -fs /usr/share/zoneinfo/$LOCALTIME /etc/localtime
+# Set local time
+ln -fs /usr/share/zoneinfo/$LOCALTIME /etc/localtime
 
-	# Set boot event and start modem monitor
-	event boot
-	event modem
+# Set boot event and start modem monitor
+event boot
+event modem
 
-	# Start web interface
-	pyweb start
-;;
-LS*)
-	# Create bin and lib directories on ramdisk
-	mkdir -p /tmp/bin /tmp/lib
-	ln -fs /tmp/bin bin
-	ln -fs /tmp/lib lib
-	sleep 10
-	[ -d /tmp/measure ] || action update
-;;
-esac
+# Start web interface
+pyweb start
