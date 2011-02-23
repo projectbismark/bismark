@@ -57,8 +57,8 @@ install)
 
 	# Create package
 	(
-	 cd $TMP_DIR
-	 tar -czvf $INSTALL_PKG *
+	 cd $TMP_DIR/..
+	 tar -czvf $INSTALL_PKG $PLATFORM
 	)
 ;;
 esac
