@@ -14,10 +14,11 @@ touch /tmp/t2_parser/lock
 
 # Settings
 [ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/data
-BACKUP_DIR=$DATA_DIR/../processed
-BACKUP_FILE=t2_$(date +%s).tar
-AGGR_TABLE="FLOWS"
-SMPL_TABLE="FLOWS_SAMPLES"
+BACKUP_DIR="$DATA_DIR/../processed"
+BACKUP_FILE="t2_$(date +%s).tar"
+LOG_FILE="/tmp/t2_parser/$BACKUP_FILE.log"
+AGGR_TABLE="FLOWS_newformat"
+SMPL_TABLE="FLOWS_SAMPLES_newformat"
 SQL_FILE="/tmp/t2_parser/flows.sql"
 
 # Create backup dir
@@ -29,23 +30,49 @@ for file in $(find . -name '*.t2') ; do
 	device="$(basename $file)"
 	device="${device%%_*}"
 
+	# Skip the file if it has already been parsed
+	read fid tst <<< $(gawk '/^[0-9]/{ print $1 " " $11; exit }' "$file")
+	uid=$(mysql -NB -u root -e "SELECT uid FROM $SMPL_TABLE WHERE flowid='$fid' AND deviceid='$device' AND tsstart='$tst';" bismark_live_v1)
+	[ $uid ] && echo "=== $(date) - $file - SKIPPED" | tee -a $LOG_FILE && continue
+
 	# Parse file
-	echo "=== $(date) - $file" | tee -a /tmp/t2_parser/parser.log
-	gawk -f /dev/stdin "$file" > $SQL_FILE <<-end
-		/^[0-9]/{
-			ts = \$11 
-			te = \$12 
+	echo "=== $(date) - $file" | tee -a $LOG_FILE
+	echo "BEGIN TRANSACTION;" > $SQL_FILE
+	gawk -f /dev/stdin "$file" >> $SQL_FILE <<-end
+		BEGIN { 
+			while ((getline line < (ENVIRON["HOME"] "/etc/tie_apps.txt")) > 0) {
+				split(line, app, /(\",\t+\"|,\t+\"|,\t+)/) ;
+				if (app[1] ~ /^[0-9]/ ) {
+					id[app[5]] = app[1] ;
+					sid[app[5]] = app[2] ;
+				}
+			}
+		}
+		/^[0-9]/ && (NF == 15){
+			ts = \$11;
+			te = \$12;
+
+			if (\$13 ~ /^[0-9]/) {
+				appid = \$13 ;
+				subid = \$14 ;
+			} else {
+				appid = id[\$14] ;
+				subid = sid[\$14] ;
+			}
+
 			print	"INSERT INTO $AGGR_TABLE VALUES (NULL,"\$1",\"$device\", \
 					INET_ATON(\""\$2"\"), \
 					INET_ATON(\""\$3"\"), \
-					"\$4","\$5","\$6","\$8","\$7","\$10","\$9","ts","te",\""\$14"\") \
+					"\$4","\$5","\$6","\$8","\$7","\$10","\$9","ts","te","appid","subid") \
 				ON DUPLICATE KEY UPDATE uid=LAST_INSERT_ID(uid), \
 					tsend="te", uppkts=uppkts+"\$8", dwpkts=dwpkts+"\$7", upbytes=upbytes+"\$10", dwbytes=dwbytes+"\$9"; \
 				INSERT INTO $SMPL_TABLE \
 					VALUES (LAST_INSERT_ID(), "\$8","\$7","\$10","\$9","ts","te");"
 		}
 	end
-	mysql -NB -u root bismark_live_v1 < $SQL_FILE 2>> /tmp/t2_parser/parser.log 
+	echo "COMMIT;" >> $SQL_FILE
+
+	mysql -NB -u root bismark_live_v1 < $SQL_FILE 2>> $LOG_FILE 
 	tar -rf $BACKUP_DIR/$BACKUP_FILE --remove-files "$file"
 done
 
