@@ -1,0 +1,24 @@
+#!/bin/bash
+# Parser or TIE netflow data
+#
+# author: walter.dedonato@unina.it
+
+# Settings
+PATH=/home/bismark/bin:/sbin:/usr/sbin:/home/bismark/bin:/home/bismark/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/bin:/bin
+[ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/processed
+TEMP_DIR="/tmp/t2_parser/tmp"
+LOG_FILE="/tmp/t2_parser/reparse_$(date +%s).log"
+
+# Create temporary dir
+mkdir -p $TEMP_DIR 
+
+# Process any .t2 file from DATA dir
+cd $DATA_DIR
+for file in $(find . -maxdepth 1 -name 't2_*.tar.gz') ; do
+	echo "$(date) - $file" | tee -a $LOG_FILE
+	tar -C $TEMP_DIR -xzf $file
+	t2_parse -r $TEMP_DIR
+done
+
+rmdir $TEMP_DIR
+

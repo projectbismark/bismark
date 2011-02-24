@@ -8,6 +8,18 @@ PATH=/home/bismark/bin:/sbin:/usr/sbin:/home/bismark/bin:/home/bismark/bin:/sbin
 # Avoid multiple instances
 [ -e /tmp/t2_parser/lock ] && exit
 
+# Parse options
+while getopts 'r' flag; do
+	case $flag in
+	r) REMOVE="true" ;;
+	*)
+		echo "Unknown option: $flag $OPTARG"
+		exit
+	;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
 # Set lock file
 mkdir -p /tmp/t2_parser
 touch /tmp/t2_parser/lock
@@ -22,7 +34,7 @@ SMPL_TABLE="FLOWS_SAMPLES_newformat"
 SQL_FILE="/tmp/t2_parser/flows.sql"
 
 # Create backup dir
-mkdir -p $BACKUP_DIR 
+[ $REMOVE ] || mkdir -p $BACKUP_DIR 
 
 # Process any .t2 file from DATA dir
 cd $DATA_DIR
@@ -31,13 +43,18 @@ for file in $(find . -name '*.t2') ; do
 	device="${device%%_*}"
 
 	# Skip the file if it has already been parsed
-	read fid tst <<< $(gawk '/^[0-9]/{ print $1 " " $11; exit }' "$file")
-	uid=$(mysql -NB -u root -e "SELECT uid FROM $SMPL_TABLE WHERE flowid='$fid' AND deviceid='$device' AND tsstart='$tst';" bismark_live_v1)
-	[ $uid ] && echo "=== $(date) - $file - SKIPPED" | tee -a $LOG_FILE && continue
+	read fid tst tend <<< $(gawk '/^[0-9]/{ print $1 " " $11 " " $12; exit }' "$file")
+	uid=$(mysql -NB -u root -e "SELECT a.uid FROM $AGGR_TABLE as a JOIN $SMPL_TABLE as s ON a.uid = s.uid
+					WHERE a.flowid='$fid' AND a.deviceid='$device' AND s.tsstart='$tst' AND s.tsend='$tend';" bismark_live_v1)
+	[ $uid ] && { 
+		echo "=== $(date) - $file - SKIPPED" | tee -a $LOG_FILE 
+		rm "$file"
+		continue
+	}
 
 	# Parse file
 	echo "=== $(date) - $file" | tee -a $LOG_FILE
-	echo "BEGIN TRANSACTION;" > $SQL_FILE
+	echo "START TRANSACTION;" > $SQL_FILE
 	gawk -f /dev/stdin "$file" >> $SQL_FILE <<-end
 		BEGIN { 
 			while ((getline line < (ENVIRON["HOME"] "/etc/tie_apps.txt")) > 0) {
@@ -65,7 +82,7 @@ for file in $(find . -name '*.t2') ; do
 					INET_ATON(\""\$3"\"), \
 					"\$4","\$5","\$6","\$8","\$7","\$10","\$9","ts","te","appid","subid") \
 				ON DUPLICATE KEY UPDATE uid=LAST_INSERT_ID(uid), \
-					tsend="te", uppkts=uppkts+"\$8", dwpkts=dwpkts+"\$7", upbytes=upbytes+"\$10", dwbytes=dwbytes+"\$9"; \
+					tsend=GREATEST("te",tsend), uppkts=uppkts+"\$8", dwpkts=dwpkts+"\$7", upbytes=upbytes+"\$10", dwbytes=dwbytes+"\$9"; \
 				INSERT INTO $SMPL_TABLE \
 					VALUES (LAST_INSERT_ID(), "\$8","\$7","\$10","\$9","ts","te");"
 		}
@@ -73,10 +90,14 @@ for file in $(find . -name '*.t2') ; do
 	echo "COMMIT;" >> $SQL_FILE
 
 	mysql -NB -u root bismark_live_v1 < $SQL_FILE 2>> $LOG_FILE 
-	tar -rf $BACKUP_DIR/$BACKUP_FILE --remove-files "$file"
+	if [ $REMOVE ]; then
+		rm "$file"
+	else
+		tar -rf $BACKUP_DIR/$BACKUP_FILE --remove-files "$file"
+	fi
 done
 
-gzip $BACKUP_DIR/$BACKUP_FILE
+[ $REMOVE ] || gzip $BACKUP_DIR/$BACKUP_FILE
 
 # Unset lock file
 rm /tmp/t2_parser/lock
