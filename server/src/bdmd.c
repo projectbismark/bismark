@@ -351,8 +351,11 @@ void *doit(void *param)
 				printf("%s - Scheduled %s measure from %s to %s at %lu for %s seconds\n", date, request.type, probe.id, target.ip, ts, request.duration);
 				fflush(stdout);
 			} else {
+				unsigned int delay = atoi(target.free_ts) - ts + 2;
+				if (delay > 300) delay = 300;
+
 				/* Set reply */
-				sprintf(reply, "%s %s %lu\n", target.ip, target.info, atoi(target.free_ts) - ts + 2);
+				sprintf(reply, "%s %s %u\n", target.ip, target.info, delay);
 
 				/* Update target entry */
 				snprintf(query, MAX_QUERY_LEN, "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
