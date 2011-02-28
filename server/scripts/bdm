@@ -444,7 +444,7 @@ function upgrade()
 	for p in $(find ~/bismark/device -maxdepth 1 -name *_* -printf "%f\n"); do
 		(
 		 cd ~/bismark/device/$p
-		 [ -e ./make_package ] && { ./make_package update && ./make_package install }
+		 [ -e ./make_package ] && { ./make_package update && ./make_package install ; }
 		)
 	done
 
