@@ -441,7 +441,7 @@ function upgrade()
 	echo "Upgrading $1"
 
 	# Create last release packages
-	for p in $(find ~/bismark/device -maxdepth 1 -name *_* -printf "%f\n"); do
+	for p in $(find ~/bismark/device -maxdepth 1 -name "*_*" -printf "%f\n"); do
 		(
 		 cd ~/bismark/device/$p
 		 [ -e ./make_package ] && { ./make_package update && ./make_package install ; }
