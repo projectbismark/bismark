@@ -1,11 +1,28 @@
 # m h  dom mon dow   command
+
+# Mysql remote access
 @reboot               socat TCP4-LISTEN:53306,fork,reuseaddr TCP4:127.0.0.1:3306
+
+# Bismark daemon failure restart
 */5  *   *   *   *    ( pgrep bdmd.real || ~/bin/bdmd start ) >/dev/null 2>/dev/null
+
+# Bismark compressed data unpacker
 5   */1  *   *   *    cd ~/var/data ; for ark in $(find -name "*.tgz"); do  tar -xzf $ark ; rm $ark ; done >/dev/null 2>/dev/null
+
+# Unparsed files packer
 50  */2  *   *   *    ~/bin/pack ~/var/data >/dev/null 2>/dev/null
+
+# Bismark data parsers
 10  */2  *   *   *    ~/bin/xml_parse.py > ~/var/log/last_parse.log 2>~/var/log/xml_parse_error.log
 20  */2  *   *   *    ~/bin/t2_parse > ~/var/log/last_t2_parse.log 2>~/var/log/t2_parse_error.log
+30  */2  *   *   *    ~/bin/events_parser.py > ~/var/log/event_last_parse.log 2>~/var/log/event_parse_error.log
+35  */2  *   *   *    ~/bin/dhcp_parser.py > ~/var/log/dhcp_last_parse.log 2>~/var/log/dhcp_parse_error.log
+40  */2  *   *   *    ~/bin/arp_parser.py > ~/var/log/arp_last_parse.log 2>~/var/log/arp_parse_error.log
+50  */2  *   *   *    ~/bin/csv_parser_airodump.py > ~/var/log/last_csv_parse.log 2>~/var/log/csv_parse_error.log
+
+# Pack every processed file older than 7 days
 30   1   1  *   *     ( /usr/bin/find ~/var/data/old -mtime +7 | /usr/bin/tee -a ~/var/log/old_backup | tar --remove-files -czf ~/var/backup/bkp_$(date +%s).tgz -T /dev/stdin ) >/dev/null 2>/dev/null
-40  */2  *   *   *    ~/bin/csv_parser_airodump.py > ~/var/log/last_csv_parse.log 2>~/var/log/csv_parse_error.log
+
+# Bismakr monitoring and notifiers
 */5  *   *   *   *    ~/bin/bdm list notify >/dev/null 2>/dev/null
 0   8,20 *   *   *    ~/bin/device_mon
