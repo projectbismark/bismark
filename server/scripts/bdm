@@ -136,8 +136,7 @@ function parse()
 	;;
 	upgrade)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help upgrade; }
-		# upgrade $2 $3 
-		echo "Upgrade function currently disabled"
+		upgrade $2 $3 
 	;;
 	config)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }
@@ -441,52 +440,13 @@ function upgrade()
 {
 	echo "Upgrading $1"
 
-	# Update version number
-	svn update ~/bismark
-	svn info ~/bismark | awk '/^Rev/{ print $2 ; exit }' > ~/bismark/device/VERSION
-	VERSION=$(cat ~/bismark/device/VERSION)
-
 	# Create last release packages
-	[ $2 ] && rm -f ~/bismark/device/dev-*.tgz
-	for type in $DEV_TYPES; do
-		if [ ! -e ~/bismark/device/dev-$type-$VERSION.tgz ]; then
-			echo "Creating $type package version $VERSION:"
-
-			# Clean & create package tree
-			rm -f ~/bismark/device/dev-$type-*.tgz
-			rm -rf /tmp/pkg/$type
-			mkdir -p /tmp/pkg/$type
-			mkdir /tmp/pkg/$type/{conf,scripts,bin,lib}
-
-			# Copy files
-			(
-			 cd ~/bismark/device
-			 cp -d conf/* /tmp/pkg/$type/conf
-			 sed -i -e "/^VERSION=/ s/=.*/=$VERSION/" /tmp/pkg/$type/conf/dev.conf
-			 cp -d scripts/* /tmp/pkg/$type/scripts
-			 [ -e bin/$type ] && (cd  bin/$type && tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/bin -xf /dev/stdin )
-			 [ -e lib/$type ] && cp -d lib/$type/* /tmp/pkg/$type/lib
-			 [ $type == NB ] && (
-				mkdir /tmp/pkg/$type/www
-				cd www 
-				tar -cf /dev/stdout --exclude=.svn . | tar -C /tmp/pkg/$type/www -xf /dev/stdin
-			 )
-			)
-
-			# Create tgz archive
-			(
-			 cd /tmp/pkg/$type
-			 tar -czvf ~/bismark/device/dev-$type-$VERSION.tgz *
-			)
-		fi
+	for p in $(find ~/bismark/device -maxdepth 1 -name *_* -printf "%f\n"); do
+		(
+		 cd ~/bismark/device/$p
+		 [ -e ./make_package ] && { ./make_package update && ./make_package install }
+		)
 	done
-
-	# Publish latest NB installation package
-	(
-	 cd ~/bismark/device/NB
-	 ./make_package
-	 cp noxbox_v$VERSION.tgz ~/www/noxbox_latest.tgz
-	)
 
 	# Start upgrade script
 	echo "Executing upgrade:"
