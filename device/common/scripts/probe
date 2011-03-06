@@ -53,6 +53,9 @@ else
 	event uplink down
 fi
 
+# Temporary arp dump every 60 secs
+barp
+
 # Parse reply
 read cmd value < /tmp/reply
 [ $cmd ] && REMOTE=on action $cmd $value

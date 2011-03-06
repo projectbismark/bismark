@@ -8,6 +8,7 @@ PATH=/home/bismark/bin:/sbin:/usr/sbin:/home/bismark/bin:/home/bismark/bin:/sbin
 [ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/processed
 TEMP_DIR="/tmp/t2_parser/tmp"
 LOG_FILE="/tmp/t2_parser/reparse_$(date +%s).log"
+DEST_DIR="~/var/reprocessed"
 
 # Create temporary dir
 mkdir -p $TEMP_DIR 
@@ -18,6 +19,7 @@ for file in $(find . -maxdepth 1 -name 't2_*.tar.gz') ; do
 	echo "$(date) - $file" | tee -a $LOG_FILE
 	tar -C $TEMP_DIR -xzf $file
 	t2_parse -r $TEMP_DIR
+	mv $file $DEST_DIR
 done
 
 rmdir $TEMP_DIR
