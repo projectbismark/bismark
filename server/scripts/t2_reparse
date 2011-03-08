@@ -5,10 +5,10 @@
 
 # Settings
 PATH=/home/bismark/bin:/sbin:/usr/sbin:/home/bismark/bin:/home/bismark/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/bin:/bin
-[ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/processed
+[ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/processed/t2
 TEMP_DIR="/tmp/t2_parser/tmp"
 LOG_FILE="/tmp/t2_parser/reparse_$(date +%s).log"
-DEST_DIR="~/var/reprocessed"
+DEST_DIR=~/var/reprocessed
 
 # Create temporary dir
 mkdir -p $TEMP_DIR 

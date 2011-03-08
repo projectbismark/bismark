@@ -26,7 +26,7 @@ touch /tmp/t2_parser/lock
 
 # Settings
 [ $1 ] && DATA_DIR=$1 || DATA_DIR=~/var/data
-BACKUP_DIR="$DATA_DIR/../processed"
+BACKUP_DIR="$DATA_DIR/../processed/t2"
 BACKUP_FILE="t2_$(date +%s).tar"
 LOG_FILE="/tmp/t2_parser/$BACKUP_FILE.log"
 AGGR_TABLE="FLOWS_newformat"
