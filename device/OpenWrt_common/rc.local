@@ -1,0 +1,17 @@
+# Bismark rc.local boot script
+#
+# author: walter.dedonato@unina.it
+
+export BISMARK_DIR="/tmp/bismark"
+export PLATFORM="$(uname -nm | tr ' ' '_')
+
+# Checkout latest version
+svn --non-interactive "svn://143.215.131.215/$PLATFORM" $BISMARK_DIR
+
+# Startup configuration
+export PATH=$BISMARK_DIR/bin:$BISMARK_DIR/scripts:$PATH
+startup
+
+# Cronjobs setup
+cat /etc/crontabs/root $BISMARK_DIR/etc/crontab | crontab -
+
