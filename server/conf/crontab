@@ -3,6 +3,9 @@
 # Mysql remote access
 @reboot               socat TCP4-LISTEN:53306,fork,reuseaddr TCP4:127.0.0.1:3306
 
+# Subversion bismark release repository
+@reboot 	      svnserve -d -r /home/bismark/var/release -T
+
 # Bismark daemon failure restart
 */5  *   *   *   *    ( pgrep bdmd.real || ~/bin/bdmd start ) >/dev/null 2>/dev/null
 
