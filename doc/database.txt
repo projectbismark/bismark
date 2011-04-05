@@ -16,7 +16,7 @@ Table: Device
 device_id   // unique device identifier composed by some letters and a progressive number (e.g. LS1 for Lynksys)
 type        // device or router
 os          // operating system version string
-version     // bismark software version
+version     // bismark software version (is this unique enough?)
 user_id     // user unique identifier (same of User table)
 
 Table: Measurements
