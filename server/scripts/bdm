@@ -566,6 +566,7 @@ function copy()
 	fi
 
 	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$2'")
+	[ $SSH_USER ] || SSH_USER=root
 	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp 2>/dev/null 
 }
 
