@@ -1,0 +1,17 @@
+#!/bin/bash
+# 
+# Script to update current device release from bismark tree
+#
+# author: walter.dedonato@unina.it
+
+[ $1 ] || { echo "syntax: $(basename $0) <dist_arch>" ; exit ; }
+[ $(basename $(pwd)) == "release" ] || { echo "Script must be called from 'release' folder" ; exit ; }
+
+# Copy device tree
+tar -chf - --exclude ".svn" ../$1/ | tar -xvf -
+
+# Add to version control eventual new files
+svn add $1
+
+# Commit release update
+svn commit
