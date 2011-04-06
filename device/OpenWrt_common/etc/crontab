@@ -1,5 +1,6 @@
-*/1  * * * * ~/scripts/probe
-*/5  * * * * ~/scripts/rshell
+SHELL=/bin/bash
+BISMARK_DIR="/tmp/bismark"
+
+*/1  * * * * $BISMARK_DIR/scripts/probe
+*/5  * * * * $BISMARK_DIR/scripts/rshell
 #*/5  * * * * ~/scripts/measure
-#4  */1 * * * ~/scripts/upload
-#*/10 * * * * ~/scripts/caching

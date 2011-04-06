@@ -6,10 +6,11 @@ export BISMARK_DIR="/tmp/bismark"
 export PLATFORM="$(uname -nm | tr ' ' '_')
 
 # Checkout latest version
-svn --non-interactive "svn://143.215.131.215/$PLATFORM" $BISMARK_DIR
+svn co --non-interactive "svn://143.215.131.215/$PLATFORM" $BISMARK_DIR
 
 # Startup configuration
 export PATH=$BISMARK_DIR/bin:$BISMARK_DIR/scripts:$PATH
+mkdir -p $BISMARK_DIR/var/data
 startup
 
 # Cronjobs setup
