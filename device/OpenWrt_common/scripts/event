@@ -1,6 +1,6 @@
 #!/bin/bash
 # Bismark events logger
-#
+# What will it take to convert these to ash?
 # author: walter.dedonato@unina.it
 
 # Load configuration files
