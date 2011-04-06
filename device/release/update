@@ -5,13 +5,24 @@
 # author: walter.dedonato@unina.it
 
 [ $1 ] || { echo "syntax: $(basename $0) <dist_arch>" ; exit ; }
-[ $(basename $(pwd)) == "release" ] || { echo "Script must be called from 'release' folder" ; exit ; }
+[ $(basename $(pwd)) == "release" ] || { echo "the script must be called from the 'release' folder" ; exit ; }
+[ -d "../$1" ] || { echo "error: unable to find $1 source path" ; exit ; }
+
+# Checkout release working copy if not present
+svn co svn://143.215.131.215/$1
 
 # Copy device tree
 tar -chf - --exclude ".svn" ../$1/ | tar -xvf -
 
+# For now the following is done manually
+# TODO: Should find a way to apply the diff from the main repository
+
+# Change pwd to target folder
+#cd $1
+
 # Add to version control eventual new files
-svn add $1
+#new_files=$(svn status | awk '/^\?/{ print $2 }')
+#echo svn add $new_files
 
 # Commit release update
-svn commit
+#svn commit $1
