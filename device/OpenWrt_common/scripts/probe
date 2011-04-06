@@ -9,7 +9,7 @@
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/conf/dev.conf
+. $BISMARK_DIR/etc/bismark.conf
 
 # Probe message generator
 msg () {
@@ -18,19 +18,16 @@ msg () {
 	return 0
 }
 
-# Launch startup script during boot
-[ -e /tmp/faults ] || startup
-
 # Create status files
-[ -e /tmp/faults ] || echo 0 > /tmp/faults
-[ -e /tmp/proxy ] || echo 0 > /tmp/proxy
+[ -e $BISMARK_DIR/var/faults ] || echo 0 > $BISMARK_DIR/var/faults
+[ -e $BISMARK_DIR/var/proxy ] || echo 0 > $BISMARK_DIR/var/proxy
 
 # Check faults count
-faults=$(cat /tmp/faults)
+faults=$(cat $BISMARK_DIR/var/faults)
 if [ $faults -ge 20 ]; then
 	proxy=$(cat /tmp/proxy)
-	echo $(( (proxy + 1) % 2 )) > /tmp/proxy
-	echo 0 > /tmp/faults
+	echo $(( (proxy + 1) % 2 )) > $BISMARK_DIR/var/proxy
+	echo 0 > $BISMARK_DIR/var/faults
 	faults=0
 fi
 
@@ -38,10 +35,10 @@ fi
 sleep $((RANDOM % 30))
 
 # Send probe and store reply
-if [ $(cat /tmp/proxy) -eq 1 ]; then
-	msg | nc -u $NC_OPTS $PROXY $PROXY_PORT > /tmp/reply
+if [ $(cat $BISMARK_DIR/var/proxy) -eq 1 ]; then
+	msg | nc -u $NC_OPTS $PROXY $PROXY_PORT > $BISMARK_DIR/var/reply
 else
-	msg | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/reply
+	msg | nc -u $NC_OPTS $SERVER $PROBE_PORT > $BISMARK_DIR/var/reply
 fi
 
 # Refresh faults count
