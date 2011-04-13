@@ -3,6 +3,18 @@
 #
 # author: walter.dedonato@unina.it
 
+# Generates integer random numbers
+# $1 = min value
+# $2 = max value
+random ()
+{
+	diff=$(( $2 - $1 ))
+	awk '{
+		srand($1*100);
+		print '$2' + int(rand()*'$diff');
+	}' /proc/uptime
+}
+
 # Modifies configuration files option
 # $1 = configuration file
 # $2 = option

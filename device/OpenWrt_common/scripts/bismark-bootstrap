@@ -1,0 +1,21 @@
+#!/bin/ash
+# Device startup script
+#
+# author walter.dedonato@unina.it
+
+# Load configuration
+. /etc/bismark/bismark.conf
+
+# Create temporary tree
+mkdir -p /tmp/bismark/{var,data}
+
+# Pull device specific configuration from the server
+#action config pull
+
+# Set boot event and start modem monitor
+# bismark-event boot
+# bismark-event modem
+
+# Cronjobs setup
+cat /etc/crontabs/root /etc/bismark/crontab | crontab -
+

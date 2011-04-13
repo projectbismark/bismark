@@ -1,21 +1,21 @@
-#!/bin/bash
+#!/bin/ash
 # Device actions script
 # Provides:
 # - on-demand SSH tunnel
 # - server heartbeat
 # - software update
-# - configuration query/push
+# - configuration query/pull
 #
 # author: walter.dedonato@unina.it
 
 # Import configuration and functions
-. $BISMARK_DIR/etc/bismark.conf
-. $BISMARK_DIR/scripts/functions
+. /etc/bismark/bismark.conf
+. /lib/bismark/functions.inc.sh
 
 # Help screen
 [ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }
 
-# Perform action
+# Perform the requested action
 case $1 in
 fwd)	# on-demand SSH tunnel
 	if [ $2 == ${2#*:} ]; then
@@ -38,24 +38,10 @@ pong)	# Server heartbeat
 		date -s @$ltime
 		hwclock -w
 	fi
-	echo $ltime > $BISMARK_DIR/var/server_last
+	echo $ltime > /tmp/bismark/var/server_last
 
 	# Store public IP 
-	echo $2 > $BISMARK_DIR/var/ip
-;;
-update)	# Software update
-
-	# Skip if same version
-	[ $2 ] && [ $VERSION -eq $2 ] && { echo "Device up to date" | output $1 ; exit ; }
-
-	# Start svn update
-	svn update $BISMARK_DIR | output $1
-
-	# Apply changes
-	crontab $BISMARK_DIR/etc/crontab
-
-	# Set restart flag
-	touch $BISMARK_DIR/var/restart
+	echo $2 > /tmp/bismark/var/ip
 ;;
 config)
 	# Modify parameters	
@@ -67,7 +53,7 @@ config)
 			value="${param#*=}"
 
 			# Check generic parameter validity
-			grep -q "^$name=" $BISMARK_DIR/etc/{bismark,local}.conf || { echo -e "Invalid option $name\n" >&2; continue ; }
+			grep -q "^$name=" /etc/bismark/{bismark,local}.conf || { echo -e "Invalid option $name\n" >&2; continue ; }
 
 			# Assign new value to parameter
 			eval "$name=\"$value\""
@@ -89,7 +75,7 @@ config)
 	fi
 
 	# Configuration output
-	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' $BISMARK_DIR/etc/bismark.conf - | output $1
+	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' /etc/bismark/bismark.conf - | output $1
 ;;
 esac
 
