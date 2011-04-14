@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/ash
 # Bismark ping wrapper
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration files
-. ~/conf/dev.conf
+. /etc/bismark/bismark.conf
 
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit ; }
@@ -13,7 +13,7 @@
 opts="$opts -c $PING_COUNT"
 opts="$opts -s $PING_PSIZE"
 opts="$opts -W $PING_TIMEOUT"
-[ ${DEVICE_ID:0:2} == LS ] || opts="$opts -i $PING_INTERVAL"
+[ -e /etc/openwrt_release ] || opts="$opts -i $PING_INTERVAL"
 
 # Execute ping
 ping $opts $1 | awk -F"=|ms" '/ttl/{ print $4 }'

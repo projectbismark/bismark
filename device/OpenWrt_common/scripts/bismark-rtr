@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/ash
 # Bismark reverse traceroute wrapper
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration files
-. ~/conf/dev.conf
+. /etc/bismark/bismark.conf
 
 # Help screen
 [ $2 ] || { echo "usage: $(basename $0) <ip> <port>" ; exit 1 ; }

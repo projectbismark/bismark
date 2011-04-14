@@ -1,12 +1,13 @@
-#!/bin/bash
-# Bismark ditg wrapper (output in Kbps)
+#!/bin/ash
+# Bismark shaperprobe wrapper (output in Kbps)
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/conf/dev.conf
-. ~/scripts/functions
+. /etc/bismark/bismark.conf
+. /usr/lib/bismark/functions.inc.sh
 
+exit 0
 # Get measure info 
 get_ip
 dst=$1

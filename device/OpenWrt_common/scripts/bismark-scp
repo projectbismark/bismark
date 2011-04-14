@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/ash
 # Transfers files to the bismark server
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/conf/dev.conf
+. /etc/bismark/bismark.conf
 
 # Help screen
 [ $2 ] || { echo "usage: $(basename $0) <up|dw> <file1> [...]" ; exit ; }
@@ -14,13 +14,13 @@ case $1 in
 up)
 	shift
 	for file in $*; do
-		scp -i $SSH_KEY $file $USER@$SERVER:~/bismark/device/$file
+		scp -i $SSH_KEY $file $USER@$SERVER:~/bismark/device/$PLATFORM/$file
 	done
 ;;
 dw)
 	shift
 	for file in $*; do
-		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$file $file
+		scp -i $SSH_KEY $USER@$SERVER:~/bismark/device/$PLATFORM/$file $file
 	done
 ;;
 esac

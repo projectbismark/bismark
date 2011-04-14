@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 # Ausiliary functions library
 #
 # author: walter.dedonato@unina.it
@@ -68,7 +68,7 @@ wifi_filter ()
         ( cd /tmp/measure/
 	  [ $PRIVACY_MODE ] && OPT="-v priv=on"
           for file in $(find -name "*.csv" -a ! -name "*.filt.*"); do
-                gawk $OPT -F", |," -f /dev/stdin $file > ${file%.*}.filt.csv <<-end
+                awk $OPT -F", |," -f /dev/stdin $file > ${file%.*}.filt.csv <<-end
 			function tstamp(d,ts){
 				cmd = "date -d \"" d "\" +%s"
 				cmd | getline ts
@@ -123,7 +123,7 @@ t2_filter ()
 {
         ( cd /tmp/measure/
           for file in $(find -name "*.t2" -a ! -name "*.filt.*"); do
-                gawk -f /dev/stdin $file > ${file%.*}.filt.t2 <<-end
+                awk -f /dev/stdin $file > ${file%.*}.filt.t2 <<-end
 			function anon(ip,d){
 				split(ip,d,".")
 				return d[1]"."d[2]"."d[3]".0" 

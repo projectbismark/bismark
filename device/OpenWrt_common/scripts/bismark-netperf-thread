@@ -1,0 +1,62 @@
+#!/usr/bin/env ash
+
+T=$1
+#i=$2
+N=$2
+host=$3
+dir=$4
+
+cmd=./netperf
+out='/tmp/netperf-out'
+err='/tmp/netperf-err'
+port=12865
+
+clean() {
+	ls $out*
+}
+check() {
+	nlines=$1
+	c=1
+	while [ $c -le $N ]
+	do
+		ilines=`awk 'END{print NR}' $out$c`
+		errors=`awk 'END{print NR}' $err$c`
+		if [ $nlines -ne $ilines ] || [ $errors -gt 0 ]
+		then 
+			echo "Error running netperf"
+			clean
+			exit 1
+		fi
+		c=`expr $c + 1`
+	done
+}
+
+parse() {
+	nlines=1
+	check $nlines
+	head -$c -q "$out"* | awk '{print $5}' | awk 'BEGIN{sum=0;}{sum+=$1}END{print sum}'; 
+}
+
+keys=" -l$T -P0 -fk"
+if [ $dir = 'rev' ]
+then
+	keys=$keys' -t TCP_MAERTS'
+fi
+if [ $dir = 'fwd' ]
+then
+	keys=$keys' -t TCP_STREAM'
+fi
+#echo $keys $host
+c=1
+while [ $c -le $N ]
+do
+	#echo $c
+	echo $cmd $keys -p$port $host
+	$cmd $keys -p$port -H $host > $out$c 2>$err$c &
+	c=`expr $c + 1`
+	#port=`expr $port + 1`
+done
+wait
+parse 
+#clean
+exit 0

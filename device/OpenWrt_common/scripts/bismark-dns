@@ -1,0 +1,38 @@
+#!/bin/ash
+# Bismark dns wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. /etc/bismark/bismark.conf
+. /usr/lib/bismark/functions.inc.sh
+exit 0
+
+# Get IP and default DNS server
+get_ip
+[ -e /etc/resolv.conf ] && dds=$(awk '/^nameserver/{ print $2 ; exit }' /etc/resolv.conf)
+
+# Cycle DNS servers (default and OpenDNS)
+mkdir -p /tmp/host
+for s in "$dds" "8.8.8.8"; do
+
+	# Cycle cache no-cache 
+	for m in NC C; do
+		# Cycle top 10 hosts list
+		fail=0
+		count=0
+		rm /tmp/host/delays
+
+		IFS=$'\n'
+		for h in $(cat ~/conf/hosts.list); do
+			~/bin/time -f %e --append -o /tmp/host/delays host $h $s >/dev/null || : $((fail++))
+			: $((count++))
+		done
+
+		# Output
+		[ $s ] || s="127.0.0.1"
+		grep '^[0-9]' /tmp/host/delays | mstats DNSDELAY$m HOST $src $s
+		awk 'BEGIN{ print ('$fail'/'$count') * 100 }' | mstats DNSFAIL$m HOST $src $s
+	done
+done
+

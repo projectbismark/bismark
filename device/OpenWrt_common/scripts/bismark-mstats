@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 # Calculates statistics from stdin samples and outputs XML measure
 #
 # author: walter.dedonato@unina.it

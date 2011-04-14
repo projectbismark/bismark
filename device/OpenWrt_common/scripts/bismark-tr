@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/ash
 # Bismark traceroute wrapper
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration files
-. ~/conf/dev.conf
+. /etc/bismark/bismark.conf
 
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit 1 ; }
@@ -29,6 +29,7 @@ filter_tcp='{ rtt=$3 } ; /\[.*\]/{ rtt=$4 }
 }'
 
 # Select traceroute type
+echo $TR_TYPE
 case $TR_TYPE in
 UDP)  
 	cmd="traceroute"

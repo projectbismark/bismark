@@ -1,12 +1,13 @@
-#!/bin/bash
+#!/bin/ash
 # Bismark ditg wrapper (output in Kbps)
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/conf/dev.conf
-. ~/scripts/functions
+. /etc/bismark/bismark.conf
+. /usr/lib/bismark/functions.inc.sh
 
+exit 0
 # Help screen
 [ $6 ] || { 
 	echo "usage: $(basename $0) tcp <target> <port> <up|dw> <duration> <kbps>"

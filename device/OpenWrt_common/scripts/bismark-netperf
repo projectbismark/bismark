@@ -1,0 +1,12 @@
+#!/bin/ash
+# Bismark netperf wrapper
+#
+# author: walter.dedonato@unina.it
+
+# Load configuration files
+. /etc/bismark/bismark.conf
+
+# Help screen
+[ $4 ] || { echo "usage: $(basename $0) <duration> <nthreads> <dst_ip> <direction>" ; exit ; }
+
+bismark-netperf-thread $1 $2 $3 $4
