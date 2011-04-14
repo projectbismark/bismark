@@ -50,7 +50,7 @@ get_ip
 # XML file header
 cat > $xml_file <<-end
 	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<measurements version="1.1">
+	<measurements version="1.2">
 	        <info deviceid=$DEVICE_ID />
 end
 
@@ -100,7 +100,7 @@ if get_target Bismark PING $ZONE 10 ; then
 
 	# Geo-distributed servers RTT
 	mkdir -p /tmp/gdrtt
-	for srv in $(grep -v ^# ~/conf/gd.list); do
+	for srv in $(grep -v ^# /usr/lib/bismark/world_ips.list); do
 		( bismark-ping $srv | bismark-mstats RTT PING $src $srv > /tmp/gdrtt/$srv ; cat /tmp/gdrtt/$srv >> $xml_file ) &
 	done
 
