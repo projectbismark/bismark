@@ -59,6 +59,7 @@
 
 /* Global paremeters from config.  */
 unsigned int serverip = 0;
+unsigned short int serv_port = 0;
 unsigned int clientip = 0;
 
 unsigned int verbose = 0;
@@ -216,13 +217,20 @@ int prober_config_load(int argc, char **argv, char *tracefile, int *fileid)
   int c = 0;
   opterr = 0;
 
+  serv_port = SERV_PORT_UDP;
   serverip = htonl(str2ip("143.215.131.173"));
   //serverip = htonl(str2ip("38.102.0.111"));
 
-  while ((c = getopt (argc, argv, "vh")) != -1)
+  while ((c = getopt (argc, argv, "s:p:vh")) != -1)
   {
   switch (c)
   {
+  case 's':
+	  serverip = htonl(str2ip(optarg));
+	  break;
+  case 'p':
+	  serv_port = atoi(optarg);
+	  break;
   case 'v':
 	  verbose = 1;
 	  break;
@@ -231,10 +239,13 @@ int prober_config_load(int argc, char **argv, char *tracefile, int *fileid)
   case 'h':
   default:
 	  fprintf(stderr, "ShaperProbe beta candidate.\n\n");
-	  fprintf(stderr, "Usage: %s\n", argv[0]);
+	  fprintf(stderr, "Usage: %s -s <server>\n", argv[0]);
 	  return -1;
   }
   }
+  //printf("serv_port: %u\n",serv_port);
+  //printf("serverint: %u\n",serverip);
+  //exit(1);
   return 0;
 }
 
@@ -328,7 +339,8 @@ int main(int argc, char *argv[])
 
   memset(&from, 0, sizeof(from));
   from.sin_family      = PF_INET;
-  from.sin_port        = htons(SERV_PORT_UDP);
+  //from.sin_port        = htons(SERV_PORT_UDP);
+  from.sin_port        = htons(serv_port);
   from.sin_addr.s_addr = serverip;
 
   gettimeofday(&tv, NULL);
@@ -338,7 +350,8 @@ int main(int argc, char *argv[])
   //fp = fopen(filename, "w");
   //fprintf(fp, "sleep time resolution: %.2f ms.\n", sleepRes*1000);
 
-  udpsock = udpclient(serverip, SERV_PORT_UDP);
+  //udpsock = udpclient(serverip, SERV_PORT_UDP);
+  udpsock = udpclient(serverip, serv_port);
   CHKRET(udpsock);
   sin_addr.s_addr = serverip;
   printf("Connected to server %s.\n", inet_ntoa(sin_addr));

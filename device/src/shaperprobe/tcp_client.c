@@ -100,7 +100,9 @@ int connect2server(unsigned int serverip, int fileid)
 {
 	int       conn_s;
 	struct    sockaddr_in servaddr;
-	short int port = SERV_PORT;
+	//short int port = SERV_PORT;
+	extern short int serv_port;
+	short int port = serv_port;
 	int ret = 0;
 	int sndsize = 1024*1024;
 	extern double TB_RATE_AVG_INTERVAL;

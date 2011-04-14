@@ -82,7 +82,9 @@ int prober_bind_port(int port)
 int create_server()
 {
 	int list_s;
-	short int port = SERV_PORT;
+	//short int port = SERV_PORT;
+	extern short int serv_port;
+	short int port = serv_port;
 	struct sockaddr_in servaddr;
 	int optval = 1;
 	int ret = 0;

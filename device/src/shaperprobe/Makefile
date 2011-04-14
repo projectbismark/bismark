@@ -1,7 +1,7 @@
 
 CC=gcc
 
-CFLAGS=-c -Wall -O3 -fno-strict-aliasing
+CFLAGS=-c -Wall -O3 -fno-strict-aliasing -DOSX
 LDFLAGS=-lm
 
 SOURCES=prober.c tcp_client.c tcpserver.c wrappers.c tbdetect.c measflow.c
