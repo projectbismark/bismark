@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/ash
 # Bismark events logger
 # What will it take to convert these to ash?
 # author: walter.dedonato@unina.it
 
 # Load configuration files
-. ~/conf/dev.conf
+. /etc/bismark/bismark.conf
 
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <alive|boot|reboot|modem|uplink|trouble> [options]" ; exit ; }
@@ -56,3 +56,4 @@ trouble)
 	echo -e "$(date +%s)\tTROUBLE\t$*" >> $event_log
 ;;
 esac
+

@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/ash
 # Bismark airodump wrapper
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration files
-. ~/conf/dev.conf
+. /etc/bismrak/bismark.conf
 
 # Enable monitor interface 
 if ! (/sbin/ifconfig | grep -q ath1) ; then

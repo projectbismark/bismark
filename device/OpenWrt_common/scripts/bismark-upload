@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/ash
 # Upload measurements to the bismark server
 #
 # author: walter.dedonato@unina.it
 
 # Load configuration file
-. ~/conf/dev.conf
-. ~/scripts/functions
+. /etc/bismark/bismark.conf
+. /usr/lib/bismark/functions.inc.sh
 
 # Copy active measurements files
 scp -i $SSH_KEY /tmp/measure/*.xml $USER@$SERVER:~/var/data && rm /tmp/measure/*.xml
