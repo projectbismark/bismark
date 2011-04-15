@@ -13,6 +13,7 @@ port=12865
 
 clean() {
 	rm $out*
+	rm $err*
 }
 check() {
 	nlines=$1
@@ -23,7 +24,7 @@ check() {
 		errors=`awk 'END{print NR}' $err$c`
 		if [ $nlines -ne $ilines ] || [ $errors -gt 0 ]
 		then 
-			echo "Error running netperf"
+			echo "-1000"
 			clean
 			exit 1
 		fi

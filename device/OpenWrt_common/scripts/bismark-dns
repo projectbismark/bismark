@@ -6,7 +6,6 @@
 # Load configuration files
 . /etc/bismark/bismark.conf
 . /usr/lib/bismark/functions.inc.sh
-exit 0
 
 # Get IP and default DNS server
 get_ip
