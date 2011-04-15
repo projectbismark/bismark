@@ -10,7 +10,7 @@
 
 # Import configuration and functions
 . /etc/bismark/bismark.conf
-. /lib/bismark/functions.inc.sh
+. /usr/lib/bismark/functions.inc.sh
 
 # Help screen
 [ $1 ] || { echo "$(basename $0) <command> [options]" ; exit ; }

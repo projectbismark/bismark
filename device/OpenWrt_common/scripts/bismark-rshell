@@ -5,7 +5,7 @@
 
 # Load configuration file
 . /etc/bismark/bismark.conf
-. /lib/bismark/functions.inc.sh
+. /usr/lib/bismark/functions.inc.sh
 
 # Local config
 BASE_PORT=5000

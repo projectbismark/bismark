@@ -17,5 +17,5 @@ mkdir -p /tmp/bismark/{var,data}
 # bismark-event modem
 
 # Cronjobs setup
-cat /etc/crontabs/root /etc/bismark/crontab | crontab -
+cat /etc/crontabs/root /etc/bismark/crontab | sort -u | crontab -
 

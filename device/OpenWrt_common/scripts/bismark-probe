@@ -9,7 +9,7 @@
 
 # Load configuration file
 . /etc/bismark/bismark.conf
-. /lib/bismark/functions.inc.sh
+. /usr/lib/bismark/functions.inc.sh
 
 # Local config
 MAX_SLEEP=30
@@ -55,5 +55,5 @@ fi
 
 # Parse reply
 read cmd value < /tmp/bismark/var/reply
-[ $cmd ] && REMOTE=on action $cmd $value
+[ $cmd ] && REMOTE=on bismark-action $cmd $value
 
