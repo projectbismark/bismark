@@ -13,7 +13,7 @@
 opts="$opts -c $PING_COUNT"
 opts="$opts -s $PING_PSIZE"
 opts="$opts -W $PING_TIMEOUT"
-[ -e /etc/openwrt_release ] || opts="$opts -i $PING_INTERVAL"
+#[ -e /etc/openwrt_release ] || opts="$opts -i $PING_INTERVAL"
 
 # Execute ping
 ping $opts $1 | awk -F"=|ms" '/ttl/{ print $4 }'

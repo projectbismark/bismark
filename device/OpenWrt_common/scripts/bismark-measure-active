@@ -7,6 +7,13 @@
 . /etc/bismark/bismark.conf
 . /usr/lib/bismark/functions.inc.sh
 
+# Configuration
+COUNTER="/tmp/bismark/var/counter"
+MEASURE_REPLY="/tmp/bismark/var/mreply"
+XML_FILE="/tmp/bismark/data/${DEVICE_ID}_$(date +%s).xml"
+
+# --- Functions ---
+
 # Measure message generator
 # $1 = options
 msg () 
@@ -20,36 +27,37 @@ msg ()
 # $2 = type
 # $3 = zone
 # $4 = duration
+# Outputs: 
+# $dst, $info and $wait
 get_target ()
 {
 	# Send message
-	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/mreply
+	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > $MEASURE_REPLY
 
 	# Get reply
-	read dst info wait < /tmp/mreply
+	read dst info wait < $MEASURE_REPLY 
 	[ $dst ] || return 1 
 }
 
+# --- Main ---
+
 # Create dirs and files
-mkdir -p /tmp/measure
-[ -e /tmp/measure/counter ] || echo 0 > /tmp/measure/counter
+mkdir -p /tmp/bismark/active
+[ -e $COUNTER ] || echo 0 > $COUNTER
 
 # Get and update count
-count=$(cat /tmp/measure/counter)
-echo $(( (count + 1) % 288 )) > /tmp/measure/counter
+count=$(cat $COUNTER)
+echo $(( (count + 1) % 288 )) > $COUNTER
 
 # Random wait
-sleep $((RANDOM % 3))
-
-# Globals
-xml_file="/tmp/${DEVICE_ID}_$(date +%s).xml"
+sleep $(random 0 3)
 
 # Get source IP
 get_ip
 
 # XML file header
-cat > $xml_file <<-end
-	<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+cat > $XML_FILE <<-end
+	<?xml version="2.0" encoding="UTF-8" standalone="yes"?>
 	<measurements version="1.2">
 	        <info deviceid=$DEVICE_ID />
 end
@@ -62,7 +70,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 		hops=$(bismark-tr $dst)
 		hops_cnt=$(echo "$hops" | wc -l)
 		if [ $hops_cnt -gt 0 ]; then
-			cat >> $xml_file <<-end
+			cat >> $XML_FILE <<-end
 			        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
 				$(echo "$hops" | awk '{ print "                " $0 }')
 			        </traceroute>
@@ -76,7 +84,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 		hops=$(bismark-rtr $dst $info)
 		hops_cnt=$(echo "$hops" | wc -l)
 		if [ $hops_cnt -gt 0 ]; then
-			cat >> $xml_file <<-end
+			cat >> $XML_FILE <<-end
 			        <traceroute srcip=$dst dstip=$src timestamp=$(date +%s) hops=$hops_cnt>
 				$(echo "$hops" | awk '{ print "                " $0 }')
 			        </traceroute>
@@ -95,22 +103,22 @@ fi
 if get_target Bismark PING $ZONE 10 ; then
 	# Last mile RTT
 	if [ "$gwip" ]; then
-		( bismark-ping $gwip | bismark-mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $xml_file ) &
+		( bismark-ping $gwip | bismark-mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $XML_FILE ) &
 	fi
 
 	# Geo-distributed servers RTT
 	mkdir -p /tmp/gdrtt
 	for srv in $(grep -v ^# /usr/lib/bismark/world_ips.list); do
-		( bismark-ping $srv | bismark-mstats RTT PING $src $srv > /tmp/gdrtt/$srv ; cat /tmp/gdrtt/$srv >> $xml_file ) &
+		( bismark-ping $srv | bismark-mstats RTT PING $src $srv > /tmp/gdrtt/$srv ; cat /tmp/gdrtt/$srv >> $XML_FILE ) &
 	done
 
 	# MServer RTT
-	bismark-ping $dst | bismark-mstats RTT PING $src $dst >> $xml_file 
+	bismark-ping $dst | bismark-mstats RTT PING $src $dst >> $XML_FILE 
 fi
 echo "Done PING"
 # DNS delay and failure
 if [ $((count % DNS_FQ)) -eq 0 ]; then
-	bismark-dns >> $xml_file
+	bismark-dns >> $XML_FILE
 fi
 echo "Done DNS"
 
@@ -124,15 +132,15 @@ if [ ! -e /tmp/mlock ]; then
 		# Downstream bitrate using NETPERF
 		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
 			sleep $wait
-			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTDW PING $src $dst >> $xml_file ) &
-			bismark-netperf $BR_DURATION $NTHREADS $dst dw | bismark-mstats BITRATE NETPERF $dst $src | grep -v nan >> $xml_file
+			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTDW PING $src $dst >> $XML_FILE ) &
+			bismark-netperf $BR_DURATION $NTHREADS $dst dw | bismark-mstats BITRATE NETPERF $dst $src | grep -v nan >> $XML_FILE
 		fi
 
 		# Upstream bitrate using NETPERF
 		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
 			sleep $wait
-			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTUP PING $src $dst >> $xml_file ) &
-			bismark-netperf $BR_DURATION $NTHREADS $dst up | bismark-mstats BITRATE NETPERF $src $dst | grep -v nan >> $xml_file
+			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTUP PING $src $dst >> $XML_FILE ) &
+			bismark-netperf $BR_DURATION $NTHREADS $dst up | bismark-mstats BITRATE NETPERF $src $dst | grep -v nan >> $XML_FILE
 		fi
 	fi
 
@@ -141,13 +149,13 @@ if [ ! -e /tmp/mlock ]; then
 		# Downstream 
 		if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
 			sleep $wait
-			bismark-ditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $xml_file
+			bismark-ditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $XML_FILE
 		fi
 
 		# Upstream
 		if get_target Bismark ITGUL $ZONE $UDP_DURATION ; then
 			sleep $wait
-			bismark-ditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $xml_file
+			bismark-ditg udp $dst $info up $UDP_DURATION $UDP_PPS >> $XML_FILE
 		fi
 	fi
 
@@ -155,7 +163,7 @@ if [ ! -e /tmp/mlock ]; then
 	if [ $((count % SP_FQ)) -eq 0 ]; then
 		if get_target Bismark SP $ZONE 150 ; then
 			sleep $wait
-			bismark-sp $dst >> $xml_file
+			bismark-sp $dst >> $XML_FILE
 		fi
 	fi
 
@@ -173,13 +181,13 @@ fi
 echo "Done ALL"
 
 # XML file footer
-cat >> $xml_file <<-end
+cat >> $XML_FILE <<-end
 	</measurements>
 end
 
-# Move file to measure folder
+# Move file to data folder
 sleep 2
-mv $xml_file /tmp/measure
+mv $XML_FILE /tmp/bismark/data
 
 # Upload result 
 

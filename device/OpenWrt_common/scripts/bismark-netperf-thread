@@ -6,13 +6,13 @@ N=$2
 host=$3
 dir=$4
 
-cmd=./netperf
+cmd=netperf
 out='/tmp/netperf-out'
 err='/tmp/netperf-err'
 port=12865
 
 clean() {
-	ls $out*
+	rm $out*
 }
 check() {
 	nlines=$1
@@ -58,5 +58,5 @@ do
 done
 wait
 parse 
-#clean
+clean
 exit 0
