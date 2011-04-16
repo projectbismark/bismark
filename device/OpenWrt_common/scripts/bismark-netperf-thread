@@ -39,11 +39,11 @@ parse() {
 }
 
 keys=" -l$T -P0 -fk"
-if [ $dir = 'rev' ]
+if [ $dir = 'dw' ]
 then
 	keys=$keys' -t TCP_MAERTS'
 fi
-if [ $dir = 'fwd' ]
+if [ $dir = 'up' ]
 then
 	keys=$keys' -t TCP_STREAM'
 fi

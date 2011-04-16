@@ -29,7 +29,6 @@ filter_tcp='{ rtt=$3 } ; /\[.*\]/{ rtt=$4 }
 }'
 
 # Select traceroute type
-echo $TR_TYPE
 case $TR_TYPE in
 UDP)  
 	cmd="traceroute"
