@@ -34,13 +34,12 @@ stop)
 			stime=ltime
 		}
 		bytes += $21
-		print bytes " " ltime - stime
 	}
 	END{
 		if (ltime - stime > 0)
 			print ((bytes/125) / (ltime - stime))
 	}' /tmp/$ip.rate
-	#rm /tmp/$ip.rate
+	rm /tmp/$ip.rate
 ;;
 esac
 
