@@ -7,7 +7,8 @@
 . /etc/bismark/bismark.conf
 
 # Create temporary tree
-mkdir -p /tmp/bismark/{var,data}
+mkdir -p /tmp/bismark/var
+mkdir -p /tmp/bismark/data
 
 # Pull device specific configuration from the server
 #action config pull
