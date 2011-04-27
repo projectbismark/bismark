@@ -1,2 +1,0 @@
-# m h  dom mon dow   command
-*/5 *  *   *   *     ./daemons >/dev/null 2>&1 &

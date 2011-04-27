@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# Load configuration
+. ~/etc/mserver.conf
+
 if [ ! $1 ]; then
-        ( sudo socat TCP-LISTEN:777,fork,reuseaddr EXEC:"$0 run",su-d=bismark2,pipes ) &
+        ( sudo socat TCP-LISTEN:$UPRATE_PORT,fork,reuseaddr EXEC:"$0 run",su-d=$LOGNAME,pipes ) &
         exit
 fi
 
@@ -12,7 +15,7 @@ read cmd opt
 
 case $cmd in
 start)
-	( sudo /usr/sbin/tcpdump -tt -n -i eth1 tcp and ip src $ip and dst port 8080 >/tmp/$ip.rate 2>/dev/null ) &
+	( sudo /usr/sbin/tcpdump -tt -n -i $IFNAME tcp and ip src $ip and dst port $HTTP_PORT >/tmp/$ip.rate 2>/dev/null ) &
 	echo $!
 ;;
 stop)

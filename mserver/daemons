@@ -1,8 +1,0 @@
-#!/bin/bash
-touch /tmp/itg.log
-pgrep -f TCP-LISTEN:110 >/dev/null || ./rtr
-pgrep -f TCP-LISTEN:143 >/dev/null || ./ritg
-pgrep -f TCP-LISTEN:777 >/dev/null || ./uprate
-pgrep -f ITGRecv >/dev/null || ( sudo ./ITGRecv >> /tmp/itg.log 2>&1 & )
-pgrep -f probeserver >/dev/null || ( ./probeserver >> /tmp/spserver.log 2>&1 & )
-
