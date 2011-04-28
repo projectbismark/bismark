@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Load configuration
+. ~/etc/mserver.conf
+
+if [ $ITG_UP_PORT -le 1024 ]; then
+	( sudo ~/bin/ITGRecv -Si $IFNAME -Sp $ITG_UP_PORT >> /tmp/itg.log 2>&1 & )
+else
+	( ~/bin/ITGRecv -Si $IFNAME -Sp $ITG_UP_PORT >> /tmp/itg.log 2>&1 & )
+fi
+

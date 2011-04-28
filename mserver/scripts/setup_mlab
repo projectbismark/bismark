@@ -1,10 +1,21 @@
 #!/bin/sh
 
-sudo yum -y install socat
+# Load configuration
+. ~/etc/mserver.conf
 
-# lighttpd php-cli-5.2.6-2.fc8.i386
-# echo "cgi.fix_pathinfo = 1" >> /etc/php.ini
+sudo yum -y install socat 
 
-# decommenta fcgi in lighttpd.conf
+# HTTP stuff (work in progress)
+# lighttpd lighttpd-fastcgi php-cli
+#echo "cgi.fix_pathinfo = 1" | sudo tee /etc/php.ini
+#[ -e /etc/lighttpd/lighttpd.conf.old ] || sudo mv /etc/lighttpd/lighttpd.conf{.old,}
+#sudo sed -i.old -f - /etc/lighttpd/lighttpd.conf <<-END
+#	/"mod_fastcgi"/ s/^#//
+#	/^server.document-root/ s/^/#/ 
+#	/^#server.document-root/ a server.document-root = "$HOME/www/"
+#	/^#server.port/ a server.port = $HTTP_PORT
+#END
+#sudo chmod 777 $HOME
+#sudo /etc/init.d/lighttpd start
 
 crontab ~/etc/crontab

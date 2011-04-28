@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo -n "Stopping all services..."
+sudo killall probeserver ITGRecv socat
+echo "done"
+
+sleep 2
+
+echo -n "Restarting services..."
+~/scripts/daemons
+echo "done"
+
