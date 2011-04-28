@@ -1,7 +1,15 @@
 #!/bin/bash
 
+# Load configuration
+. ~/etc/mserver.conf
+
+# If launched without options starts the socat listener
 if [ ! $1 ]; then
-	sudo socat TCP-LISTEN:110,fork,reuseaddr EXEC:"$0 run",pipes &
+	if [ $RTR_PORT -le 1024 ]; then
+		sudo socat TCP-LISTEN:$RTR_PORT,fork,reuseaddr EXEC:"$0 run",su-d=$LOGNAME,pipes &
+	else
+		socat TCP-LISTEN:$RTR_PORT,fork,reuseaddr EXEC:"$0 run",pipes &
+	fi
 	exit
 fi
 
@@ -10,7 +18,7 @@ read type rest
 
 # Select traceroute type
 case $type in
-ICMP) traceroute -n -q1 -I $SOCAT_PEERADDR ;;
+ICMP) sudo traceroute -n -q1 -I $SOCAT_PEERADDR ;;
 UDP)  traceroute -n -q1 $SOCAT_PEERADDR ;;
-TCP)  traceroute -n -q1 -T $SOCAT_PEERADDR ;;
+TCP)  sudo traceroute -n -q1 -T $SOCAT_PEERADDR ;;
 esac

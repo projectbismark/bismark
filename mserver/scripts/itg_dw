@@ -1,7 +1,15 @@
 #!/bin/bash
 
+# Load configuration
+. ~/etc/mserver.conf
+
+# If launched without options starts the socat listener
 if [ ! $1 ]; then
-	sudo socat TCP-LISTEN:143,fork,reuseaddr EXEC:"$0 run",su-d=bismark2,pipes &
+	if [ $ITG_DW_PORT -le 1024 ]; then
+		sudo socat TCP-LISTEN:$ITG_DW_PORT,fork,reuseaddr EXEC:"$0 run",su-d=$LOGNAME,pipes &
+	else
+		socat TCP-LISTEN:$ITG_DW_PORT,fork,reuseaddr EXEC:"$0 run",pipes &
+	fi
 	exit
 fi
 
@@ -24,6 +32,6 @@ log)
 	awk '(NR > 1){ print $3 }' $opt.jitter
 	echo pktloss
 	awk '(NR > 1){ print $3 }' $opt.pktloss
-	sudo rm $opt $opt.*
+	rm $opt $opt.*
 ;;
 esac

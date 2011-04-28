@@ -1,16 +1,13 @@
 #!/bin/bash
+# Script to check/respawn measurement services
 
 # Load configuration
 . ~/etc/mserver.conf
 
-# Create log files
-touch /tmp/itg.log
-
-# Check running daemons
+# Check running services
 pgrep -f TCP-LISTEN:$RTR_PORT >/dev/null || ~/scripts/rtr
 pgrep -f TCP-LISTEN:$ITG_DW_PORT >/dev/null || ~/scripts/itg_dw
 pgrep -f TCP-LISTEN:$UPRATE_PORT >/dev/null || ~/scripts/uprate
 pgrep -f ITGRecv >/dev/null || ~/scripts/itg_up
-#pgrep -f ITGRecv >/dev/null || ( sudo ./ITGRecv >> /tmp/itg.log 2>&1 & )
 pgrep -f probeserver >/dev/null || ( ~/bin/probeserver >> /tmp/spserver.log 2>&1 & )
 

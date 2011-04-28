@@ -4,7 +4,11 @@
 . ~/etc/mserver.conf
 
 if [ ! $1 ]; then
-        ( sudo socat TCP-LISTEN:$UPRATE_PORT,fork,reuseaddr EXEC:"$0 run",su-d=$LOGNAME,pipes ) &
+        if [ $UPRATE_PORT -le 1024 ]; then
+		( sudo socat TCP-LISTEN:$UPRATE_PORT,fork,reuseaddr EXEC:"$0 run",su-d=$LOGNAME,pipes ) &
+        else
+		( socat TCP-LISTEN:$UPRATE_PORT,fork,reuseaddr EXEC:"$0 run",pipes ) &
+        fi
         exit
 fi
 
