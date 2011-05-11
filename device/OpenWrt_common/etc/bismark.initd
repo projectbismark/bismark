@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=1
+
+start() {
+        bismark-bootstrap
+}
+
+stop() {
+        crontab -r
+        grep -v bismark- /etc/crontabs/root | crontab -
+}
+

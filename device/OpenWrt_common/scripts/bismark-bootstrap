@@ -17,6 +17,11 @@ mkdir -p /tmp/bismark/data
 # bismark-event boot
 # bismark-event modem
 
+# Set the device identifier
+if [[ ! -e /etc/bismark/ID ]]; then
+	(echo -n OW; ifconfig eth0 | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
+fi
+
 # Cronjobs setup
 cat /etc/crontabs/root /etc/bismark/crontab | sort -u | crontab -
 
