@@ -93,24 +93,25 @@ while getopts 'l:h' flag; do
 done
 shift $(( OPTIND - 1 ))
 
-pid=$(pgrep bdmd.real)
+pids=$(pgrep bdmd.real)
+ports=$(sudo netstat -lnup | awk -F"[\t: ]*" '/bdmd.real/{ print $5 }')
 case $1 in
 start)
-	if [ $pid ]; then
-		echo "bdmd already running"
+	if [ "$( echo $ports | awk "/$PROBE_PORT/{ print \"busy\" }")" == "busy" ]; then
+		echo "bdmd already running on port $PROBE_PORT"
 	else
 		echo -n "Starting bdmd..."
 		bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE 2> /tmp/bdmd.debug &
 		sleep 1
-		[ $(pgrep bdmd.real) ] && echo "done" || echo "error"
+		[ "$(pgrep bdmd.real)" ] && echo "done" || echo "error"
 	fi
 ;;
 stop)
-	if [ $pid ]; then 
+	if [ "$pids" ]; then 
 		echo -n "Stopping bdmd..."
-		kill $(pgrep bdmd.real)
+		kill $pids
 		sleep 1
-		[ $(pgrep bdmd.real) ] && echo "error" || echo "done" 	
+		[ "$(pgrep bdmd.real)" ] && echo "error" || echo "done" 	
 	else
 		echo "bdmd not running"
 	fi
@@ -120,9 +121,8 @@ restart)
 	$0 -l $PROBE_PORT start 
 ;;
 info)
-	if [ $pid ]; then
-		port=$(sudo netstat -lanup | awk -F':| *' '/'$pid'\//{ print $5 }')
-		echo "bdmd listening on $port (pid $pid)"
+	if [ "$pids" ]; then
+		echo "bdmd listening on "$ports" (pids "$pids")"
 	else
 		echo "bdmd not running"
 	fi

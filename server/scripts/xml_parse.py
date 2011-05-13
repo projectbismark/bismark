@@ -63,8 +63,9 @@ def get_id_from_table(table,did,ts):
 def get_uid(did,table):
   cmd = 'SELECT userid from ' + table + ' where '
   cmd += 'deviceid = "' + did + '"'
-  res = sql.run_data_cmd(cmd)
-  return str(res[0][0])
+  #res = sql.run_data_cmd(cmd)
+  #return str(res[0][0])
+  return "NULL"
 
 def write_block_v1_0(data,tables,log,file):
   if 'info' not in data:

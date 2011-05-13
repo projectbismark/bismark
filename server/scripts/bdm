@@ -44,6 +44,8 @@ function help()
 
 	    blacklist [<dev_id> <on|off>]   Manage devices blacklist
 
+	    updatetunnels                   Updates the tunnel list catching eventual recovery shells
+
 	    settunnel <dev_id> <port>       Set the tunnel entry for <dev_id>
 
 	    setuser   <dev_id> <username>   Set the SSH username for <dev_id>
@@ -152,6 +154,9 @@ function parse()
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help settunnel; }
 		[ $3 ] || { echo -e "Missing parameter: <port>\n"; help settunnel; }
 		settunnel $2 $3
+	;;
+	updatetunnels)
+		updatetunnels
 	;;
 	copy)
 		[ $2 ] || { echo -e "Missing parameter: <file>\n"; help copy; }
@@ -332,6 +337,13 @@ function settunnel()
 	
 	# Send notification email
 	sendmail $1 "Recovery tunnel created for $1 on port $2"
+}
+
+# Update the tunnel list from ps and netstat outputs
+function updatetunnels()
+{
+	echo -n "Updating tunnels..."
+	echo done
 }
 
 ## User command functions ##
