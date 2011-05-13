@@ -24,11 +24,12 @@ msg () {
 # Create status files
 [ -e /tmp/bismark/var/faults ] || echo 0 > /tmp/bismark/var/faults
 [ -e /tmp/bismark/var/proxy ] || echo 0 > /tmp/bismark/var/proxy
+[ -e /tmp/bismark/var/port_counter ] || echo 0 > /tmp/bismark/var/port_counter
 
 # Check faults count
-faults=$(cat /tmp/bismark/var/faults)
+read faults < /tmp/bismark/var/faults
 if [ $faults -ge 20 ]; then
-	proxy=$(cat /tmp/bismark/var/proxy)
+	read proxy < /tmp/bismark/var/proxy
 	echo $(( (proxy + 1) % 2 )) > /tmp/bismark/var/proxy
 	echo 0 > /tmp/bismark/var/faults
 	faults=0
@@ -37,6 +38,10 @@ fi
 # Random delay wait
 sleep $(random 0 $MAX_SLEEP)
 
+# Select probe port
+read port_counter < /tmp/bismark/var/port_counter
+PROBE_PORT=$(echo $PROBE_PORTS | awk '{print $'$((port_counter + 1))'}')
+
 # Send probe and store reply
 if [ $(cat /tmp/bismark/var/proxy) -eq 1 ]; then
 	msg | nc -u $NC_OPTS $PROXY $PROXY_PORT > /tmp/bismark/var/reply
@@ -44,12 +49,18 @@ else
 	msg | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/bismark/var/reply
 fi
 
-# Refresh faults count
+# Faults control 
 if [ "`cat /tmp/bismark/var/reply`" ]; then
-	echo 0 > /tmp/faults
+	# Reset faults count
+	echo 0 > /tmp/bismark/var/faults
 	#event uplink up
 else
-	echo $((++faults)) > /tmp/faults
+	# Update faults count
+	echo $((++faults)) > /tmp/bismark/var/faults
+
+	# Cycle server port
+	ports=$(echo $PROBE_PORTS | awk '{print NF}')
+	echo $(( (port_counter + 1) % ports )) > /tmp/bismark/var/port_counter
 	#event uplink down
 fi
 

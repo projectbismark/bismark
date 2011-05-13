@@ -15,15 +15,16 @@ MAX_PORT=50000
 
 # Start new tunnel if last timestamp is more than 5 minutes old
 if [ $((`date +%s` - `cat /tmp/bismark/var/server_last`)) -gt 300 ]; then
-	if [ -e /tmp/tunnel ]; then
+	if [ -e /tmp/bismark/var/tunnel ]; then
 		# Check pre-existing recovery tunnel
-		pid=$(cat /tmp/bismark/var/tunnel)
+		read pid < /tmp/bismark/var/tunnel
 		ps $pid >/dev/null || rm /tmp/bismark/var/tunnel
 	else
 		# Create new recovery tunnel
 		port=$(random $BASE_PORT $MAX_PORT)
-		#ssh -i $SSH_KEY $USER@$SERVER "bin/bdm settunnel $DEVICE_ID $port"
 		( ssh $KEEP_ALIVE -N -i $SSH_KEY -R $port:127.0.0.1:22 $USER@$SERVER >/dev/null 2>&1 & )
+		sleep 2
+		ssh -i $SSH_KEY $USER@$SERVER "bin/bdm updatetunnels"
 		echo $! > /tmp/bismark/var/tunnel
 	fi
 fi
