@@ -6,27 +6,35 @@
 # Load configuration files
 . /etc/bismark/bismark.conf
 
+# Settings
+DATA_DIR=/tmp/bismark/active
+
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit 1 ; }
 
 # AWK filters
 filter_common='	
-if (! gwip) {
-	if (! ($2 ~ /^10\./ || $2 ~ /^192\.168/ || $2 ~ /^172\.16/) ) {
-		gwip=$2
-		print gwip > "/tmp/gwip"
+	if (! gwip) {
+		if (! ($2 ~ /^10\./ || $2 ~ /^192\.168/ || $2 ~ /^172\.16/) ) {
+			gwip=$2
+			print gwip > "'$DATA_DIR'/gwip"
+		}
 	}
-}'
+'
 filter_std='
-! /trace/{ 
-	print "<hop id="$1" ip="$2" rtt="$3" />"
-	'$filter_common'
-}'
-filter_tcp='{ rtt=$3 } ; /\[.*\]/{ rtt=$4 }
-{ 
-	print "<hop id="$1" ip="$2" rtt="rtt" />" 
-	'$filter_common'
-}'
+	! /trace/{ 
+		print "<hop id="$1" ip="$2" rtt="$3" />"
+		'$filter_common'
+	}
+'
+filter_tcp='
+	{ rtt=$3 }  
+	/\[.*\]/{ rtt=$4 }
+	{ 
+		print "<hop id="$1" ip="$2" rtt="rtt" />" 
+		'$filter_common'
+	}
+'
 
 # Select traceroute type
 case $TR_TYPE in

@@ -10,7 +10,7 @@
 # Configuration
 COUNTER="/tmp/bismark/var/counter"
 MEASURE_REPLY="/tmp/bismark/var/mreply"
-XML_FILE="/tmp/bismark/data/${DEVICE_ID}_$(date +%s).xml"
+XML_FILE="/tmp/bismark/active/${DEVICE_ID}_$(date +%s).xml"
 
 # --- Functions ---
 
@@ -31,6 +31,10 @@ msg ()
 # $dst, $info and $wait
 get_target ()
 {
+	# Select probe port
+	read port_counter < /tmp/bismark/var/port_counter
+	PROBE_PORT=$(echo $PROBE_PORTS | awk '{print $'$((port_counter + 1))'}')
+
 	# Send message
 	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > $MEASURE_REPLY
 
@@ -76,7 +80,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 			        </traceroute>
 			end
 		fi
-		gwip=$(cat /tmp/gwip)
+		gwip=$(cat /tmp/bismark/active/gwip)
 	fi
 
 	# Reverse traceroute
@@ -96,20 +100,20 @@ echo "Done TR"
 # Get Gateway IP
 if [ ! "$gwip" ]; then
 	bismark-tr "8.8.8.8" > /dev/null
-	[ -e /tmp/gwip ] && gwip=$(cat /tmp/gwip)
+	[ -e /tmp/bismark/active/gwip ] && gwip=$(cat /tmp/bismark/active/gwip)
 fi
 
 # RTT measurements using PING
 if get_target Bismark PING $ZONE 10 ; then
 	# Last mile RTT
 	if [ "$gwip" ]; then
-		( bismark-ping $gwip | bismark-mstats LMRTT PING $src $gwip > /tmp/lmrtt ; cat /tmp/lmrtt >> $XML_FILE ) &
+		( bismark-ping $gwip | bismark-mstats LMRTT PING $src $gwip > /tmp/bismark/active/lmrtt ; cat /tmp/bismark/active/lmrtt >> $XML_FILE ) &
 	fi
 
 	# Geo-distributed servers RTT
-	mkdir -p /tmp/gdrtt
+	mkdir -p /tmp/bismark/active/gdrtt
 	for srv in $(grep -v ^# /usr/lib/bismark/world_ips.list); do
-		( bismark-ping $srv | bismark-mstats RTT PING $src $srv > /tmp/gdrtt/$srv ; cat /tmp/gdrtt/$srv >> $XML_FILE ) &
+		( bismark-ping $srv | bismark-mstats RTT PING $src $srv > /tmp/bismark/active/gdrtt/$srv ; cat /tmp/bismark/active/gdrtt/$srv >> $XML_FILE ) &
 	done
 
 	# MServer RTT
@@ -123,9 +127,9 @@ fi
 echo "Done DNS"
 
 ## Serial measurements ##
-if [ ! -e /tmp/mlock ]; then 
+if [ ! -e /tmp/bismark/var/mlock ]; then 
 	# Set measure lock
-	echo $(date +%s) > /tmp/mlock
+	echo $(date +%s) > /tmp/bismark/var/mlock
 
 	# Bitrate
 	if [ $((count % BR_FQ)) -eq 0 ]; then
@@ -133,17 +137,18 @@ if [ ! -e /tmp/mlock ]; then
 		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
 			sleep $wait
 			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTDW PING $src $dst >> $XML_FILE ) &
-			bismark-netperf $BR_DURATION $NTHREADS $dst dw > /tmp/bismark/data/netperf-out
-			cat /tmp/bismark/data/netperf-out | bismark-mstats BITRATE NETPERF $dst $src | grep -v nan >> $XML_FILE
+			bismark-netperf $BR_DURATION $NTHREADS $dst dw > /tmp/bismark/active/netperf-out
+			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF $dst $src | grep -v nan >> $XML_FILE
+			rm /tmp/bismark/active/netperf-out
 		fi
 
 		# Upstream bitrate using NETPERF
 		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
 			sleep $wait
 			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTUP PING $src $dst >> $XML_FILE ) &
-			bismark-netperf $BR_DURATION $NTHREADS $dst up > /tmp/bismark/data/netperf-out
-			cat /tmp/bismark/data/netperf-out | bismark-mstats BITRATE NETPERF $src $dst | grep -v nan >> $XML_FILE
-			rm /tmp/bismark/data/netperf-out
+			bismark-netperf $BR_DURATION $NTHREADS $dst up > /tmp/bismark/active/netperf-out
+			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF $src $dst | grep -v nan >> $XML_FILE
+			rm /tmp/bismark/active/netperf-out
 		fi
 	fi
 
@@ -171,14 +176,14 @@ if [ ! -e /tmp/mlock ]; then
 	fi
 
 	# Release measure lock
-	rm /tmp/mlock
+	rm /tmp/bismark/var/mlock
 else
 	# Check lock
-	locktime=$(cat /tmp/mlock)
+	locktime=$(cat /tmp/bismark/var/mlock)
 	currtime=$(date +%s)
 	if [ $((currtime - locktime)) -gt 400  ]; then
 		killall netperf prober ITGRecv ITGSend
-		rm /tmp/mlock
+		rm /tmp/bismark/var/mlock
 	fi
 fi
 echo "Done ALL"

@@ -1,12 +1,75 @@
 #!/bin/ash
-# Bismark netperf wrapper
+# Bismark netperf multi-task wrapper
 #
-# author: walter.dedonato@unina.it
+# author: srikanth@gatech.edu
+# last modified by: walter.dedonato@unina.it
 
 # Load configuration files
 . /etc/bismark/bismark.conf
 
 # Help screen
-[ $4 ] || { echo "usage: $(basename $0) <duration> <nthreads> <dst_ip> <direction>" ; exit ; }
+[ $4 ] || { echo "usage: $(basename $0) <duration> <nthreads> <dst_ip> <up|dw>" ; exit ; }
 
-bismark-netperf-thread $1 $2 $3 $4
+# Settings
+DATA_DIR=/tmp/bismark/active
+cmd=netperf
+out="$DATA_DIR/netperf-out"
+err="$DATA_DIR/netperf-err"
+port=12345
+
+# Ausiliary functions
+clean() {
+	rm $out*
+	rm $err*
+}
+
+check() {
+	nlines=$1
+	c=1
+	while [ $c -le $N ]
+	do
+		ilines=`awk 'END{print NR}' ${out}-$c`
+		errors=`awk 'END{print NR}' ${err}-$c`
+		if [ $nlines -ne $ilines ] || [ $errors -gt 0 ]
+		then 
+			echo "-1000"
+			clean
+			exit 1
+		fi
+		: $((c++))
+	done
+}
+
+parse() {
+	nlines=1
+	check $nlines
+	head -$c -q "$out"* | awk '{print $5}' | awk 'BEGIN{sum=0;}{sum+=$1}END{print sum}'; 
+}
+
+# Parse input parameters
+T=$1
+N=$2
+host=$3
+dir=$4
+keys=" -l$T -P0 -fk"
+case $dir in
+dw) keys=$keys' -t TCP_MAERTS' ;;
+up) keys=$keys' -t TCP_STREAM' ;;
+esac
+
+mkdir -p $DATA_DIR
+
+# Parallel tasks creatin loop
+c=1
+while [ $c -le $N ]; do
+	$cmd $keys -p$port -H $host > ${out}-$c 2> ${err}-$c &
+	: $((c++))
+done
+
+# Wait for tasks to complete their job
+wait
+
+# Parse measurement results and remove logs
+parse 
+clean
+exit 0
