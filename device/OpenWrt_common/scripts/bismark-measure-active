@@ -32,8 +32,12 @@ msg ()
 get_target ()
 {
 	# Select probe port
-	read port_counter < /tmp/bismark/var/port_counter
-	PROBE_PORT=$(echo $PROBE_PORTS | awk '{print $'$((port_counter + 1))'}')
+	if [ -e /tmp/bismark/var/port_counter ]; then
+		read port_counter < /tmp/bismark/var/port_counter
+		PROBE_PORT=$(echo $PROBE_PORTS | awk '{print $'$((port_counter + 1))'}')
+	else
+		PROBE_PORT=5353
+	fi
 
 	# Send message
 	msg "$1 $2 $3 $4" | nc -u $NC_OPTS $SERVER $PROBE_PORT > $MEASURE_REPLY
@@ -67,7 +71,6 @@ cat > $XML_FILE <<-end
 end
 
 ## Concurrent measurements ##
-count=0
 if [ $((count % TR_FQ)) -eq 0 ]; then
 	# Traceroute
 	if get_target Bismark TR $ZONE 0 ; then
@@ -96,7 +99,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 		fi
 	fi
 fi
-echo "Done TR"
+
 # Get Gateway IP
 if [ ! "$gwip" ]; then
 	bismark-tr "8.8.8.8" > /dev/null
@@ -119,12 +122,11 @@ if get_target Bismark PING $ZONE 10 ; then
 	# MServer RTT
 	bismark-ping $dst | bismark-mstats RTT PING $src $dst >> $XML_FILE 
 fi
-echo "Done PING"
+
 # DNS delay and failure
 if [ $((count % DNS_FQ)) -eq 0 ]; then
 	bismark-dns >> $XML_FILE
 fi
-echo "Done DNS"
 
 ## Serial measurements ##
 if [ ! -e /tmp/bismark/var/mlock ]; then 
