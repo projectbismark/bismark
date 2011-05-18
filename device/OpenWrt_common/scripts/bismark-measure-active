@@ -189,15 +189,14 @@ else
 		rm /tmp/bismark/var/mlock
 	fi
 fi
-echo "Done ALL"
 
 # XML file footer
+sleep 5
 cat >> $XML_FILE <<-end
 	</measurements>
 end
 
 # Move file to data folder
-sleep 2
 mv $XML_FILE /tmp/bismark/data
 
 # Upload result 
