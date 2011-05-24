@@ -20,7 +20,6 @@ function help()
 	
 	Options:
 	
-	    -l <prb_port>    Port number to listen on for probe packets (default: $PROBE_PORT)
 	    -h               Print help screen
 	end
 	exit
@@ -29,7 +28,7 @@ function help()
 ## Main ##
 
 # Check directories
-mkdir -p ~/var/log/devices/
+mkdir -p $VAR_DIR/log/devices/
 
 # Check DB
 if [ ! -e $BDM_DB ]; then
@@ -77,11 +76,8 @@ if [ ! -e $MSR_DB ]; then
 fi
 
 # Parse command-line
-while getopts 'l:h' flag; do
+while getopts 'h' flag; do
 	case $flag in
-	l)
-		PROBE_PORT=$OPTARG
-	;;
 	h)
 		help
 	;;
@@ -93,23 +89,23 @@ while getopts 'l:h' flag; do
 done
 shift $(( OPTIND - 1 ))
 
-pids=$(pgrep bdmd.real)
+pid=$(pgrep bdmd.real)
 ports=$(sudo netstat -lnup | awk -F"[\t: ]*" '/bdmd.real/{ print $5 }')
 case $1 in
 start)
-	if [ "$( echo $ports | awk "/$PROBE_PORT/{ print \"busy\" }")" == "busy" ]; then
-		echo "bdmd already running on port $PROBE_PORT"
+	if [ "$ports" ]; then
+		echo "bdmd already running on ports" $ports
 	else
 		echo -n "Starting bdmd..."
-		bdmd.real $PROBE_PORT >> $BDMD_LOG_FILE 2> /tmp/bdmd.debug &
+		bdmd.real $PROBE_PORTS >> $BDMD_LOG_FILE 2> /tmp/bdmd.debug &
 		sleep 1
 		[ "$(pgrep bdmd.real)" ] && echo "done" || echo "error"
 	fi
 ;;
 stop)
-	if [ "$pids" ]; then 
+	if [ "$pid" ]; then 
 		echo -n "Stopping bdmd..."
-		kill $pids
+		kill $pid
 		sleep 1
 		[ "$(pgrep bdmd.real)" ] && echo "error" || echo "done" 	
 	else
@@ -118,11 +114,11 @@ stop)
 ;;
 restart)
 	$0 stop
-	$0 -l $PROBE_PORT start 
+	$0 start 
 ;;
 info)
-	if [ "$pids" ]; then
-		echo "bdmd listening on "$ports" (pids "$pids")"
+	if [ "$pid" ]; then
+		echo "bdmd listening on "$ports" (pid "$pid")"
 	else
 		echo "bdmd not running"
 	fi
