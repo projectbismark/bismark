@@ -63,7 +63,6 @@ def parsefile(file,tables,log):
 
 if __name__ == '__main__':
   HOME = os.environ['HOME'] + '/'
-  #HOME = './'
   MEASURE_FILE_DIR = 'var/data/'
   LOG_DIR = 'var/log/'
   tables = {'measurement':'MEASUREMENTS','traceroute':'TRACEROUTES','hop':'TRACEROUTE_HOPS',\

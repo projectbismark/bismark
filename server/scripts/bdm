@@ -529,7 +529,7 @@ function list()
 		else
 			echo -ne $RED
 		fi
-		[ $(mysql -NB -u root -e "SELECT deviceid FROM DEVICES WHERE deviceid='$id'" $MYSQL_DB)  ] || printf "#"
+		# [ $(mysql -NB -u root -e "SELECT deviceid FROM DEVICES WHERE deviceid='$id'" $MYSQL_DB)  ] || printf "#"
 		printf "%s\t%s\t%s\t%s\t%s\n" $id $ip $user $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 
