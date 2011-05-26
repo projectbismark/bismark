@@ -52,6 +52,8 @@ function help()
 	
 	    clearmsg  [id]                  Delete pending messages
 
+	    cleardev  [id]                  Delete device from list
+
 	Options:
 	
 	    -o <ssh_opts>    Additional SSH options
@@ -104,6 +106,7 @@ function parse()
 				done
 			fi
 		else
+			check_device_id $2 || { echo -e "Unknown device $2\n"; help tunnel; }
 			[ $3 == "on" ] && start_tunnel $2 $4
 			[ $3 == "off" ] && stop_tunnel $2 $4
 		fi
@@ -111,11 +114,13 @@ function parse()
 	gtunnel)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help gtunnel; }
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help gtunnel; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help gtunnel; }
 		start_gtunnel $2 $3 
 	;;
 	console)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help console; }
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help console; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help console; }
 		echo "Connecting to $2"
 		console $2
 	;;
@@ -123,6 +128,7 @@ function parse()
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help exec; }
 		[ $3 ] || { echo -e "Missing parameter: <command>\n"; help exec; }
 		[ $2 == ALL ] && { echo -e "ALL not allowed\n"; help exec; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help exec; }
 		echo "Executing \"${p#* * }\" on $2"
 		console $2 ${p#* * }
 	;;
@@ -138,16 +144,19 @@ function parse()
 	;;
 	upgrade)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help upgrade; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help upgrade; }
 		upgrade $2 $3 
 	;;
 	config)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help config; }
-		[ $2 == ALL ] && echo $* | grep -q DEVICE_ID && { echo -e "ALL not allowed for DEVICE_ID\n"; help console; }
+		[ $2 == ALL ] && echo $* | grep -q DEVICE_ID && { echo -e "ALL not allowed for DEVICE_ID\n"; help config; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help config; }
 		$* 
 	;;
 	setuser)
 		[ $2 ] || { echo -e "Missing parameter: <dev_id>\n"; help setuser; }
 		[ $3 ] || { echo -e "Missing parameter: <username>\n"; help setuser; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help setuser; }
 		setuser $2 $3
 	;;
 	settunnel)
@@ -161,10 +170,14 @@ function parse()
 	copy)
 		[ $2 ] || { echo -e "Missing parameter: <file>\n"; help copy; }
 		[ $3 ] || { echo -e "Missing parameter: <dev_id>\n"; help copy; }
+		check_device_id $2 || { echo -e "Unknown device $2\n"; help copy; }
 		copy $2 $3
 	;;
 	clearmsg)
 		clearmsg $2 
+	;;
+	cleardev)
+		cleardev $2 
 	;;
 	*)
 		[ $1 ] && echo "Unknown command: $1"
@@ -223,6 +236,18 @@ function recv_msg()
 		sleep 1
 	done
 }
+
+# Check device ID
+# $1 = device id
+function check_device_id()
+{
+	if [ $(query $BDM_DB "SELECT id FROM devices WHERE \"id\"='$1';") ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 
 # Check forwarding port
 # $1 = port number
@@ -662,6 +687,19 @@ function clearmsg()
 		echo "Delete all pending messages (y/N)?"
 		read a
 		[ $a == "y" ] && query $MSG_DB "DELETE FROM messages;"
+	fi
+}
+
+# Clear pending messages
+# $1 = id
+function cleardev()
+{
+	if [ $1 ]; then
+		query $BDM_DB "DELETE FROM devices WHERE id=$1;"
+	else
+		echo "Delete all devices (yes/no)?"
+		read a
+		[ $a == "yes" ] && query $BDM_DB "DELETE FROM devices;"
 	fi
 }
 
