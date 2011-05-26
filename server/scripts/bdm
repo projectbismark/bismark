@@ -346,7 +346,7 @@ function sendmail ()
 	/usr/sbin/sendmail -t <<-end
 		From: "Bismark Device Manager" <do-not-reply@gtnoise.net>
 		To: "Walter" <walter.dedonato@unina.it>, "Brian" <bpoole@cc.gatech.edu>, "Srikanth" <srikanth@gatech.edu>
-		Subject: Recovery Tunnel Notification ($1)
+		Subject: Bismark Notification System ($1)
 		Date: $(date -R)
 		Content-type: text/plain
 
@@ -557,8 +557,8 @@ function list()
 			echo -ne $GREEN
 		elif [ $off_time -lt 600 ]; then
 			echo -ne $YELLOW
-			[ $1 ] && sendmail $id "Device $id went offline"
 		else
+			[ "$1" -a $off_time -lt 900 ] && sendmail $id "Device $id went offline"
 			echo -ne $RED
 		fi
 		# [ $(mysql -NB -u root -e "SELECT deviceid FROM DEVICES WHERE deviceid='$id'" $MYSQL_DB)  ] || printf "#"
