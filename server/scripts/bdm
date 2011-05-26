@@ -31,6 +31,8 @@ function help()
 	    exec     <dev_id> <command>          Execute a shell command on <dev_id>
 	
 	    list                                 List available devices and tunnels
+
+	    mslist                               List configured measurement servers
 	
 	    readmsg                              Read incoming messages
 
@@ -134,6 +136,9 @@ function parse()
 	;;
 	list)	
 		list $2
+	;;
+	mslist)	
+		mslist
 	;;
 	readmsg)
 		read_msg
@@ -541,27 +546,30 @@ function list()
 	# Dump devices table
 	echo -e "${BLUE}Latest version: ${WHITE}$VERSION"
 	echo -e "${BLUE}\nDevices:"
-	echo -e "${WHITE}ID\tIP\t\tUSER\tVERSION\tLAST PROBE"
+	echo -ne "${WHITE}"
+	printf "%-16s %-15s %-7s %-20s %-10s\n" ID IP VERSION LAST_PROBE USER
 	IFS=$'\n' 
-	for dev in $(query $BDM_DB 'SELECT id,ip,user,version,ts FROM devices ORDER BY id;'); do
-		IFS=$'|' read id ip user ver ts <<< "$dev"
+	for dev in $(query $BDM_DB 'SELECT id,ip,version,ts,user FROM devices ORDER BY id;'); do
+		IFS=$'|' read id ip ver ts user <<< "$dev"
 		off_time=$(( $(date +%s) - $ts ))
+		[ "$user" ] || user=root
 		if [ $off_time -lt 300 ]; then
 			echo -ne $GREEN
 		elif [ $off_time -lt 600 ]; then
 			echo -ne $YELLOW
-			[ $2 ] && sendmail $id "Device $id went offline"
+			[ $1 ] && sendmail $id "Device $id went offline"
 		else
 			echo -ne $RED
 		fi
 		# [ $(mysql -NB -u root -e "SELECT deviceid FROM DEVICES WHERE deviceid='$id'" $MYSQL_DB)  ] || printf "#"
-		printf "%s\t%s\t%s\t%s\t%s\n" $id $ip $user $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+		printf "%-16s %-15s %-7s %-20s %-10s\n" $id $ip $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S") $user
 	done
 
 	# Dump tunnels table
 	echo -e "${BLUE}\nTunnels:"
-	echo -e "${WHITE}ID\tPORT\tSTART TIME"
-	echo -ne $GREEN
+	echo -ne "${WHITE}"
+	printf "%-16s %-5s %-20s\n" ID PORT START_TIME
+
 	IFS=$'\n' 
 	for dev in $(query $BDM_DB 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
@@ -573,7 +581,7 @@ function list()
 		else
 			echo -ne $RED
 		fi
-		printf "%s\t%s\t%s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
+		printf "%-16s %-5s %-20s\n" $id $port $(date -d @$ts +"%Y-%m-%d %H:%M:%S")
 	done
 	echo -ne $NO_COLOR
 
@@ -586,6 +594,55 @@ function list()
 		IFS=$'|' read id from to msg <<< "$message"
 		printf "%s\t%s\t%s\t%s\n" $id $from $to $msg
 	done
+	echo -ne $NO_COLOR
+}
+
+# List measurement servers info
+function mslist()
+{
+	# Dump measure servers table with capabilities
+	echo -e "${BLUE}\nMeasurement Servers:"
+	echo -ne "${WHITE}"
+	printf "%-15s %-8s %-11s %s\n" IP ZONE FREE_TS SERVICES
+	IFS=$'\n' 
+	for ms in $(query $MSR_DB 'SELECT ip,zone,free_ts FROM targets ORDER BY ip;'); do
+		IFS=$'|' read ip zone ts <<< "$ms"
+
+		#off_time=$(( $(date +%s) - $ts ))
+		#[ "$user" ] || user=root
+		#if [ $off_time -lt 300 ]; then
+			echo -ne $GREEN
+		#elif [ $off_time -lt 600 ]; then
+		#	echo -ne $YELLOW
+		#	[ $2 ] && sendmail $id "MServer $id went offline"
+		#else
+		#	echo -ne $RED
+		#fi
+
+		printf "%-15s %-8s %-11s " $ip $zone $ts
+		
+		for cap in $(query $MSR_DB 'SELECT service,info FROM capabilities WHERE ip="'$ip'" ORDER BY service;'); do
+			IFS=$'|' read serv info <<< "$cap"
+
+			printf "${BLUE}(${MAGENTA}%s${BLUE},${MAGENTA}%s${BLUE})" $serv $info
+		done
+		printf "\n"
+	done
+
+	# Dump measure servers table with capabilities
+	echo -e "${BLUE}\nMeasure Service Types:"
+	echo -ne "${WHITE}"
+	printf "%-10s %s\n" TYPE MUTEX
+	echo -ne $MAGENTA
+
+	IFS=$'\n' 
+	for ms in $(query $MSR_DB 'SELECT type,exclusive FROM mtypes ORDER BY type;'); do
+		IFS=$'|' read tp mutex <<< "$ms"
+
+		[ $mutex -eq 0 ] && mutex=no || mutex=yes
+		printf "%-10s %s\n" $tp $mutex
+	done
+
 	echo -ne $NO_COLOR
 }
 
@@ -695,7 +752,7 @@ function clearmsg()
 function cleardev()
 {
 	if [ $1 ]; then
-		query $BDM_DB "DELETE FROM devices WHERE id=$1;"
+		query $BDM_DB "DELETE FROM devices WHERE id=\"$1\";"
 	else
 		echo "Delete all devices (yes/no)?"
 		read a
