@@ -568,7 +568,7 @@ function list()
 		elif [ $off_time -lt 600 ]; then
 			echo -ne $YELLOW
 		else
-			[ "$1" -a $off_time -lt 900 ] && echo "$(date +"%Y-%m-%d %H:%M:%S") - Device $id went offline" >> /tmp/devices.log
+			[ "$1" == log -a $off_time -lt 900 ] && echo "$(date +"%Y-%m-%d %H:%M:%S") - Device $id went offline" >> /tmp/devices.log
 			echo -ne $RED
 		fi
 		# [ $(mysql -NB -u root -e "SELECT deviceid FROM DEVICES WHERE deviceid='$id'" $MYSQL_DB)  ] || printf "#"
