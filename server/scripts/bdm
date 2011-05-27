@@ -343,6 +343,8 @@ function wait_tunnel()
 # $2 = message
 function sendmail ()
 {
+	[ ${2:0:1} == "@" ] && msg=$(cat ${2:1}) || msg=$2
+
 	/usr/sbin/sendmail -t <<-end
 		From: "Bismark Device Manager" <do-not-reply@gtnoise.net>
 		To: "Walter" <walter.dedonato@unina.it>, "Brian" <bpoole@cc.gatech.edu>, "Srikanth" <srikanth@gatech.edu>
@@ -350,7 +352,7 @@ function sendmail ()
 		Date: $(date -R)
 		Content-type: text/plain
 
-		$2
+		$msg
 
 		-- BDM
 	end
@@ -558,12 +560,13 @@ function list()
 		elif [ $off_time -lt 600 ]; then
 			echo -ne $YELLOW
 		else
-			[ "$1" -a $off_time -lt 900 ] && sendmail $id "Device $id went offline"
+			[ "$1" -a $off_time -lt 900 ] && echo "$(date +"%Y-%m-%d %H:%M:%S") - Device $id went offline" >> /tmp/devices.log
 			echo -ne $RED
 		fi
 		# [ $(mysql -NB -u root -e "SELECT deviceid FROM DEVICES WHERE deviceid='$id'" $MYSQL_DB)  ] || printf "#"
 		printf "%-16s %-15s %-7s %-20s %-10s\n" $id $ip $ver $(date -d @$ts +"%Y-%m-%d %H:%M:%S") $user
 	done
+	[ "$1" == "notify" ] && ( sendmail "@/tmp/devices.log" ; rm /tmp/devices.log )
 
 	# Dump tunnels table
 	echo -e "${BLUE}\nTunnels:"
