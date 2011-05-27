@@ -343,12 +343,20 @@ function wait_tunnel()
 # $2 = message
 function sendmail ()
 {
-	[ ${2:0:1} == "@" ] && msg=$(cat ${2:1}) || msg=$2
+	# Expand @filename if present
+	if [ ${1:0:1} == "@" ]; then
+		msg=$(cat ${1:1})
+		id=$(basename $1)
+	else
+		msg=$2
+		id=$1
+	fi
 
+	# Send email to admins
 	/usr/sbin/sendmail -t <<-end
 		From: "Bismark Device Manager" <do-not-reply@gtnoise.net>
 		To: "Walter" <walter.dedonato@unina.it>, "Brian" <bpoole@cc.gatech.edu>, "Srikanth" <srikanth@gatech.edu>
-		Subject: Bismark Notification System ($1)
+		Subject: Bismark Notification System ($id)
 		Date: $(date -R)
 		Content-type: text/plain
 
