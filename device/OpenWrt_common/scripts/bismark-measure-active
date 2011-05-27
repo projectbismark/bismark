@@ -200,4 +200,4 @@ end
 mv $XML_FILE /tmp/bismark/data
 
 # Upload result 
-scp -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:~/var/data && rm /tmp/bismark/data/*.xml
+scp -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
