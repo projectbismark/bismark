@@ -6,6 +6,8 @@
 # Load configuration file
 . ~/etc/bdm.conf
 
+export VAR_DIR
+
 # Aliases
 query(){ sqlite3 -list $1 "$2"; }
 
