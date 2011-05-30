@@ -351,7 +351,7 @@ void *doit(void *param)
 
 		/* Process request */
 		reply = malloc(MAX_IP_LEN + MAX_INFO_LEN + MAX_WAIT_LEN + 4);
-		if (*exclusive == '1') {
+		if (exclusive != NULL && *exclusive == '1') {
 			/* Exclusive request (only mutual exclusion for now) */
 			if (ts > atoi(target.free_ts)) {
 				/* Set reply */
