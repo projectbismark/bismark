@@ -199,5 +199,10 @@ end
 # Move file to data folder
 mv $XML_FILE /tmp/bismark/data
 
-# Upload result 
-scp -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
+# Upload result
+[ -e /tmp/bismark/ssh ] || { 
+	echo -e '#!/bin/ash\nexec ssh -y "$@"' > /tmp/bismark/ssh 
+	chmod +x /tmp/bismark/ssh 
+}
+
+scp -S "/tmp/bismark/ssh" -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
