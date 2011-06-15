@@ -39,7 +39,7 @@ function help()
 	    tunnel   <dev_id> <on> [ip:port]     Open a tunnel to <dev_id> using SSH port forwarding (default: 127.0.0.1:22)
 	             <dev_id> <off> [port]       Close a tunnel to <dev_id> (default: oldest) (ALL applies)
 	
-	    upgrade  <dev_id> [rebuild]          Upgrade software on <dev_id> (ALL applies)
+	    upgrade  <dev_id> [URL]              Upgrade software on <dev_id> (ALL applies)
 
 
 	    For internal use only:
@@ -487,7 +487,7 @@ function start_gtunnel()
 
 # Update device software
 # $1 = dev id
-# $2 = rebuild
+# $2 = URL
 function upgrade()
 {
 	echo "Upgrading $1"
@@ -503,10 +503,10 @@ function upgrade()
 	# Start upgrade script
 	echo "Executing upgrade:"
 	if check_tunnel $1; then
-		console $1 "~/scripts/action" update
+		console $1 "~/scripts/action" update "$2"
 	else
 		# Send message
-		send_msg $1 update $VERSION || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 pending"; return 1; } ; }
+		send_msg $1 update "$2" || { [ $1 == ALL ] && echo done || { echo -e "\nDelivery to $1 pending"; return 1; } ; }
 
 		# Wait reply
 		echo -e "\nWaiting for upgrade log:"
