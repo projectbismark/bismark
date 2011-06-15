@@ -43,6 +43,18 @@ pong)	# Server heartbeat
 	# Store public IP 
 	echo $2 > /tmp/bismark/var/ip
 ;;
+update) # Software update
+       if [ "$2" ]; then
+               # Upgrade from URL to ipk package
+               wget -O /tmp/bismark/pkg.ipk "$2"
+               opkg install /tmp/bismark/pkg.ipk | output $1
+               rm /tmp/bismark/pkg.ipk
+       else
+               # Upgrade everything from repositories
+               opkg update
+               opkg upgrade
+       fi 
+;;
 config)
 	# Modify parameters	
 	if [ "$2" ]; then 
