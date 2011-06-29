@@ -15,7 +15,7 @@ DATA_DIR=/tmp/bismark/active
 cmd=netperf
 out="$DATA_DIR/netperf-out"
 err="$DATA_DIR/netperf-err"
-port=443
+port=$NETPERF_PORT
 
 # Ausiliary functions
 clean() {
