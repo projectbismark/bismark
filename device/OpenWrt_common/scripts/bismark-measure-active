@@ -13,6 +13,7 @@ COUNTER="/tmp/bismark/var/counter"
 MEASURE_REPLY="/tmp/bismark/var/mreply"
 XML_FILE="/tmp/bismark/active/${DEVICE_ID}_$(date +%s).xml"
 
+
 # --- Functions ---
 
 # Measure message generator
