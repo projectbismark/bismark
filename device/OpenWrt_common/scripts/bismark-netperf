@@ -14,7 +14,7 @@
 # Settings
 DATA_DIR=/tmp/bismark/active
 cmd=netperf
-out="$DATA_DIR/netperf-out"
+out="$DATA_DIR/netperf-tmp-out"
 err="$DATA_DIR/netperf-err"
 port=$NETPERF_PORT
 
