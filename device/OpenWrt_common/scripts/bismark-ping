@@ -5,6 +5,7 @@
 
 # Load configuration files
 . /etc/bismark/bismark.conf
+. /etc/bismark/bismark-active.conf
 
 # Help screen
 [ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit ; }

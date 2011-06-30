@@ -6,6 +6,7 @@
 
 # Load configuration files
 . /etc/bismark/bismark.conf
+. /etc/bismark/bismark-active.conf
 
 # Help screen
 [ $4 ] || { echo "usage: $(basename $0) <duration> <nthreads> <dst_ip> <up|dw>" ; exit ; }

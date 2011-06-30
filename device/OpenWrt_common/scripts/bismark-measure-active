@@ -5,6 +5,7 @@
 
 # Load configuration file
 . /etc/bismark/bismark.conf
+. /etc/bismark/bismark-active.conf
 . /usr/lib/bismark/functions.inc.sh
 
 # Configuration

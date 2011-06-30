@@ -5,6 +5,7 @@
 
 # Load configuration files
 . /etc/bismark/bismark.conf
+. /etc/bismark/bismark-active.conf
 
 # Settings
 DATA_DIR=/tmp/bismark/active
