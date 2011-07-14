@@ -18,7 +18,7 @@ mkdir -p /tmp/bismark/var
 
 # Set the device identifier
 if [[ ! -e /etc/bismark/ID ]]; then
-	(echo -n OW; ifconfig eth0 | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
+	(echo -n OW; ifconfig ge00 | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
 fi
 
 # Cronjobs setup
