@@ -70,7 +70,7 @@ get_ip
 cat > $XML_FILE <<-end
 	<?xml version="2.0" encoding="UTF-8" standalone="yes"?>
 	<measurements version="1.2">
-	        <info deviceid=$DEVICE_ID />
+	        <info deviceid="$DEVICE_ID" />
 end
 
 ## Concurrent measurements ##
@@ -81,7 +81,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 		hops_cnt=$(echo "$hops" | wc -l)
 		if [ $hops_cnt -gt 0 ]; then
 			cat >> $XML_FILE <<-end
-			        <traceroute srcip=$src dstip=$dst timestamp=$(date +%s) hops=$hops_cnt>
+			        <traceroute srcip="$src" dstip="$dst" timestamp="$(date +%s)" hops="$hops_cnt">
 				$(echo "$hops" | awk '{ print "                " $0 }')
 			        </traceroute>
 			end
@@ -95,7 +95,7 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 		hops_cnt=$(echo "$hops" | wc -l)
 		if [ $hops_cnt -gt 0 ]; then
 			cat >> $XML_FILE <<-end
-			        <traceroute srcip=$dst dstip=$src timestamp=$(date +%s) hops=$hops_cnt>
+			        <traceroute srcip="$dst" dstip="$src" timestamp="$(date +%s)" hops="$hops_cnt">
 				$(echo "$hops" | awk '{ print "                " $0 }')
 			        </traceroute>
 			end
