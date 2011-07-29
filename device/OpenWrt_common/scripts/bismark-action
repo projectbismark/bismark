@@ -20,10 +20,10 @@ case $1 in
 fwd)	# on-demand SSH tunnel
 	if [ $2 == ${2#*:} ]; then
 		# Default to local port 22 
-		( ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER >/dev/null 2>&1 & )
+		( ssh -y $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER >/dev/null 2>&1 & )
 	else
 		# To custom IP:PORT destination
-		( ssh $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER >/dev/null 2>&1 & )
+		( ssh -y $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER >/dev/null 2>&1 & )
 	fi
 ;;
 pong)	# Server heartbeat
@@ -52,7 +52,7 @@ update) # Software update
        else
                # Upgrade everything from repositories
                opkg update
-               opkg upgrade
+               opkg upgrade bismark-{mgmt,active,chrome} 
        fi 
 ;;
 config)
