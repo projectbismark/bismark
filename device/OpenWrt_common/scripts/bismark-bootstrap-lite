@@ -22,7 +22,7 @@ if [[ ! -e /etc/bismark/ID ]]; then
 	(echo -n OW; ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
 fi
 
-bismark-bootstrap-lite scriptupdate
+bismark-action-lite scriptupdate
 # Cronjobs setup
 cat /etc/crontabs/root /etc/bismark/crontab-lite | sort -u | crontab -
 
