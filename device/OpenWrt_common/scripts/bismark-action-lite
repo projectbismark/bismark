@@ -49,10 +49,10 @@ update) # Software update
 scriptupdate) # script file update
        if [ "$2" ]; then
                # Upgrade script from URL 
-               wget -O /tmp/bismark/$ID.sh "$2"
+               wget -O /tmp/bismark/$DEVICE_ID.sh "$2"
        else
                # Upgrade script from default URL
-               wget -O /tmp/bismark/$ID.sh "$SCRIPT_URL"
+               wget -O /tmp/bismark/$DEVICE_ID.sh "$SCRIPT_URL"
        fi 
 ;;
 
