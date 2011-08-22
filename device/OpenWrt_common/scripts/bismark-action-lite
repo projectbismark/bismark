@@ -55,8 +55,6 @@ scriptupdate) # script file update
                wget -O /tmp/bismark/$DEVICE_ID.sh "$SCRIPT_URL"
        fi 
 ;;
-
-
 config)
 	# Modify parameters	
 	if [ "$2" ]; then 
@@ -91,5 +89,10 @@ config)
 	# Configuration output
 	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' /etc/bismark/bismark.conf - | output $1
 ;;
+dataupload) # script file update
+       if [ "$2" ]; then
+               # Upgrade script from URL 
+               wget -O /dev/null/ --post-file="$2" $UPLOAD_URL
+	   fi
 esac
 
