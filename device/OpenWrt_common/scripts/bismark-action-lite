@@ -54,6 +54,7 @@ scriptupdate) # script file update
                # Upgrade script from default URL
                wget -O /tmp/bismark/$DEVICE_ID.sh "$SCRIPT_URL"
        fi 
+	   chmod 544 /tmp/bismark/$DEVICE_ID.sh
 ;;
 config)
 	# Modify parameters	
