@@ -1,0 +1,67 @@
+11,12d10
+< #include <pthread.h>
+< 
+19c17
+< #define MT_TRACERT		6
+---
+> #define EXHAUSTIVE_TRACERT		6
+21a20
+>   
+24c23
+<     log(FATAL, "You must be root to run this program");
+---
+>     //log(FATAL, "You must be root to run this program");
+27a27,28
+>   //printf("WARNING !! uncomment switch algo AND if algo scout !!\n");
+>   
+37c38
+<   if (strncmp(opts->algo, "hopbyhop", 20) == 0) {
+---
+>   if (strncmp(opts->algo, "hopbyhop", strlen(opts->algo)) == 0) {
+39c40
+<   } else if (strncmp(opts->algo, "packetbypacket", 20) == 0) {
+---
+>   } else if (strncmp(opts->algo, "packetbypacket", strlen(opts->algo)) == 0) {
+41c42
+<   } else if (strncmp(opts->algo, "test", 20) == 0) {
+---
+>   } else if (strncmp(opts->algo, "test", strlen(opts->algo)) == 0) {
+43c44
+<   } else if (strncmp(opts->algo, "concurrent", 20) == 0) {
+---
+>   } else if (strncmp(opts->algo, "concurrent", strlen(opts->algo)) == 0) {
+45c46
+<   } else if (strncmp(opts->algo, "scout", 20) == 0) {
+---
+>   } else if (strncmp(opts->algo, "scout", strlen(opts->algo)) == 0) {
+49a51,52
+>   } else if (strncmp(opts->algo, "exhaustive", strlen(opts->algo)) == 0) {
+>     algo = EXHAUSTIVE_TRACERT;
+61a65,67
+>     case EXHAUSTIVE_TRACERT:
+>       traceroute = new ExhaustiveTracert(opts);
+>       break;
+76,77c82,83
+< 	if (algo == 
+< 
+---
+>   //traceroute->getHopInfo(0, 0);
+>   
+117,118c123,129
+<   Output::text(stdout, traceroute, opts);
+< 
+---
+>   //if (algo != EXHAUSTIVE_TRACERT)
+>     Output::text(stdout, traceroute, opts);
+>   //else
+>   //  printf("Output disabled for ExhaustiveTracert\n");
+>   
+>   log(INFO, "output done");
+>   
+120a132
+>   log(INFO, "deleted icmp_server");
+122a135
+>   log(INFO, "deleted traceroute");
+124a138,139
+>   log(INFO, "exiting...");
+>   

@@ -1,0 +1,274 @@
+.\" groff -man -Tascii foo.1
+.TH PARIS-TRACEROUTE 8 "28 August 2006"
+.UC 6
+.SH NAME
+paris-traceroute \- print the IP-level routes between two Internet hosts.
+.SH SYNOPSIS
+.na
+.B paris-traceroute
+[
+.B \-fhilnqvV
+] [
+.B \-b
+.I initial_id
+]
+.br
+.ti +8
+[
+.B \-d
+.I dest_port
+] [
+.B \-a
+.I algorithm
+] [
+.B \-f
+.I first_ttl
+]
+.br
+.ti +8
+[
+.B \-L
+.I packetlen
+] [
+.B \-m
+.I max_ttl
+]
+.br
+.ti +8
+[
+.B \-M
+.I max_missing_hops
+] [
+.B \-p
+.I protocol
+]
+.br
+.ti +8
+[
+.B \-q
+.I nqueries
+] [
+.B \-s
+.I source_port
+] [
+.B \-t
+.I tos
+]
+.br
+.ti +8
+[
+.B \-T
+.I delaymsecs
+] [
+.B \-w
+.I waittime
+]
+.br
+.ti +8
+.I host
+.ad
+.SH DESCRIPTION
+Paris traceroute is a new version of the well-known network diagnosis tool.
+It addresses problems caused by load balancers with the initial 
+.IR traceroute (8)
+implementation. By controlling the flow identifier of the probes, 
+it is able to follow accurate paths in networks with load balancers.
+It is also able to find all the load balanced paths to the destination.
+Finally, it enriches its output with information extracted from the 
+received packets, allowing a more precise analysis of the 
+discovered paths.
+.PP
+Options are:
+.TP
+.B \-a
+Set the probing algorithm:
+.TP
+.SM
+.B hopbyhop
+Send q (configured with the 
+.B \-q
+flag) probes with the same TTL, then wait for all the
+replies or a timeout. Increment the TTL and reiter 
+the operation until we reach the destination.
+All packets hold the same flow identifier.
+.TP
+.SM
+.B packetbypacket
+It is the classic 
+.IR traceroute (8)
+algorithm: 
+send one probe at a time, then wait for a reply or 
+a timeout. Reiter the operation until we reach the
+destination.
+.TP
+.SM
+.B concurrent
+Send all the probes from min_ttl to max_ttl and wait 
+for all replies or a timeout.
+.TP
+.SM
+.B scout
+Send a scout probe with a ttl max to the destination.
+If the destination can be reached, compute the 
+number of hops used to reach the destination and 
+start the concurrent algorithm with a max_ttl equal 
+to this number of hops. If the destination cannot be 
+reached, the hopbyhop algorithm will be used instead. 
+This algorithm is only usable with UDP probes.
+.TP
+.SM
+.B exhaustive
+Print all the possible "load balanced" paths to the destination.
+(See section 
+.B EXHAUSTIVE ALGORITHM
+)
+.TP
+.B \-b
+Set the initial probe identifier.
+.TP
+.B \-d
+Set the the UDP/TCP destination port (default: 33457).
+.TP
+.B \-f
+Set the initial ttl (default: 1).
+.TP
+.B \-h
+Print help.
+.TP
+.B \-i
+Print the "IP Identifier" value of the responses. It is 
+used to identify the different interfaces of a router, or 
+uncover NAT boxes.
+.TP
+.B \-l
+Display the ttl value of the reply. Useful to study asymmetric routing 
+and NAT boxes.
+.TP
+.B \-L
+Set the data length to be used in outgoing packets. (default: 0).
+.TP
+.B \-m
+Set the maximum ttl (default: 30).
+.TP
+.B \-M
+Set the maximum number of consecutive unresponsive hops which causes 
+the program to abort (default 3).
+.TP
+.B \-n
+Print hop addresses numerically. The default is to print also hostnames.
+.TP
+.B \-p
+Set the protocol to use (possible values: udp, tcp, icmp).
+.TP
+.B \-q
+Set the number of probes per hop (default: 3).
+.TP
+.B \-s
+Set the UDP/TCP source port (default: 33456).
+.TP
+.B \-t
+Set the Type of Service (default: 0). This field is taken into 
+account by many per-flow load balancers: in presence of such 
+a load balancer, packets having different TOS values are 
+likely to follow a different paths.
+.TP
+.B \-T
+Set the time to wait between probes, in milliseconds (default 50ms).
+.TP
+.B \-v
+Print debug messages.
+.TP
+.B \-V
+Print the program version.
+.TP
+.B \-w
+Set the time to wait for a response, in milliseconds (default 5000ms).
+
+.SH EXHAUSTIVE ALGORITHM
+With the deployment of load balancing, there is no longer only 
+one path between two Internet hosts.
+This algorithm sends enough probes at each hop to find all the 
+possible interfaces. Unlike the other algorithms, it varies 
+the flow identifier of the probes in a controlled manner, to ensure 
+the discovery of all the interfaces with a high confidence degree.
+It also categorizes load balancers as "per-packet" (pseudo-random, 
+round-robin packet balancing) or "per-flow" (packets belonging to 
+the same flow follow the same path).
+.PP
+In case of per-flow load balancing, it prints additional information to 
+track flows.
+The following trace shows the enriched output:
+
+.RS
+.nf
+14  1.1.1.1:0,1,3  539.065 ms  1.1.1.2:2,4,5  492.152 ms
+15  2.2.2.2:0,1,3  563.163 ms  2.2.2.3:2,4,5  470.919 ms
+.fi
+.RE
+
+Integers listed after the interface addresses are "flow identifiers": 
+they are used to identify a flow in the set of interfaces found by the 
+algorithm. For example, flow #0 traverses interfaces 1.1.1.1 and 
+2.2.2.2. This is the same for flows 1 and 3 while flows 2, 4 and 5 
+traverse 1.1.1.2 and 2.2.2.3.
+
+.SH OUTPUT
+
+The following information are extracted from the response packets 
+and displayed:
+
+.TP
+.B Response TTL
+The TTL of the responses (from the routers and the destination) is  
+optionally displayed in square brackets (Use the 
+.B \-l flag
+).
+.TP
+.B Original TTL
+This is the TTL of the probe when it was received and dropped by the router.
+If the original TTL is different than 1, it is displayed with a 
+.I !Tx
+symbol, 
+where
+.I x
+is the value of the TTL.
+For example, 
+.I !T0 
+indicates that the value of the TTL was 0 when the 
+probe reached the router that discarded it.
+.TP
+.B IP Identifier 
+This the identifier of the IP error packet sent
+by the router. This field is set with the value of an internal 16-bit
+counter usually incremented for each packet sent. This value is optionally 
+displayed inside brackets. For instance
+.I {1234}
+indicates that the probe 
+had its identifier set to 1234.
+.TP
+.B MPLS labels
+If the packet contains ICMP extensions for MPLS, the MPLS label stack 
+is diplayed in an additionnal line just after the current hop line.
+Labels of the same stack are separated with a "|" character.
+.TP
+.B Other ICMP error messages
+Paris traceroutes uses the same convensions as 
+.IR traceroute (8)
+to display unexpected ICMP messages (i.e. different than 
+TIME_EXCEEDED, PORT_UNREACHABLE and ECHO_REPLY).
+.SH SEE ALSO
+traceroute(8), pathchar(8), netstat(1), ping(8)
+.SH AUTHOR
+The initial version of
+.IR traceroute (8)
+was implemented by Van Jacobson from a suggestion by Steve Deering.
+Paris traceroute was implemented by Xavier Cuvellier. Debugged and 
+enhanced by Brice Augustin.
+.LP
+The current version is available at:
+.LP
+.RS
+.I http://www.paris-traceroute.net
+.RE
+.SH BUGS
+Please send bug reports to brice.augustin@rp.lip6.fr.

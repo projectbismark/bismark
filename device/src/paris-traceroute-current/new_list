@@ -1,0 +1,140 @@
+src//ConcurrentTracert.cc:    // Create a new list of probes with the same ttl
+src//ConcurrentTracert.cc:    probes_by_ttl[i]           = new ListProbes();
+src//ConcurrentTracert.cc:    lprobes->probes            = new TimedProbe*[opts->max_try];
+src//Datagram.cc: * Create a new datagram.
+src//Datagram.cc:  headers = new Header*[8];
+src//Datagram.cc:  this->data = new uint8[length];
+src//ExhaustiveOldTracert.cc:    // Create a new list of probes with the same ttl
+src//ExhaustiveOldTracert.cc:    probes_by_ttl2[ttl_current] = new MapProbes();
+src//ExhaustiveOldTracert.cc:    //lprobes->probes            = new TimedProbe*[opts->max_try];
+src//ExhaustiveOldTracert.cc:      // or no new reply was caught in one round
+src//ExhaustiveOldTracert.cc:      // or no new reply was caught in one round
+src//ExhaustiveOldTracert.cc:      // or no new reply was caught in one round
+src//ExhaustiveOldTracert.cc:        fprintf(stderr, "[%d] new interface : %s", ttl_current, tprobe->host_address);
+src//ExhaustiveOldTracert.cc:      printf("not new %s\n", tprobe->host_address);*/
+src//ExhaustiveTracert.cc:  // or no new reply was caught in one round
+src//ExhaustiveTracert.cc:	mprobes_prev = new MapProbes();
+src//ExhaustiveTracert.cc:	//TimedProbe* t = new TimedProbe();
+src//ExhaustiveTracert.cc:    // Create a new list of probes with the same ttl
+src//ExhaustiveTracert.cc:    probes_by_ttl2[ttl_current] = new MapProbes();
+src//ExhaustiveTracert.cc:    //lprobes->probes            = new TimedProbe*[opts->max_try];
+src//ExhaustiveTracert.cc:	interf = new Interface();
+src//ExhaustiveTracert.cc:		Interface** list = new Interface*[size];
+src//ExhaustiveTracert.cc:    //  log(WARN, "[%d] new interface : %s", ttl_current, tprobe->host_address);
+src//Header.cc:	printf("new header\n");
+src//HopByHopTracert.cc:    // Create a new list of probes with the same ttl
+src//HopByHopTracert.cc:    probes_by_ttl[ttl_current] = new ListProbes();
+src//HopByHopTracert.cc:    lprobes->probes            = new TimedProbe*[opts->max_try];
+src//ICMPDestUnreachable.cc: * Create a new ICMP Destination Unreachable header and initialize it from the
+src//ICMPDestUnreachable.cc:  ip4_err = new IP4Header(data, len, offs + 8);
+src//ICMPDestUnreachable.cc:  data_err = new uint8[8];
+src//ICMPEcho.cc: * Create a new ICMP Echo header (Echo request or echo reply).
+src//ICMPEcho.cc: * Create a new ICMP Echo header and initialize it with 16 bytes of <i>data</i>
+src//ICMPHeader.cc: * Create a new ICMP header.
+src//ICMPHeader.cc:  header = new uint8[8];
+src//ICMPHeader.cc: * Create a new ICMP header and initialize it from the <i>data</i> array
+src//ICMPHeader.cc:  header = new uint8[8];
+src//ICMPProbe.cc: * Create a new UDP probe.
+src//ICMPProbe.cc:  IP4Header* ip4 = new IP4Header();
+src//ICMPProbe.cc:  ICMPHeader* icmp = new  ICMPHeader();
+src//ICMPProbe.cc:    uint8* d = new uint8[data_len];
+src//ICMPProbe.cc:  uint8* icmp_datagram = new uint8[datagram_len];
+src//ICMPReply.cc: * Create a new <i>ICMPReply</i> from an ICMP packet.
+src//ICMPReply.cc:  IP4Header* ip4 = new IP4Header(packet, packet_len, 0);
+src//ICMPReply.cc:  ICMPHeader* icmp = new ICMPHeader(packet, packet_len, ip4_hdrlen);
+src//ICMPReply.cc:    IP4Header* err_ip4 = new IP4Header(packet, packet_len, ip4_hdrlen + 8);
+src//ICMPReply.cc:      UDPHeader* err_udp = new UDPHeader(packet, packet_len, ip4_hdrlen + 28);
+src//ICMPReply.cc:        MPLSHeader* mpls = new MPLSHeader(packet, ip_remaining_len, ip4_hdrlen + 8 + 128);
+src//ICMPReply.cc:       ICMPHeader* err_icmp = new ICMPHeader(packet, packet_len, 48);
+src//ICMPReply.cc:         MPLSHeader* mpls = new MPLSHeader(packet, ip_remaining_len, ip4_hdrlen + 8 + 128);
+src//ICMPReply.cc:       ICMPHeader* err_icmp2 = new ICMPHeader(packet, packet_len, ip4_hdrlen + 28);
+src//ICMPReply.cc:         MPLSHeader* mpls = new MPLSHeader(packet, ip_remaining_len, ip4_hdrlen + 8 + 128);
+src//ICMPTimeExceeded.cc: * Create a new ICMP Time Exceeded header and initialize it from the <i>data</i>
+src//ICMPTimeExceeded.cc:  ip4_err = new IP4Header(data, length, offset + 8);
+src//ICMPTimeExceeded.cc:  data_err = new uint8[8];
+src//IP4Header.cc: * Create a new IPv4 header.
+src//IP4Header.cc:  header = new uint8[20];
+src//IP4Header.cc: * Create a new IPv4 header and initialize it with 20 bytes of <i>data</i> array
+src//IP4Header.cc:  header = new uint8[header_len];
+src//IP4Header_NetBSD.cc: * Create a new IPv4 header.
+src//IP4Header_NetBSD.cc:  header = new uint8[20];
+src//IP4Header_NetBSD.cc: * Create a new IPv4 header and initialize it with 20 bytes of <i>data</i> array
+src//IP4Header_NetBSD.cc:  header = new uint8[20];
+src//MPLSHeader.cc:  header = new uint8[length];
+src//MPLSHeader.cc:        labels = new uint32[nbr_entries+1];
+src//MtTracert.cc:	      t = new HopByHopTracert(opts);
+src//MtTracert.cc:	      t = new PackByPackTracert(opts);
+src//MtTracert.cc:	      t = new ConcurrentTracert(opts, opts->ttl_max);
+src//MtTracert.cc:	      t = new ScoutTracert(opts, opts->ttl_max);
+src//MtTracert.cc:	    	t = new ExhaustiveTracert(opts);
+src//MtTracert.cc:	    	t = new ExhaustiveOldTracert(opts);
+src//MtTracert.cc:	      //traceroute = new NULLTracert();
+src//MtTracert.cc:		//t = new HopByHopTracert(opts);
+src//MtTracert.cc:	      t = new PackByPackTracert(opts);
+src//MtTracert.cc:	      t = new ConcurrentTracert(opts, opts->ttl_max);
+src//MtTracert.cc:	      t = new ScoutTracert(opts, opts->ttl_max);
+src//MtTracert.cc:	      //traceroute = new NULLTracert();
+src//Output.cc:        // A "new interface"
+src//Output.cc:            // if new algo, or old algo and per-flow lb
+src//PackByPackTracert.cc:    // Create a new list of probes with the same ttl
+src//PackByPackTracert.cc:    probes_by_ttl[ttl_current] = new ListProbes();
+src//PackByPackTracert.cc:    lprobes->probes            = new TimedProbe*[opts->max_try];
+src//paris-traceroute.cc:  Options* opts        = new Options(argc, argv);
+src//paris-traceroute.cc:  	icmp_server = new Server(opts, "icmp");
+src//paris-traceroute.cc:  	 	bw = new Bandwidth(opts);
+src//paris-traceroute.cc:  	MtTracert** mt = new MtTracert*[opts->threads_count];
+src//paris-traceroute.cc:  	bool* terminated = new bool[opts->threads_count];
+src//paris-traceroute.cc:  		mt[i] = new MtTracert(opts, i, icmp_server, targets, &targets_lock, &output_lock, bw);
+src//paris-traceroute.cc:	  icmp_server = new Server(opts, "icmp");
+src//paris-traceroute.cc:	    tcp_server = new Server(opts, "tcp");
+src//paris-traceroute.cc:	      traceroute = new ConcurrentTracert(opts, ttl_dest);
+src//paris-traceroute.cc:	      traceroute = new HopByHopTracert(opts);
+src//Probe.cc: * Create a new Probe.
+src//Probe.cc:    return new ICMPProbe(src_addr, dst_addr, ttl, tos, data_len, dst_port, proc_id, id);
+src//Probe.cc:    return new UDPProbe(src_addr, src_port, dst_addr, dst_port,
+src//Probe.cc:    return new TCPProbe(src_addr, src_port, dst_addr, dst_port,
+src//Probe.cc:  *data = new uint8[len];
+src//Reply.cc:        return new ICMPReply(packet, packet_len);
+src//Reply.cc:        return new TCPReply(packet, packet_len);
+src//ScoutTracert.cc: * Create a new instance of a traceroute test algorithm.
+src//ScoutTracert.cc:  probes_by_ttl[ttl_current] = new ListProbes();
+src//ScoutTracert.cc:  lprobes->probes            = new TimedProbe*[1];
+src//Server.cc: * Create a new <i>Server</i> to listen incoming message.
+src//Server.cc:  this->client   = new Tracert*[opts->threads_count];
+src//Server.cc:  this->client_id =  new int[opts->threads_count];
+src//Server.cc: * a new probable reply has arrived. It is up to the client to distinguish
+src//TCPHeader.cc: * Create a new TCP header.
+src//TCPHeader.cc:  header = new uint8[20];
+src//TCPHeader.cc: * Create a new TCP header and initialise it with 20 bytes of <i>data</i> array
+src//TCPHeader.cc:  header = new uint8[20];
+src//TCPProbe.cc:  IP4Header* ip4 = new IP4Header();
+src//TCPProbe.cc:  TCPHeader* tcp = new TCPHeader();
+src//TCPProbe.cc:    uint8* d = new uint8[data_len];
+src//TCPProbe.cc:  uint8* dgram_checksum = new uint8[dgram_checksum_len];
+src//TCPReply.cc:  IP4Header* ip4 = new IP4Header(packet, packet_len, 0);
+src//TCPReply.cc:  TCPHeader* tcp = new TCPHeader(packet, packet_len, ip4_hdrlen);
+src//Test.cc:  Options* opts   = new Options(argc, argv);
+src//Test.cc:  Tracert* trace  = new NULLTracert();
+src//Test.cc:  Server*  server = new Server(trace, opts, "tcp");
+src//TracertImpl.cc:  time = new Time();
+src//TracertImpl.cc:  TimedProbe* tprobe   = new TimedProbe();
+src//tupleroute.cc:  Options* opts        = new Options(argc, argv);
+src//tupleroute.cc:      traceroute = new HopByHopTracert(opts);
+src//tupleroute.cc:      traceroute = new ExhaustiveTracert(opts);
+src//tupleroute.cc:      traceroute = new PackByPackTracert(opts);
+src//tupleroute.cc:      traceroute = new ConcurrentTracert(opts, opts->ttl_max);
+src//tupleroute.cc:      traceroute = new ScoutTracert(opts, opts->ttl_max);
+src//tupleroute.cc:      traceroute = new NULLTracert();
+src//tupleroute.cc:  icmp_server = new Server(opts, "icmp");
+src//tupleroute.cc:    tcp_server = new Server(opts, "tcp");
+src//tupleroute.cc:      traceroute = new ConcurrentTracert(opts, ttl_dest);
+src//tupleroute.cc:      traceroute = new HopByHopTracert(opts);
+src//UDPHeader.cc: * Create a new UDP header.
+src//UDPHeader.cc:  header = new uint8[8];
+src//UDPHeader.cc: * Create a new IDP header and initialise it with 8 bytes of <i>data</i> array
+src//UDPHeader.cc:  header = new uint8[8];
+src//UDPProbe.cc: * Create a new UDP probe.
+src//UDPProbe.cc:  IP4Header* ip4 = new IP4Header();
+src//UDPProbe.cc:  UDPHeader* udp = new UDPHeader();
+src//UDPProbe.cc:  uint8* d = new uint8[data_len];
+src//UDPProbe.cc:  uint8* dgram_checksum = new uint8[dgram_checksum_len];

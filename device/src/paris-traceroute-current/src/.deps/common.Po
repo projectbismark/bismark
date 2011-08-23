@@ -1,0 +1,34 @@
+common.o common.o: common.cc common.h /usr/include/sys/time.h \
+  /usr/include/sys/cdefs.h /usr/include/sys/_types.h \
+  /usr/include/machine/_types.h /usr/include/i386/_types.h \
+  /usr/include/time.h /usr/include/_types.h \
+  /usr/include/machine/_limits.h /usr/include/i386/_limits.h \
+  /usr/include/stdio.h \
+  /usr/lib/gcc/i686-apple-darwin8/4.0.1/include/stdarg.h \
+  /usr/include/string.h
+
+common.h:
+
+/usr/include/sys/time.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/sys/_types.h:
+
+/usr/include/machine/_types.h:
+
+/usr/include/i386/_types.h:
+
+/usr/include/time.h:
+
+/usr/include/_types.h:
+
+/usr/include/machine/_limits.h:
+
+/usr/include/i386/_limits.h:
+
+/usr/include/stdio.h:
+
+/usr/lib/gcc/i686-apple-darwin8/4.0.1/include/stdarg.h:
+
+/usr/include/string.h:
