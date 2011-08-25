@@ -25,4 +25,6 @@ fi
 bismark-action-lite scriptupdate
 # Cronjobs setup
 cat /etc/crontabs/root /etc/bismark/crontab-lite | sort -u | crontab -
-
+if [[ -e /www/index.html ]]; then
+	rm -f /www/index.html
+fi
