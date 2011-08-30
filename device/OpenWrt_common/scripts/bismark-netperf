@@ -16,6 +16,7 @@ DATA_DIR=/tmp/bismark/active
 cmd=netperf
 out="$DATA_DIR/netperf-tmp-out"
 err="$DATA_DIR/netperf-err"
+ifaceout="$DATA_DIR/iface-out"
 port=$NETPERF_PORT
 
 # Ausiliary functions
@@ -35,6 +36,7 @@ check() {
 		then 
 			echo "-1000"
 			clean
+			echo 0 > $ifaceout
 			exit 1
 		fi
 		: $((c++))
@@ -54,12 +56,19 @@ host=$3
 dir=$4
 keys=" -l$T -P0 -fk"
 case $dir in
-dw) keys=$keys' -t TCP_MAERTS' ;;
-up) keys=$keys' -t TCP_STREAM' ;;
+dw) 
+	keys=$keys' -t TCP_MAERTS'
+	netproc=2
+	;;
+up) 
+	keys=$keys' -t TCP_STREAM'
+	netproc=10
+	;;
 esac
 
 mkdir -p $DATA_DIR
 
+bytecnt1=`cat /proc/net/dev | awk '/'$WAN_IF'/ {print $'$netproc'}'`
 # Parallel tasks creatin loop
 c=1
 while [ $c -le $N ]; do
@@ -69,8 +78,14 @@ done
 
 # Wait for tasks to complete their job
 wait
+bytecnt2=`cat /proc/net/dev | awk '/'$WAN_IF'/ {print $'$netproc'}'`
 
 # Parse measurement results and remove logs
 parse 
+if [ $bytecnt2 -le $bytecnt1 ]; then
+	echo 0 > $ifaceout
+else
+	echo $bytecnt1 $bytecnt2 | awk '{print ($2 - $1)/(125*'$T')}' > $ifaceout
+fi
 clean
 exit 0

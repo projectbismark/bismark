@@ -135,25 +135,29 @@ fi
 if [ ! -e /tmp/bismark/var/mlock ]; then 
 	# Set measure lock
 	echo $(date +%s) > /tmp/bismark/var/mlock
-
 	# Bitrate
 	if [ $((count % BR_FQ)) -eq 0 ]; then
 		# Downstream bitrate using NETPERF
+		NTHREADS=`echo $NETPERF_NTHREADS | awk '{print $(('$((count / BR_FQ))' % NF) + 1)}'`
 		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
 			sleep $wait
 			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTDW PING $src $dst >> $XML_FILE ) &
-			bismark-netperf $BR_DURATION $NETPERF_NTHREADS $dst dw > /tmp/bismark/active/netperf-out
-			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF $dst $src | grep -v nan >> $XML_FILE
+			bismark-netperf $BR_DURATION $NTHREADS $dst dw > /tmp/bismark/active/netperf-out
+			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF_${NTHREADS} $dst $src | grep -v nan >> $XML_FILE
+			cat /tmp/bismark/active/iface-out | bismark-mstats AGGL3BITRATE IFACE $dst $src | grep -v nan >> $XML_FILE
 			rm /tmp/bismark/active/netperf-out
+			rm /tmp/bismark/active/iface-out
 		fi
 
 		# Upstream bitrate using NETPERF
 		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
 			sleep $wait
 			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTUP PING $src $dst >> $XML_FILE ) &
-			bismark-netperf $BR_DURATION $NETPERF_NTHREADS $dst up > /tmp/bismark/active/netperf-out
-			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF $src $dst | grep -v nan >> $XML_FILE
+			bismark-netperf $BR_DURATION $NTHREADS $dst up > /tmp/bismark/active/netperf-out
+			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF_${NTHREADS} $src $dst | grep -v nan >> $XML_FILE
+			cat /tmp/bismark/active/iface-out | bismark-mstats AGGL3BITRATE IFACE $dst $src | grep -v nan >> $XML_FILE
 			rm /tmp/bismark/active/netperf-out
+			rm /tmp/bismark/active/iface-out
 		fi
 	fi
 
