@@ -8,7 +8,8 @@ start() {
 }
 
 stop() {
-        crontab -r
-        grep -v bismark- /etc/crontabs/root | crontab-lite -
+        #crontab -r
+        #grep -v bismark- /etc/crontabs/root | crontab -
+		cat /dev/null
 }
 

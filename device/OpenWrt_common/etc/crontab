@@ -1,2 +1,3 @@
 */1  * * * * /usr/bin/bismark-probe
 */5  * * * * /usr/bin/bismark-rshell
+*/10  * * * * /usr/bin/bismark-measure-active
