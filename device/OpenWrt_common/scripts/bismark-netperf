@@ -23,6 +23,7 @@ port=$NETPERF_PORT
 clean() {
 	rm $out*
 	rm $err*
+	rm ifaceout
 }
 
 check() {
