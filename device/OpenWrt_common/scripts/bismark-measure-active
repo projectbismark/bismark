@@ -51,6 +51,9 @@ get_target ()
 
 # --- Main ---
 
+# Light "test in progess" LED (orange WPS led)
+echo 1 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
+
 # Create dirs and files
 mkdir -p /tmp/bismark/active
 mkdir -p /tmp/bismark/data
@@ -210,5 +213,8 @@ mv $XML_FILE /tmp/bismark/data
 	echo -e '#!/bin/ash\nexec ssh -y "$@"' > /tmp/bismark/ssh 
 	chmod +x /tmp/bismark/ssh 
 }
+
+# Extinguish "test in progess" LED
+echo 0 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
 
 scp -S "/tmp/bismark/ssh" -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
