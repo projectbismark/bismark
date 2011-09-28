@@ -61,8 +61,8 @@ mkdir -p /tmp/bismark/data
 
 # Get and update count
 count=$(cat $COUNTER)
-echo $(( (count + 1) % 288 )) > $COUNTER
-
+echo $(( (count + 1) % 144 )) > $COUNTER
+count=$(( count + 1 ))
 # Random wait
 sleep $(random 0 3)
 
@@ -77,7 +77,7 @@ cat > $XML_FILE <<-end
 end
 
 ## Concurrent measurements ##
-if [ $((count % TR_FQ)) -eq 0 ]; then
+if [ $((count % TR_UP_FQ)) -eq 0 ]; then
 	# Traceroute
 	if get_target Bismark TR $ZONE 0 ; then
 		hops=$(bismark-tr $dst)
@@ -91,7 +91,9 @@ if [ $((count % TR_FQ)) -eq 0 ]; then
 		fi
 		gwip=$(cat /tmp/bismark/active/gwip)
 	fi
+fi
 
+if [ $(( (count + MOFFSET) % TR_DW_FQ)) -eq 0 ]; then
 	# Reverse traceroute
 	if get_target Bismark RTR $ZONE 0 ; then
 		hops=$(bismark-rtr $dst $info)
@@ -139,24 +141,27 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 	# Set measure lock
 	echo $(date +%s) > /tmp/bismark/var/mlock
 	# Bitrate
-	if [ $((count % BR_FQ)) -eq 0 ]; then
+	if [ $(( (count + MOFFSET) % BR_DW_FQ)) -eq 0 ]; then
 		# Downstream bitrate using NETPERF
-		NTHREADS=`echo $NETPERF_NTHREADS | awk '{print $(('$((count / BR_FQ))' % NF) + 1)}'`
-		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
+		NTHREADS=`echo $NETPERF_DW_NTHREADS | awk '{print $(('$(( (count + MOFFSET) / BR_DW_FQ))' % NF) + 1)}'`
+		if get_target Bismark NETPERF $ZONE $BR_DW_DURATION ; then
 			sleep $wait
 			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTDW PING $src $dst >> $XML_FILE ) &
-			bismark-netperf $BR_DURATION $NTHREADS $dst dw > /tmp/bismark/active/netperf-out
+			bismark-netperf $BR_DW_DURATION $NTHREADS $dst dw > /tmp/bismark/active/netperf-out
 			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF_${NTHREADS} $dst $src | grep -v nan >> $XML_FILE
 			cat /tmp/bismark/active/iface-out | bismark-mstats AGGL3BITRATE IFACE $dst $src | grep -v nan >> $XML_FILE
 			rm /tmp/bismark/active/netperf-out
 			rm /tmp/bismark/active/iface-out
 		fi
+	fi
 
+	if [ $((count % BR_UP_FQ)) -eq 0 ]; then
 		# Upstream bitrate using NETPERF
-		if get_target Bismark NETPERF $ZONE $BR_DURATION ; then
+		NTHREADS=`echo $NETPERF_UP_NTHREADS | awk '{print $(('$((count / BR_UP_FQ))' % NF) + 1)}'`
+		if get_target Bismark NETPERF $ZONE $BR_UP_DURATION ; then
 			sleep $wait
 			( sleep 3 ; bismark-ping $dst | bismark-mstats ULRTTUP PING $src $dst >> $XML_FILE ) &
-			bismark-netperf $BR_DURATION $NTHREADS $dst up > /tmp/bismark/active/netperf-out
+			bismark-netperf $BR_UP_DURATION $NTHREADS $dst up > /tmp/bismark/active/netperf-out
 			cat /tmp/bismark/active/netperf-out | bismark-mstats BITRATE NETPERF_${NTHREADS} $src $dst | grep -v nan >> $XML_FILE
 			cat /tmp/bismark/active/iface-out | bismark-mstats AGGL3BITRATE IFACE $dst $src | grep -v nan >> $XML_FILE
 			rm /tmp/bismark/active/netperf-out
@@ -165,13 +170,14 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 	fi
 
 	# Jitter & Packet loss using DITG
-	if [ $((count % UDP_FQ)) -eq 0 ]; then
+	if [ $(( (count + MOFFSET) % UDP_DW_FQ)) -eq 0 ]; then
 		# Downstream 
 		if get_target Bismark ITGDL $ZONE $UDP_DURATION ; then
 			sleep $wait
 			bismark-ditg udp $dst $info dw $UDP_DURATION $UDP_PPS >> $XML_FILE
 		fi
-
+	fi
+	if [ $((count % UDP_UP_FQ)) -eq 0 ]; then
 		# Upstream
 		if get_target Bismark ITGUL $ZONE $UDP_DURATION ; then
 			sleep $wait
