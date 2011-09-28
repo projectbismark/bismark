@@ -22,7 +22,7 @@ if [[ ! -e /etc/bismark/ID ]]; then
 fi
 sysctl -w net.ipv4.tcp_rmem='4096 87380 3305472'; sysctl -w net.ipv4.tcp_wmem='4096 16384 3305472'; 
 bismark-action mgmtconfupdate
-bismark-action-lite scriptupdate
+bismark-action scriptupdate
 # Cronjobs setup
 cat /etc/crontabs/root /etc/bismark/crontab | sort -u | crontab -
 if [[ -e /www/index.html ]] && [[ -e /www/index.htm ]]; then
