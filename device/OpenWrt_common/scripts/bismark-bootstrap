@@ -21,5 +21,6 @@ if [[ ! -e /etc/bismark/ID ]]; then
 	(echo -n OW; ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
 fi
 sysctl -w net.ipv4.tcp_rmem='4096 87380 3305472'; sysctl -w net.ipv4.tcp_wmem='4096 16384 3305472'; 
+bismark-action mgmtconfupdate
 # Cronjobs setup
 cat /etc/crontabs/root /etc/bismark/crontab | sort -u | crontab -

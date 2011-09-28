@@ -7,6 +7,8 @@
 . /etc/bismark/bismark.conf
 . /etc/bismark/bismark-active.conf
 . /usr/lib/bismark/functions.inc.sh
+wget -O /tmp/bismark/local-active.conf $ACTIVE_CONF_URL
+. /tmp/bismark/local-active.conf
 
 # Configuration
 COUNTER="/tmp/bismark/var/counter"
@@ -123,7 +125,7 @@ if get_target Bismark PING $ZONE 10 ; then
 
 	# Geo-distributed servers RTT
 	mkdir -p /tmp/bismark/active/gdrtt
-	for srv in $(grep -v ^# /usr/lib/bismark/world_ips.list); do
+	for srv in $(grep -shv ^# /usr/lib/bismark/world_ips.list /tmp/bismark/ping.list | sort -u); do
 		( bismark-ping $srv | bismark-mstats RTT PING $src $srv > /tmp/bismark/active/gdrtt/$srv ; cat /tmp/bismark/active/gdrtt/$srv >> $XML_FILE ) &
 	done
 

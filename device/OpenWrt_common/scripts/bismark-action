@@ -55,6 +55,9 @@ update) # Software update
                opkg upgrade bismark-{mgmt,active,chrome} 
        fi 
 ;;
+mgmtconfupdate) # mgmt conf update
+       wget -O /tmp/bismark/local.conf "$MGMT_CONF_URL"
+;;
 config)
 	# Modify parameters	
 	if [ "$2" ]; then 
@@ -72,16 +75,16 @@ config)
 
 			if [ "$value" ]; then
 				# Store parameter 
-				if grep -q "^$name=" /tmp/local.conf; then
+				if grep -q "^$name=" /tmp/bismark/local.conf; then
 					# Substitute
-					mod_conf /tmp/local.conf $name "$value"
+					mod_conf /tmp/bismark/local.conf $name "$value"
 				else
 					# Append
-					echo $name="$value" >> /tmp/local.conf
+					echo $name="$value" >> /tmp/bismark/local.conf
 				fi
-			elif grep -q "^$name=" /tmp/local.conf; then
+			elif grep -q "^$name=" /tmp/bismark/local.conf; then
 				# Remove parameter from local.conf
-				mod_conf /tmp/local.conf $name
+				mod_conf /tmp/bismark/local.conf $name
 			fi
 		done
 	fi
