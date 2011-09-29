@@ -1,5 +1,4 @@
 */1  * * * * /usr/bin/bismark-probe
-*/1  * * * * /usr/bin/bismark-measure-wrapper
 */5  * * * * /usr/bin/bismark-rshell
 */5  * * * * ash /etc/hotplug.d/iface/20-ntpclient ifup
 0 */12 * * * /usr/bin/bismark-action scriptupdate
