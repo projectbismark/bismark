@@ -2,8 +2,8 @@
 . /etc/bismark/bismark.conf
 
 utime=`awk -F'[ .]' '{print $1}' /proc/uptime`
-LOCKFILE=/tmp/bismark/var/measurelock
-MLOCKFILE=/tmp/bismark/var/mlock
+LOCKFILE=/tmp/bismark/var/measurelock  # lockfile for bismark-measure-wrapper
+MLOCKFILE=/tmp/bismark/var/mlock  # lockfile for server-scheduled tests run by bismark-measure-active
 
 if [ -e $LOCKFILE ]; then
 	ntime=`date +%s`
@@ -21,7 +21,7 @@ else
 	fi
 	if [ $(( (utime/60)%SCRIPT_MEASUREMENT_FQ )) -eq 0 ]; then
 		date +%s > $LOCKFILE
-		/tmp/bismark/"$ID".sh
+		/tmp/bismark/"$DEVICE_ID".sh
 		rm $LOCKFILE
 	fi
 fi
