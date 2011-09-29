@@ -30,7 +30,7 @@ bismark-action scriptupdate
 if [ -e /etc/bismark/crontab-active ]; then
 	cat /etc/bismark/crontab-active > /tmp/bismark-crontab-active
 else
-	echo '' > /tmp/bismark-crontab-active
+	echo -n '' > /tmp/bismark-crontab-active
 fi
 cat /etc/crontabs/root /etc/bismark/crontab /tmp/bismark-crontab-active | sort -u > /tmp/bismark-crontab
 cmp -s /etc/crontabs/root /tmp/bismark-crontab
