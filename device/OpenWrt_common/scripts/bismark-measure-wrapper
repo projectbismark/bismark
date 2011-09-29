@@ -1,0 +1,27 @@
+#!/usr/bin/env ash
+. /etc/bismark/bismark.conf
+
+utime=`awk -F'[ .]' '{print $1}' /proc/uptime`
+LOCKFILE=/tmp/bismark/var/measurelock
+MLOCKFILE=/tmp/bismark/var/mlock
+
+if [ -e $LOCKFILE ]; then
+	ntime=`date +%s`
+	ctime=`cat $LOCKFILE`
+	if [ $((ntime - ctime)) -gt 3600 ]; then
+		kill -9 `ps aux | grep bismark-measure-active | awk -F" " '!/grep/{print $1}'`
+		kill -9 `ps aux | grep "$DEVICE_ID".sh | awk -F" " '!/grep/{print $1}'`
+		rm $LOCKFILE $MLOCKFILE /tmp/bismark/data/* /tmp/bismark/active/*.xml
+	fi
+else
+	if [ $(( (utime/60)%ACTIVE_MEASUREMENT_FQ )) -eq 0 ]; then
+		date +%s > $LOCKFILE
+		/usr/bin/bismark-measure-active
+		rm $LOCKFILE
+	fi
+	if [ $(( (utime/60)%SCRIPT_MEASUREMENT_FQ )) -eq 0 ]; then
+		date +%s > $LOCKFILE
+		/tmp/bismark/"$ID".sh
+		rm $LOCKFILE
+	fi
+fi

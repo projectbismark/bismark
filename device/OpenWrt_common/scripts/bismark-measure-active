@@ -63,7 +63,7 @@ mkdir -p /tmp/bismark/data
 
 # Get and update count
 count=$(cat $COUNTER)
-echo $(( (count + 1) % 144 )) > $COUNTER
+echo $(( (count + 1) % ACTIVE_ROLLOVER)) > $COUNTER
 count=$(( count + 1 ))
 # Random wait
 sleep $(random 0 3)
