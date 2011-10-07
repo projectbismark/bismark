@@ -7,7 +7,7 @@
 
 sort -n | awk '
 BEGIN {	n = sum = qsum = 0 }
-($1 > 0){ 
+($1 >= 0) { 
 	sum += $1
 	qsum += $1 ^ 2
 	data[++n] = $1 
