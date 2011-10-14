@@ -1,21 +1,13 @@
 #!/bin/sh
+# BISmark server setup script (M-Lab version)
+#
+# author: walter.dedonato@unina.it
+# last modified on: 10/10/2011
 
-# Load configuration
-. ~/etc/mserver.conf
-
+# Install dependencies 
 sudo yum -y install socat 
 
-# HTTP stuff (work in progress)
-# lighttpd lighttpd-fastcgi php-cli
-#echo "cgi.fix_pathinfo = 1" | sudo tee /etc/php.ini
-#[ -e /etc/lighttpd/lighttpd.conf.old ] || sudo mv /etc/lighttpd/lighttpd.conf{.old,}
-#sudo sed -i.old -f - /etc/lighttpd/lighttpd.conf <<-END
-#	/"mod_fastcgi"/ s/^#//
-#	/^server.document-root/ s/^/#/ 
-#	/^#server.document-root/ a server.document-root = "$HOME/www/"
-#	/^#server.port/ a server.port = $HTTP_PORT
-#END
-#sudo chmod 777 $HOME
-#sudo /etc/init.d/lighttpd start
+# Start common setup script
+~/scripts/setup_common
 
-crontab ~/etc/crontab
+

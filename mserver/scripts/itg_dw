@@ -19,13 +19,16 @@ read cmd opt
 case $cmd in
 send)
 	if [ ${opt:0:2} == "-H" ]; then
-		echo $opt >> /tmp/itg.log
-		./ITGSend $opt >> /tmp/itg.log 2>&1 &
+		id=$(echo $opt | md5sum | cut -c 1-10)
+		echo "$id start $(date +%s) ($opt)" >> /tmp/itg_dw.log
+		~/bin/ITGSend $opt 2>&1 | awk '{ "date +%s" | getline date ; print "'$id' " date " " $0 ; fflush() }' >> /tmp/itg_dw.log &
+		pid=$(( $! - 1 ))
+		echo "$id pid $pid" >> /tmp/itg_dw.log
 	fi
 ;;
 log)
 	echo $cmd - $opt >> /tmp/itg.log
-	./ITGDec $opt -j 1000 $opt.jitter -p 1000 $opt.pktloss -b 1000 $opt.bitrate 2> /dev/null
+	~/bin/ITGDec $opt -j 1000 $opt.jitter -p 1000 $opt.pktloss -b 1000 $opt.bitrate 2> /dev/null
 	echo bitrate
 	awk '(NR > 1){ print $3 }' $opt.bitrate
 	echo jitter
