@@ -1,0 +1,39 @@
+#!/bin/sh
+# BISmark server setup script (Common version)
+#
+# author: walter.dedonato@unina.it
+# last modified on: 10/11/2011
+
+# Load configuration
+. ~/etc/mserver.conf
+
+# Download and extract packages 
+(cd /tmp ; wget "$DITG_URL" ; tar -C ~/src -xzvf $DITG_PKG.tgz ; rm $DITG_PKG.tgz )
+(cd /tmp ; wget "$IPERF_URL" ; tar -C ~/src -xzvf $IPERF_PKG.tar.gz ; rm $IPERF_PKG.tar.gz )
+svn co -r $NETPERF_REV "$NETPERF_SVN" ~/src/netperf
+
+# Apply patches
+( cd ~/src/$DITG_PKG ; patch -p1 < ~/src/patches/$DITG_PKG.patch )
+( cd ~/src/netperf ; patch -p1 < ~/src/patches/netperf-r$NETPERF_REV.patch )
+
+# Build binaries
+( cd ~/src/netperf; ./configure; make; cp -v src/netserver ~/bin )
+( cd ~/src/$IPERF_PKG; ./configure; make; cp -v src/iperf ~/bin )
+( cd ~/src/$DITG_PKG/src; make multiport=on; cd ~/src/$DITG_PKG/bin ; cp -v ITG{Send,Recv,Dec} ~/bin )
+( cd ~/src/spserver; make ; cp -v probeserver ~/bin )
+
+# HTTP stuff (work in progress)
+# lighttpd lighttpd-fastcgi php-cli
+#echo "cgi.fix_pathinfo = 1" | sudo tee /etc/php.ini
+#[ -e /etc/lighttpd/lighttpd.conf.old ] || sudo mv /etc/lighttpd/lighttpd.conf{.old,}
+#sudo sed -i.old -f - /etc/lighttpd/lighttpd.conf <<-END
+#	/"mod_fastcgi"/ s/^#//
+#	/^server.document-root/ s/^/#/ 
+#	/^#server.document-root/ a server.document-root = "$HOME/www/"
+#	/^#server.port/ a server.port = $HTTP_PORT
+#END
+#sudo chmod 777 $HOME
+#sudo /etc/init.d/lighttpd start
+
+# Set cron jobs
+crontab ~/etc/crontab
