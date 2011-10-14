@@ -1,0 +1,49 @@
+Index: src/netserver.c
+===================================================================
+--- src/netserver.c	(revision 432)
++++ src/netserver.c	(working copy)
+@@ -644,7 +644,7 @@
+       
+     case DEBUG_ON:
+       netperf_response.content.response_type = DEBUG_OK;
+-      debug++;
++      //debug++;
+ 
+       if (debug == 1) {
+ 	/* we just flipped-on debugging, dump the request because
+@@ -659,7 +659,7 @@
+       
+     case DEBUG_OFF:
+       if (debug)
+-	debug--;
++	//debug--;
+       netperf_response.content.response_type = DEBUG_OK;
+       send_response();
+       /* we used to take the trouble to close the debug file, but SAF
+@@ -932,7 +932,7 @@
+        worry about the standard file descriptors. raj 2011-07-11 */
+ 
+     close_listens(listen_list);
+-    open_debug_file();
++    //open_debug_file();
+ 
+     child = 1;
+     netperf_daemon = 0;
+@@ -1283,7 +1283,7 @@
+     /* we are the child. we should get a new "where" to match our new
+        pid */
+ 
+-    open_debug_file();
++    //open_debug_file();
+ 
+ #ifdef HAVE_SETSID
+       setsid();
+@@ -1415,7 +1415,7 @@
+        be called before open_debug_file() or there is a chance that
+        we'll toast the descriptor when we do not wish it. */
+     set_server_sock();
+-    open_debug_file();
++    //open_debug_file();
+     process_requests();
+   }
+   else if (daemon_parent) {
