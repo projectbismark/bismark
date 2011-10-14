@@ -18,12 +18,13 @@ out="$DATA_DIR/netperf-tmp-out"
 err="$DATA_DIR/netperf-err"
 ifaceout="$DATA_DIR/iface-out"
 port=$NETPERF_PORT
+dataport=$NETPERF_DATAPORT
 
-# Ausiliary functions
+# Auxiliary functions
 clean() {
-	rm $out*
-	rm $err*
-	rm $ifaceout
+	rm -f $out*
+	rm -f $err*
+	rm -f $ifaceout
 }
 
 check() {
@@ -73,7 +74,8 @@ bytecnt1=`cat /proc/net/dev | awk '/'$WAN_IF'/ {print $'$netproc'}'`
 # Parallel tasks creatin loop
 c=1
 while [ $c -le $N ]; do
-	$cmd $keys -p$port -H $host > ${out}-$c 2> ${err}-$c &
+	tdp=$(( dataport + c ))
+	$cmd $keys -p$port -H $host -- -P $tdp > ${out}-$c 2> ${err}-$c &
 	: $((c++))
 done
 
