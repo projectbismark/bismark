@@ -54,7 +54,9 @@ get_target ()
 # --- Main ---
 
 # Light "test in progess" LED (orange WPS led)
-echo 1 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
+if [ -e /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness ]; then
+	echo 1 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
+fi
 
 # Create dirs and files
 mkdir -p /tmp/bismark/active
@@ -233,6 +235,8 @@ mv $XML_FILE /tmp/bismark/data
 }
 
 # Extinguish "test in progess" LED
-echo 0 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
+if [ -e /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness ]; then
+	echo 0 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
+fi
 
 scp -S "/tmp/bismark/ssh" -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
