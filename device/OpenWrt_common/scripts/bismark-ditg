@@ -76,8 +76,8 @@ udp)
 		ITGRecv -H $2 -Sp $port -l itgfifo.dat > /dev/null 2>&1 
 		ITGDec itgfifo.dat -p 1000 -j 1000 > /dev/null 2>&1
 		rm itgfifo.dat
-		awk '{ print $3 }' jitter.txt | bismark-mstats JITTER DITG $2 $src
-		awk '{ print $3/'$pkt_rate' }' packetloss.txt | bismark-mstats PKTLOSS DITG $2 $src
+		awk '(NR > 1){ print $3 }' jitter.txt | bismark-mstats JITTER DITG $2 $src
+		awk '(NR > 1){ print $3/'$pkt_rate' }' packetloss.txt | bismark-mstats PKTLOSS DITG $2 $src
 	;;
 	esac
 ;;
