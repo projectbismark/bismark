@@ -14,7 +14,7 @@ svn co -r $NETPERF_REV "$NETPERF_SVN" ~/src/netperf
 
 # Apply patches
 ( cd ~/src/$DITG_PKG ; patch -p1 < ~/src/patches/$DITG_PKG.patch )
-( cd ~/src/netperf ; patch -p1 < ~/src/patches/netperf-r$NETPERF_REV.patch )
+( cd ~/src/netperf ; patch -p0 < ~/src/patches/netperf-r$NETPERF_REV.patch )
 
 # Build binaries
 ( cd ~/src/netperf; ./configure; make; cp -v src/netserver ~/bin )
