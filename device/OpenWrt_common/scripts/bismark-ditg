@@ -37,7 +37,7 @@ tstamp=$(date +%s)
 # Select protocol
 case $1 in
 tcp)
-	pkt_size=1460
+	pkt_size=$DITG_TCP_PKTSIZE
 	pkt_rate=$(( ((${6}000 / 8) / $pkt_size) + 1 ))
 
 	# Select direction
@@ -58,7 +58,7 @@ tcp)
 	esac
 ;;
 udp)
-	pkt_size=512
+	pkt_size=$DITG_UDP_PKTSIZE
 	pkt_rate=$6
 
 	# Select direction
@@ -82,7 +82,7 @@ udp)
 	esac
 ;;
 udpflood)
-	pkt_size=1472
+	pkt_size=$DITG_UDPFLOOD_PKTSIZE
 	pkt_rate=$(( ((${6}000 / 8) / $pkt_size) + 1 ))
 
 	# Select direction
