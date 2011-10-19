@@ -26,7 +26,9 @@ filter_common='
 			}
 		}
 		gwip=$2
-       	if (gwip != "*")
+       	if (gwip == "*")
+			gwip = ""
+		else
 			print gwip > "'$DATA_DIR'/gwip"
        	else
 			print "" > "'$DATA_DIR'/gwip"
@@ -75,5 +77,6 @@ ICMP)
 esac
 
 # Run traceroute
-$cmd $opts $1 | awk "$filter"
+echo "" > $DATA_DIR/gwip
+cat /tmp/tr2 | awk "$filter"
 
