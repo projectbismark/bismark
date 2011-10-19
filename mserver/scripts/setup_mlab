@@ -5,9 +5,12 @@
 # last modified on: 10/10/2011
 
 # Install dependencies 
-sudo yum -y install socat gcc gcc-g++ make libpcap-devel
+sudo yum -y install socat gcc gcc-c++ make libpcap-devel
 
 # Start common setup script
 ~/scripts/setup_common
 
+# Start crond daemon
+sudo /sbin/chkconfig --level 2345 crond on
+sudo /etc/init.d/crond start
 
