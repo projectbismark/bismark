@@ -16,13 +16,20 @@ DATA_DIR=/tmp/bismark/active
 # AWK filters
 filter_common='	
 	if (! gwip) {
-		if (! ($2 ~ /^10\./ || $2 ~ /^192\.168/ || $2 ~ /^172\.16/) ) {
-			gwip=$2
-            if (gwip != "*")
-			  print gwip > "'$DATA_DIR'/gwip"
-            else
-			  print "" > "'$DATA_DIR'/gwip"
+		if ( $2 ~ /^10\./ || $2 ~ /^192\.168/ ) {
+			next
 		}
+		if ( $2 ~ /^172\./ ) {
+			split($2,sip,".")
+			if ( sip[2] > 15 && sip[2] < 32 ) {
+				next
+			}
+		}
+		gwip=$2
+       	if (gwip != "*")
+			print gwip > "'$DATA_DIR'/gwip"
+       	else
+			print "" > "'$DATA_DIR'/gwip"
 	}
 '
 filter_std='
