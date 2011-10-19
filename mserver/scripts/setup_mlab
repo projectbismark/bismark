@@ -5,7 +5,7 @@
 # last modified on: 10/10/2011
 
 # Install dependencies 
-sudo yum -y install socat 
+sudo yum -y install socat gcc gcc-g++ make libpcap-devel
 
 # Start common setup script
 ~/scripts/setup_common

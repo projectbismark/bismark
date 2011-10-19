@@ -17,6 +17,7 @@ svn co -r $NETPERF_REV "$NETPERF_SVN" ~/src/netperf
 ( cd ~/src/netperf ; patch -p0 < ~/src/patches/netperf-r$NETPERF_REV.patch )
 
 # Build binaries
+mkdir -p ~/bin
 ( cd ~/src/netperf; ./configure; make; cp -v src/netserver ~/bin )
 ( cd ~/src/$IPERF_PKG; ./configure; make; cp -v src/iperf ~/bin )
 ( cd ~/src/$DITG_PKG/src; make multiport=on; cd ~/src/$DITG_PKG/bin ; cp -v ITG{Send,Recv,Dec} ~/bin )
