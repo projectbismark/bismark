@@ -25,13 +25,11 @@ filter_common='
 				next
 			}
 		}
-		gwip=$2
+	gwip=$2
        	if (gwip == "*")
-			gwip = ""
-		else
-			print gwip > "'$DATA_DIR'/gwip"
-       	else
-			print "" > "'$DATA_DIR'/gwip"
+		gwip = ""
+	else
+		print gwip > "'$DATA_DIR'/gwip"
 	}
 '
 filter_std='
@@ -78,5 +76,5 @@ esac
 
 # Run traceroute
 echo "" > $DATA_DIR/gwip
-cat /tmp/tr2 | awk "$filter"
+$cmd $opts $1 | awk "$filter"
 
