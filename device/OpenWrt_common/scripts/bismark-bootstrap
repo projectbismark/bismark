@@ -17,7 +17,7 @@ mkdir -p /tmp/bismark/var
 # bismark-event modem
 
 # Set the device identifier
-if [[ ! -e /etc/bismark/ID ]]; then
+if [ ! -e /etc/bismark/ID ]; then
 	(echo -n OW; ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
 fi
 
@@ -40,6 +40,6 @@ fi
 rm /tmp/bismark-crontab-active
 rm /tmp/bismark-crontab
 
-if [[ -e /www/index.html ]] && [[ -e /www/index.htm ]]; then
+if [ -e /www/index.html ] && [ -e /www/index.htm ]; then
 	rm -f /www/index.html
 fi
