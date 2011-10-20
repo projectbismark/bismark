@@ -74,8 +74,13 @@ bytecnt1=`cat /proc/net/dev | awk '/'$WAN_IF'/ {print $'$netproc'}'`
 # Parallel tasks creatin loop
 c=1
 while [ $c -le $N ]; do
-	tdp=$(( dataport + c ))
-	$cmd $keys -p$port -H $host -- -P $tdp > ${out}-$c 2> ${err}-$c &
+	if [ $dataport -gt 0 ]; then
+		tdp=$(( dataport + c ))
+		dpopt=" -- -P $tdp "
+	else 
+		dpopt=""
+	fi; 
+	$cmd $keys -p$port -H $host $dpopt > ${out}-$c 2> ${err}-$c &
 	: $((c++))
 done
 
