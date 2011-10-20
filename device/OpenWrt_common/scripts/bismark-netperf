@@ -79,7 +79,7 @@ while [ $c -le $N ]; do
 		dpopt=" -- -P $tdp "
 	else 
 		dpopt=""
-	fi; 
+	fi 
 	$cmd $keys -p$port -H $host $dpopt > ${out}-$c 2> ${err}-$c &
 	: $((c++))
 done
