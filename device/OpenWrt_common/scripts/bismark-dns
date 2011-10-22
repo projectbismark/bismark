@@ -27,7 +27,7 @@ for s in "$local_dns" "8.8.8.8"; do
                 rm $DATA_DIR/delays
 
 		IFS=$'\n'
-		for h in $(cat /usr/lib/bismark/hosts.list); do
+		for h in $(grep -shv ^# /usr/lib/bismark/dns_targets.list /tmp/bismark/dns_targets.list | sort -u); do
                         time -f %e --append -o $DATA_DIR/delays nslookup $h $s >/dev/null || : $((fail++))
 			: $((count++))
 		done
