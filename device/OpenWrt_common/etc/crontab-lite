@@ -1,3 +1,0 @@
-*/10  * * * * /tmp/bismark/`cat /etc/bismark/ID`.sh ; /usr/bin/bismark-measure-active
-0 */12 * * * /usr/bin/bismark-action-lite scriptupdate
-*/5  * * * * ash /etc/hotplug.d/iface/20-ntpclient ifup
