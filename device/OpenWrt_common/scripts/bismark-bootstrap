@@ -22,7 +22,6 @@ if [ ! -e /etc/bismark/ID ]; then
 fi
 
 #Conf changes
-sysctl -w net.ipv4.tcp_rmem='4096 87380 3305472'; sysctl -w net.ipv4.tcp_wmem='4096 16384 3305472'; 
 bismark-action mgmtconfupdate
 bismark-action scriptupdate
 
