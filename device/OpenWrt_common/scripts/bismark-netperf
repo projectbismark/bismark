@@ -24,7 +24,6 @@ dataport=$NETPERF_DATAPORT
 clean() {
 	rm -f $out*
 	rm -f $err*
-	rm -f $ifaceout
 }
 
 check() {
