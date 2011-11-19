@@ -33,6 +33,7 @@ CREATE TABLE  tunnels(
                );
 
 CREATE TABLE messages(
+		rowid		serial,
                 msgfrom 	msg_from_t,
                 msgto   	msg_to_t, 
                 msg 		msg_t 
@@ -64,3 +65,7 @@ CREATE TABLE mtypes(
                 mexclusive  mexc_t
                );
 
+CREATE TABLE  blacklist(
+                id     		id_t,
+		);
+ 

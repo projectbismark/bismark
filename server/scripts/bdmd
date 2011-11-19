@@ -9,7 +9,6 @@
 export VAR_DIR
 
 # Aliases
-query(){ sqlite3 -list $1 "$2"; }
 
 # Help screen
 # $1 = command
@@ -32,50 +31,10 @@ function help()
 # Check directories
 mkdir -p $VAR_DIR/log/devices/
 
-# Check DB
-if [ ! -e $BDM_DB ]; then
-	query $BDM_DB "CREATE TABLE devices(
-		id      TEXT PRIMARY KEY,
-		version INTEGER, 
-		user    TEXT, 
-		ip      TEXT, 
-		ts      INTEGER
-	       );"
-	query $BDM_DB "CREATE TABLE tunnels(
-		id      TEXT,
-		port    INTEGER, 
-		ts      INTEGER
-	       );"
-	query $BDM_DB "CREATE TABLE blacklist(
-		id      TEXT PRIMARY KEY
-	       );"
-fi
-if [ ! -e $MSG_DB ]; then
-	query $MSG_DB "CREATE TABLE messages(
-		'from'  TEXT,
-		'to'    TEXT, 
-		msg     TEXT
-	       );"
-fi
-if [ ! -e $MSR_DB ]; then
-	query $MSR_DB "CREATE TABLE targets(
-		ip       TEXT PRIMARY KEY,
-		cat      TEXT, 
-		zone     TEXT,
-		free_ts  INTEGER,
-		curr_cli INTEGER,
-		max_cli  INTEGER
-	       );"
-	query $MSR_DB "CREATE TABLE capabilities(
-		ip       TEXT,
-		service  TEXT,
-		info     TEXT
-	       );"
-	query $MSR_DB "CREATE TABLE mtypes(
-		type       TEXT PRIMARY KEY,
-		exclusive  INTEGER 
-	       );"
-fi
+# Make DB
+cd $DB_SRC
+make create DB=$PSQL_DB
+cd -
 
 # Parse command-line
 while getopts 'h' flag; do

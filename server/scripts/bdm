@@ -7,7 +7,7 @@
 . ~/etc/bdm.conf
 
 # Aliases
-query(){ sqlite3 -list $1 "$2"; }
+query(){ psql -t -c "$2" $PSQL_DB | awk 'NF!=0 {print}'; }
 
 # Help screen
 # $1 = command
@@ -98,12 +98,12 @@ function parse()
 		if [ $2 == ALL ]; then
 			if [ $3 == "on" ]; then
 				NOWAIT=on
-				for dev in $(query $BDM_DB "SELECT id FROM devices WHERE $(date +%s) - ts < 180;"); do
+				for dev in $(query "SELECT id FROM devices WHERE $(date +%s) - ts < 180;"); do
 					FWD_PORT=""
 					start_tunnel $dev
 				done
 			elif [ $3 == "off" ]; then
-				for dev in $(query $BDM_DB "SELECT id FROM tunnels;"); do
+				for dev in $(query "SELECT id FROM tunnels;"); do
 					stop_tunnel $dev
 				done
 			fi
@@ -202,19 +202,19 @@ function send_msg()
 	# Add message to queue
 	if [ $1 == ALL ]; then
 		# Broadcast
-		for dev in $(query $BDM_DB "SELECT id FROM devices;"); do
-			query $MSG_DB "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$dev','$2 $3');"
+		for dev in $(query "SELECT id FROM devices;"); do
+			query "INSERT INTO messages(msgfrom, msgto, msg) VALUES('BDM','$dev','$2 $3');"
 		done
 	else
 		# Unicast
-		query $MSG_DB "INSERT INTO messages('from', 'to', msg) VALUES('BDM','$1','$2 $3');"
+		query $MSG_DB "INSERT INTO messages(msgfrom, msgto, msg) VALUES('BDM','$1','$2 $3');"
 
 		[ $NOWAIT ] && return 0
 
 		# Wait for message delivery
 		time=0
 		while [ true ]; do
-			rowid=$(query $MSG_DB "SELECT rowid FROM messages WHERE \"to\"='$1' AND msg='$2 $3';")
+			rowid=$(query "SELECT * FROM messages WHERE msgto ='$1' AND msg='$2 $3';")
 			[ ${#rowid} -eq 0 ] && return 0
 			[ $((time++)) -eq $MSG_TIMEOUT ] && return 1
 			echo -n "."
@@ -230,7 +230,7 @@ function recv_msg()
 	# Wait for message 
 	time=0
 	while [ true ]; do
-		info=$(query $MSG_DB "SELECT rowid,msg FROM messages WHERE \"from\"='$1';")
+		info=$(query "SELECT msg FROM messages WHERE msgfrom='$1';")
 		if [ ${#info} -gt 0 ]; then
 			echo
 			read_msg $1
@@ -246,7 +246,7 @@ function recv_msg()
 # $1 = device id
 function check_device_id()
 {
-	if [ $(query $BDM_DB "SELECT id FROM devices WHERE \"id\"='$1';") ]; then
+	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
 		return 0
 	else
 		return 1
@@ -289,7 +289,7 @@ function gen_fwd_port()
 function get_fwd_port()
 {
 	# Query tunnels db
-	FWD_PORT=$(query $BDM_DB "SELECT port FROM tunnels WHERE id='$1' ORDER BY ts ASC LIMIT 1;")
+	FWD_PORT=$(query "SELECT port FROM tunnels WHERE id='$1' ORDER BY ts ASC LIMIT 1;")
 	[ $FWD_PORT ] || return 1
 }
 
@@ -311,7 +311,7 @@ function check_tunnel()
 	if check_fwd_port $FWD_PORT; then
 		return 0
 	else
-		query $BDM_DB "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT AND ts<$(date +%s);"
+		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT AND ts<$(date +%s);"
 		get_fwd_port $1 && return 2 || return 3
 	fi
 }
@@ -372,7 +372,7 @@ function sendmail ()
 function settunnel()
 {
 	echo -n "Setting tunnel db entry for $1 on port $2..."
-	query $BDM_DB "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
+	query "INSERT INTO tunnels (id, port, ts) VALUES('$1',$2,$(date +%s));"
 	echo done
 	
 	# Send notification email
@@ -424,7 +424,7 @@ function console()
 	fi
 
 	[ $2 ] && { p=$* ; cmd=${p#* } ; }
-	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$1'")
+	SSH_USER=$(query "SELECT duser FROM devices WHERE id='$1'")
 	[ $SSH_USER ] || SSH_USER=root
 	if [ "$cmd" == bg ]; then
 		ssh $SSH_USER@127.0.0.1 -p $FWD_PORT $SSH_OPTIONS -i $SSH_KEY 2>/dev/null &
@@ -452,7 +452,7 @@ function stop_tunnel()
 		echo "Unable to close tunnel"
 	else
 		echo "Tunnel closed"
-		query $BDM_DB "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
+		query "DELETE FROM tunnels WHERE id='$1' AND port=$FWD_PORT;"
 	fi
 }
 
@@ -559,7 +559,7 @@ function list()
 	echo -ne "${WHITE}"
 	printf "%-16s %-15s %-7s %-20s %-10s\n" ID IP VERSION LAST_PROBE USER
 	IFS=$'\n' 
-	for dev in $(query $BDM_DB 'SELECT id,ip,version,ts,user FROM devices ORDER BY id;'); do
+	for dev in $(query 'SELECT id,ip,bversion,ts,duser FROM devices ORDER BY id;'); do
 		IFS=$'|' read id ip ver ts user <<< "$dev"
 		off_time=$(( $(date +%s) - $ts ))
 		[ "$user" ] || user=root
@@ -582,7 +582,7 @@ function list()
 	printf "%-16s %-5s %-20s\n" ID PORT START_TIME
 
 	IFS=$'\n' 
-	for dev in $(query $BDM_DB 'SELECT * FROM tunnels ORDER BY id;'); do
+	for dev in $(query 'SELECT * FROM tunnels ORDER BY id;'); do
 		IFS=$'|' read id port ts <<< "$dev"
 		check_tunnel $id $port
 		if [ $? -eq 0 ]; then
@@ -601,9 +601,9 @@ function list()
 	echo -e "${WHITE}ID\tFROM\tTO\tMESSAGE"
 	echo -ne $MAGENTA
 	IFS=$'\n' 
-	for message in $(query $MSG_DB 'SELECT rowid,* FROM messages ORDER BY "from","to";'); do
-		IFS=$'|' read id from to msg <<< "$message"
-		printf "%s\t%s\t%s\t%s\n" $id $from $to $msg
+	for message in $(query 'SELECT * FROM messages ORDER BY "from","to";'); do
+		IFS=$'|' read from to msg <<< "$message"
+		printf "%s\t%s\t%s\n" $from $to $msg
 	done
 	echo -ne $NO_COLOR
 }
@@ -616,7 +616,7 @@ function mslist()
 	echo -ne "${WHITE}"
 	printf "%-15s %-8s %-11s %s\n" IP ZONE FREE_TS SERVICES
 	IFS=$'\n' 
-	for ms in $(query $MSR_DB 'SELECT ip,zone,free_ts FROM targets ORDER BY ip;'); do
+	for ms in $(query 'SELECT ip,zone,free_ts FROM targets ORDER BY ip;'); do
 		IFS=$'|' read ip zone ts <<< "$ms"
 
 		#off_time=$(( $(date +%s) - $ts ))
@@ -632,7 +632,7 @@ function mslist()
 
 		printf "%-15s %-8s %-11s " $ip $zone $ts
 		
-		for cap in $(query $MSR_DB 'SELECT service,info FROM capabilities WHERE ip="'$ip'" ORDER BY service;'); do
+		for cap in $(query 'SELECT service,info FROM capabilities WHERE ip="'$ip'" ORDER BY service;'); do
 			IFS=$'|' read serv info <<< "$cap"
 
 			printf "${BLUE}(${MAGENTA}%s${BLUE},${MAGENTA}%s${BLUE})" $serv $info
@@ -647,7 +647,7 @@ function mslist()
 	echo -ne $MAGENTA
 
 	IFS=$'\n' 
-	for ms in $(query $MSR_DB 'SELECT type,exclusive FROM mtypes ORDER BY type;'); do
+	for ms in $(query 'SELECT mtype,mexclusive FROM mtypes ORDER BY type;'); do
 		IFS=$'|' read tp mutex <<< "$ms"
 
 		[ $mutex -eq 0 ] && mutex=no || mutex=yes
@@ -670,7 +670,7 @@ function copy()
 		esac
 	fi
 
-	SSH_USER=$(query $BDM_DB "SELECT user FROM devices WHERE id='$2'")
+	SSH_USER=$(query "SELECT duser FROM devices WHERE id='$2'")
 	[ $SSH_USER ] || SSH_USER=root
 	scp -P $FWD_PORT $SSH_OPTIONS -i $SSH_KEY $1 $SSH_USER@127.0.0.1:/tmp 2>/dev/null 
 }
@@ -680,15 +680,15 @@ function copy()
 function read_msg()
 {
 	if [ $1 ]; then
-		rows=$(query $MSG_DB "SELECT rowid,* FROM messages WHERE \"from\"='$1';")
+		rows=$(query "SELECT * FROM messages WHERE msgfrom='$1';")
 	else
-		rows=$(query $MSG_DB "SELECT rowid,* FROM messages WHERE \"to\"='BDM';")
+		rows=$(query "SELECT * FROM messages WHERE msgto='BDM';")
 	fi
 
 	if [ ${#rows} -gt 0 ]; then
 		IFS=$'\n'
 		for row in $rows; do
-			IFS=$'|' read mid from to msg <<< "$row"
+			IFS=$'|' read rowid from to msg <<< "$row"
 			echo "Message from $from: $msg"
 			echo "------------------------"
 			awk '
@@ -699,7 +699,7 @@ function read_msg()
 			' ~/var/log/devices/$from.log
 			echo "------------------------"
 
-			query $MSG_DB "DELETE FROM messages WHERE rowid='$mid';"
+			query "DELETE FROM messages WHERE rowid='$mid';"
 		done
 	else
 		echo "No incoming messages"
@@ -714,18 +714,18 @@ function blacklist ()
 	if [ $1 ]; then
 		case $2 in
 		on) 
-			query $BDM_DB "INSERT INTO blacklist (id) VALUES('$1');"
+			query "INSERT INTO blacklist (id) VALUES('$1');"
 			echo -e "Added $1 to blacklist\n"
 		;;
 		off) 
-			query $BDM_DB "DELETE FROM blacklist WHERE id='$1';" 
+			query "DELETE FROM blacklist WHERE id='$1';" 
 			echo -e "Removed $1 from blacklist\n"
 		;;
 		esac	
 	fi
 
 	echo -e "${WHITE}Blacklisted devices:${RED}"
-	query $BDM_DB "SELECT id FROM blacklist;"
+	query "SELECT id FROM blacklist;"
 	echo -ne $NO_COLOR
 }
 
@@ -737,10 +737,10 @@ function blacklist ()
 function setuser()
 {
 	echo -n "Setting $1 SSH user to $2..."
-	if [ $(query $BDM_DB "SELECT id FROM devices WHERE id='$1';") ]; then
-		query $BDM_DB "UPDATE devices SET user='$2' WHERE id='$1';"
+	if [ $(query "SELECT id FROM devices WHERE id='$1';") ]; then
+		query "UPDATE devices SET duser='$2' WHERE id='$1';"
 	else
-		query $BDM_DB "INSERT INTO devices (id, user) VALUES('$1','$2');"
+		query "INSERT INTO devices (id, duser) VALUES('$1','$2');"
 	fi
 	echo done
 }
@@ -750,11 +750,11 @@ function setuser()
 function clearmsg()
 {
 	if [ $1 ]; then
-		query $MSG_DB "DELETE FROM messages WHERE rowid=$1;"
+		query "DELETE FROM messages WHERE rowid=$1;"
 	else
 		echo "Delete all pending messages (y/N)?"
 		read a
-		[ $a == "y" ] && query $MSG_DB "DELETE FROM messages;"
+		[ $a == "y" ] && query "DELETE FROM messages;"
 	fi
 }
 
@@ -763,11 +763,11 @@ function clearmsg()
 function cleardev()
 {
 	if [ $1 ]; then
-		query $BDM_DB "DELETE FROM devices WHERE id=\"$1\";"
+		query "DELETE FROM devices WHERE id=\"$1\";"
 	else
 		echo "Delete all devices (yes/no)?"
 		read a
-		[ $a == "yes" ] && query $BDM_DB "DELETE FROM devices;"
+		[ $a == "yes" ] && query "DELETE FROM devices;"
 	fi
 }
 
