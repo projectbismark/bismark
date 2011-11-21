@@ -113,13 +113,14 @@ pthread_mutex_t mutex_dbconn = PTHREAD_MUTEX_INITIALIZER;
  */
 char *do_query(const char *query, const int process_output)
 {
-    PQresult *res = NULL;
+    PGresult *res = NULL;
 	char *out = NULL;
     char *cur = NULL;
     char *val = NULL;
     int num_rows = 0;
     int num_cols = 0;
     int outlen = 0;
+    int i;
 
 	pthread_mutex_lock(&mutex_dbconn);
     res = PQexec(dbconn, query);
@@ -131,12 +132,12 @@ char *do_query(const char *query, const int process_output)
             num_cols = PQnfields(res);
             if(num_rows > 0) {
                 outlen = 0;
-                for(int i = 0; i < num_cols; i++) {
+                for(i = 0; i < num_cols; i++) {
                     outlen += PQgetlength(res, num_rows-1, i);
                 }
-                if(out = malloc(outlen) != NULL) {
+                if((out = (char*)malloc(outlen)) != NULL) {
                     cur = out;
-                    for(int i = 0; i < num_cols; i++) {
+                    for(i = 0; i < num_cols; i++) {
                         val = PQgetvalue(res, num_rows-1, i);
                         strncpy(cur, val, outlen - (cur - out));
                         cur += strlen(val);
@@ -272,7 +273,7 @@ void *doit(void *param)
 			/* Deallocate row */
 			free(row);
 		} else {
-			if (!blacklisted(bdm_db, probe.id)) {
+			if (!blacklisted(probe.id)) {
 				/* Set pong reply */
 				reply = malloc(MAX_IP_LEN + MAX_TS_LEN + 7);
 				sprintf(reply, "pong %s %lu\n", ip, ts);
