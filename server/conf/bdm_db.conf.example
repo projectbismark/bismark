@@ -1,0 +1,8 @@
+# any variables not exported will use the postgres defaults
+export BDM_PG_DBNAME=bismark_mgmt
+export BDM_PG_HOST=localhost
+#export BDM_PG_PORT
+export BDM_PG_USER=bismark
+export BDM_PG_PASSWORD=top_secret
+# see http://developer.postgresql.org/pgdocs/postgres/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS
+export BDM_PG_SSLMODE=require

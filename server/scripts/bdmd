@@ -6,6 +6,9 @@
 # Load configuration file
 . ~/etc/bdm.conf
 
+# Load local db config file (contains passwords, etc.)
+. ~/etc/bdm_db.conf
+
 export VAR_DIR
 
 # Aliases
