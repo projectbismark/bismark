@@ -13,7 +13,6 @@ CREATE DOMAIN msg_t AS varchar(100);
 CREATE DOMAIN zone_t AS varchar(50);
 CREATE DOMAIN cli_t AS integer;
 CREATE DOMAIN prio_t AS integer;
-CREATE DOMAIN serv_t AS varchar(50);
 CREATE DOMAIN info_t AS varchar(500);
 CREATE DOMAIN mtype_t AS varchar(50);
 CREATE DOMAIN mexc_t AS int;
@@ -48,7 +47,7 @@ CREATE TABLE targets(
                 max_cli  cli_t
 		);
 
-CREATE TABLE device_target(
+CREATE TABLE device_targets(
 		device		id_t,
 		server		ip_t,
 		priority	prio_t
@@ -56,7 +55,7 @@ CREATE TABLE device_target(
 
 CREATE TABLE capabilities(
                 ip      ip_t,
-                service	serv_t,
+                service	mtype_t,
                 info 	info_t	    
                );
 
