@@ -5,7 +5,7 @@ CREATE DOMAIN inetn_t AS inet;
 CREATE DOMAIN version_t AS varchar(50);
 CREATE DOMAIN user_t AS varchar(50);
 CREATE DOMAIN ip_t AS inet;
-CREATE DOMAIN ts_t AS timestamp;
+CREATE DOMAIN ts_t AS integer;
 CREATE DOMAIN cat_t AS varchar(50);
 CREATE DOMAIN msg_from_t AS varchar(50);
 CREATE DOMAIN msg_to_t AS varchar(50);
@@ -65,6 +65,6 @@ CREATE TABLE mtypes(
                );
 
 CREATE TABLE  blacklist(
-                id     		id_t,
+                id     		id_t
 		);
  

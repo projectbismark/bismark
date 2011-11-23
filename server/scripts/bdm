@@ -6,8 +6,10 @@
 # Load configuration file
 . ~/etc/bdm.conf
 
+. ~/etc/bdm_db.conf
+
 # Aliases
-query(){ psql -t -c "$2" $PSQL_DB | awk 'NF!=0 {print}'; }
+query(){ psql -A -q -U bismark -t -c "$1" $BDM_PG_DBNAME | awk 'NF!=0 {print}'; }
 
 # Help screen
 # $1 = command
@@ -601,7 +603,7 @@ function list()
 	echo -e "${WHITE}ID\tFROM\tTO\tMESSAGE"
 	echo -ne $MAGENTA
 	IFS=$'\n' 
-	for message in $(query 'SELECT * FROM messages ORDER BY "from","to";'); do
+	for message in $(query 'SELECT * FROM messages ORDER BY msgfrom,msgto;'); do
 		IFS=$'|' read from to msg <<< "$message"
 		printf "%s\t%s\t%s\n" $from $to $msg
 	done

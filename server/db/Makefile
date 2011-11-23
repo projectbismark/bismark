@@ -1,11 +1,11 @@
 all: create
 
 create:
-	psql -f tables.sql $(DB)
+	psql -U bismark -f tables.sql $(DB)
 
 createall: clean create 
 
 functions:
 
 clean:
-	psql -c 'DROP SCHEMA public CASCADE' $(DB)
+	psql -U bismark -c 'DROP SCHEMA public CASCADE' $(DB)

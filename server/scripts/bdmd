@@ -15,15 +15,15 @@ export VAR_DIR
 
 # Help screen
 # $1 = command
-function help() 
+function help()
 {
 	cat <<-end
 	Syntax:
 
 	    $(basename $0) [options] <start|stop|restart|info>
-	
+
 	Options:
-	
+
 	    -h               Print help screen
 	end
 	exit
@@ -35,9 +35,17 @@ function help()
 mkdir -p $VAR_DIR/log/devices/
 
 # Make DB
-cd $DB_SRC
-make create DB=$PSQL_DB
-cd -
+db_exists=`psql -l | grep -c $BDM_PG_DBNAME`
+if [ $db_exists -eq 0 ]; then
+	echo "Database $BDM_PG_DBNAME does not exist. Please create it."
+	exit 1
+fi
+num_tables=`psql -A -q -t -c "\dt" $BDM_PG_DBNAME | wc -l`
+if [ $num_tables -eq 0 ]; then
+	cd $DB_SRC
+	make create DB=$BDM_PG_DBNAME
+	cd -
+fi
 
 # Parse command-line
 while getopts 'h' flag; do
@@ -67,18 +75,18 @@ start)
 	fi
 ;;
 stop)
-	if [ "$pid" ]; then 
+	if [ "$pid" ]; then
 		echo -n "Stopping bdmd..."
 		kill $pid
 		sleep 1
-		[ "$(pgrep bdmd.real)" ] && echo "error" || echo "done" 	
+		[ "$(pgrep bdmd.real)" ] && echo "error" || echo "done"
 	else
 		echo "bdmd not running"
 	fi
 ;;
 restart)
 	$0 stop
-	$0 start 
+	$0 start
 ;;
 info)
 	if [ "$pid" ]; then
