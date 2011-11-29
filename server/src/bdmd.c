@@ -36,6 +36,8 @@ typedef struct {
 typedef struct {
     char *var_dir;
     char *log_dir;
+    int time_error;
+    int max_delay;
 } config_t;
 
 /* Probe format */
@@ -68,6 +70,7 @@ typedef struct {
     char *free_ts;  /* Free timestamp */
     char *curr_cli; /* Current clients count */
     char *max_cli;  /* Max clients count */
+    char *exclusive;
 } mtf;
 
 /*
@@ -95,6 +98,9 @@ typedef struct {
 #define ENV_PG_SSLMODE  "BDM_PG_SSLMODE"
 #define ENV_PG_DBNAME   "BDM_PG_DBNAME"
 
+#define ENV_TIME_ERROR  "BDM_TIME_ERROR"
+#define ENV_MAX_DELAY   "BDM_MAX_DELAY"
+
 /*
  * Globals
  */
@@ -107,6 +113,7 @@ PGconn *dbconn;         /* Postgres db connection, mediated by mutex_dbconn */
 /* Mutex */
 pthread_mutex_t mutex_num_thread = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_dbconn = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_freets = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Execute a query (thread safe)
@@ -310,7 +317,7 @@ void *doit(void *param) {
         /* Measure */
         mrf request;
         mtf target;
-        char *exclusive;
+        unsigned int delay = 0;
 
         /* Parse request */
         request.cat = probe.param;
@@ -323,103 +330,91 @@ void *doit(void *param) {
         probe.param[i] = 0;
 
         /*
-         * TODO insert device-specific measurement server query here
-         * TODO ALSO draw a database schema first, to figure out what the best
-         * approach is to deal with this
+         * Query for a measurement target
+         * 1) for non-exclusive measurements, select a target with the highest
+         *    preference value in the devices_targets table for a given device
+         * 2) for exclusive measurements, select a target with the highest
+         *    preference that has a free_ts <= (ts + max_delay). if multiple
+         *    targets meet the free_ts criterion and have the same preference
+         *    value, select the target with the lowest free_ts.
+         *
+         * if 0 rows are returned for either of the above, we have no suitable
+         * target for a measurement and must respond to the device accordingly.
+         * (with an empty string).
          */
 
-        /*
-         * Query target
-         * (prefer target with less clients and closest free timestamp)
+        snprintf(query, MAX_QUERY_LEN,
+                 "SELECT t.ip, c.info, t.free_ts, t.curr_cli, t.max_cli, "
+                 "       mt.mexclusive "
+                 "FROM targets as t, capabilities as c, "
+                 "     device_targets as dt, mtypes as mt "
+                 "WHERE dt.device = '%s' "
+                 "      AND dt.server = c.ip "
+                 "      AND c.service = '%s' "
+                 "      AND dt.server = t.ip "
+                 "      AND t.cat = '%s' "
+                 "      AND mt.mtype = c.service "
+                 "      AND (mt.mexclusive = 0 OR "
+                 "           (mt.mexclusive = 1 AND "
+                 "            t.free_ts < %lu)) "
+                 "ORDER BY dt.priority DESC, t.free_ts ASC "
+                 "LIMIT 1;",
+                 probe.id, request.type, request.cat,
+                 ts + config.max_delay);
+        /* TODO this mutex is overbroad; need to look into row-level exclusive
+         * locks for transactions, and to start a transaction with the above
+         * SELECT and commit it following the UPDATE below if the measurement
+         * is exclusive.
          */
-        snprintf(query, MAX_QUERY_LEN,
-                "SELECT t.ip,info,free_ts,curr_cli,max_cli "
-                "FROM targets AS t, capabilities AS c "
-                "WHERE t.ip=c.ip AND service='%s' AND cat='%s' AND zone='%s' "
-                "ORDER BY curr_cli,free_ts ASC LIMIT 1;",
-                request.type, request.cat, request.zone);
-        if (!(row = do_query(query, 1))) {
-            /* Repeat query without zone */
-            snprintf(query, MAX_QUERY_LEN,
-                    "SELECT t.ip,info,free_ts,curr_cli,max_cli "
-                    "FROM targets AS t, capabilities AS c "
-                    "WHERE t.ip=c.ip AND service='%s' AND cat='%s' "
-                    "ORDER BY curr_cli,free_ts ASC LIMIT 1;",
-                    request.type, request.cat);
-            row = do_query(query, 1);
-        }
+        pthread_mutex_lock(&mutex_freets); /* begin TOCTOU avoidance */
+        row = do_query(query, 1);
 
-        /* Parse query result */
-        target.ip = row;
-        for (i = 0; row[i] != ' '; i++);
-        target.info = &row[i + 1];
-        for (row[i] = 0; row[i] != ' '; i++);
-        target.free_ts = &row[i + 1];
-        for (row[i] = 0; row[i] != ' '; i++);
-        target.curr_cli = &row[i + 1];
-        for (row[i] = 0; row[i] != ' '; i++);
-        target.max_cli = &row[i + 1];
-        row[i] = 0;
+        if(row) {
+            /* We have a target; parse the query result and prepare reply */
+            target.ip = row;
+            for (i = 0; row[i] != ' '; i++);
+            target.info = &row[i + 1];
+            for (row[i] = 0; row[i] != ' '; i++);
+            target.free_ts = &row[i + 1];
+            for (row[i] = 0; row[i] != ' '; i++);
+            target.curr_cli = &row[i + 1];
+            for (row[i] = 0; row[i] != ' '; i++);
+            target.max_cli = &row[i + 1];
+            for (row[i] = 0; row[i] != ' '; i++);
+            target.exclusive = &row[i + 1];
+            row[i] = 0;
+            free(row);
 
-        /* Get measure type mode */
-        snprintf(query, MAX_QUERY_LEN,
-                "SELECT mexclusive FROM mtypes WHERE mtype='%s';",
-                request.type);
-        exclusive = do_query(query, 1);
-
-        /* Process request */
-        reply = malloc(MAX_IP_LEN + MAX_INFO_LEN + MAX_WAIT_LEN + 4);
-        if (exclusive != NULL && *exclusive == '1') {
-            /* Exclusive request (only mutual exclusion for now) */
-            if (ts > atoi(target.free_ts)) {
-                /* Set reply */
-                sprintf(reply, "%s %s %d\n", target.ip, target.info, 0);
-
-            /* Update target entry */
-            snprintf(query, MAX_QUERY_LEN,
-                    "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
-                        ts + atoi(request.duration) + 2, target.ip);
-                do_query(query, 0);
-
-                /* Output log entry */
-                printf("%s - Scheduled %s measure from %s to %s at %lu "
-                        "for %s seconds\n", date, request.type, probe.id,
-                        target.ip, ts, request.duration);
-                fflush(stdout);
-            } else {
-                unsigned int delay = atoi(target.free_ts) - ts + 2;
-                if (delay > 300) delay = 300;
-
-                /* Set reply */
-                sprintf(reply, "%s %s %u\n", target.ip, target.info, delay);
-
-                /* Update target entry */
+            if(*target.exclusive == '1') {
+                if(atol(target.free_ts) > ts) {
+                    delay = (int)(atol(target.free_ts) - ts);
+                }
                 snprintf(query, MAX_QUERY_LEN,
-                        "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
-                        atol(target.free_ts) + atoi(request.duration) + 2,
-                        target.ip);
+                         "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
+                         (ts + delay + atoi(request.duration) + config.time_error),
+                         target.ip);
                 do_query(query, 0);
-
-                /* Output log entry */
-                printf("%s - Scheduled %s measure from %s to %s at %s "
-                        "for %s seconds\n", date, request.type, probe.id,
-                        target.ip, target.free_ts, request.duration);
-                fflush(stdout);
             }
-        } else {
-            /* Set reply */
-            sprintf(reply, "%s %s %d\n", target.ip, target.info, 0);
+
+            reply = malloc(MAX_IP_LEN + MAX_INFO_LEN + MAX_WAIT_LEN + 4);
+            sprintf(reply, "%s %s %d\n", target.ip, target.info, delay);
 
             /* Output log entry */
             printf("%s - Scheduled %s measure from %s to %s at %lu "
                     "for %s seconds\n", date, request.type, probe.id,
-                    target.ip, ts, request.duration);
+                    target.ip, (ts + delay), request.duration);
+            fflush(stdout);
+        } else {
+            /* no measurement possible, return an empty string */
+            reply = malloc(2 * sizeof(char));
+            strncpy(reply, " \0", 2);
+
+            /* Output log entry */
+            printf("%s - No target available for %s measurement from %s\n",
+                   date, request.type, probe.id);
             fflush(stdout);
         }
-
-        /* Free memory */
-        free(exclusive);
-        free(row);
+        pthread_mutex_unlock(&mutex_freets); /* end TOCTOU avoidance */
     }
 
     /* Send reply to client */
@@ -465,11 +460,13 @@ int main(int argc, char *argv[])
     char date[25];                  /* Date string */
     unsigned int rcv_buff_size = RCV_BUFF_SIZE;
     int i = 0, j = 0;
+    int connect_strlen = 1;     /* initial value, we need to include a NUL */
     char* pg_connect_keys[PG_CONNECT_PARAM_COUNT+1];
     char* pg_connect_values[PG_CONNECT_PARAM_COUNT+1];
     char* pg_connect_str;
     char* cur;
-    int connect_strlen = 1;     /* initial value, we need to include a NUL */
+    char* env;
+    int converted;
 
     /* Command-line check */
     if (argc < 2) {
@@ -488,6 +485,22 @@ int main(int argc, char *argv[])
     if (!config.var_dir) config.var_dir = strdup("/var");
     config.log_dir = malloc(strlen(config.var_dir) + sizeof(LOG_DIR) + 3);
     sprintf(config.log_dir, "%s/%s", config.var_dir, LOG_DIR);
+
+    config.time_error = 2; /* defaults to 2 seconds */
+    env = getenv(ENV_TIME_ERROR);
+    if(env) {
+        converted = (int)strtol(env, &cur, 10);
+        if(cur != env)
+            config.time_error = converted;
+    }
+    config.max_delay = 300; /* default to 5 minutes (300 s) */
+    env = getenv(ENV_MAX_DELAY);
+    if(env) {
+        converted = (int)strtol(env, &cur, 10);
+        if(cur != env)
+            config.max_delay = converted;
+    }
+    env = cur = NULL;
 
     /* Grab Postgres environment variables */
     pg_connect_keys[0]   = "host";
