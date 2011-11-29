@@ -232,28 +232,28 @@ void *doit(void *param) {
 
         /* Check device presence in db */
         snprintf(query, MAX_QUERY_LEN,
-                "SELECT id FROM devices WHERE id='%s';",
-                probe.id);
+                 "SELECT id FROM devices WHERE id='%s';",
+                 probe.id);
         if ((row = do_query(query, 1))) {
             /* Update db entry */
             snprintf(query, MAX_QUERY_LEN,
-                    "UPDATE devices SET ip='%s',ts=%lu,bversion=%s "
-                    "WHERE id='%s';", ip, ts, probe.param, probe.id);
+                     "UPDATE devices SET ip='%s',ts=%lu,bversion=%s "
+                     "WHERE id='%s';", ip, ts, probe.param, probe.id);
             do_query(query, 0);
             free(row);
         } else {
             /* Insert new db entry */
             snprintf(query, MAX_QUERY_LEN,
-                    "INSERT INTO devices (id, ip, ts, bversion) "
-                    "VALUES('%s','%s',%lu,'%s');", probe.id, ip, ts,
-                    probe.param);
+                     "INSERT INTO devices (id, ip, ts, bversion) "
+                     "VALUES('%s','%s',%lu,'%s');", probe.id, ip, ts,
+                     probe.param);
             do_query(query, 0);
         }
 
         /* Check messages */
         snprintf(query, MAX_QUERY_LEN,
-                "SELECT rowid,msgfrom,msgto,msg FROM messages "
-                "WHERE msgto='%s' LIMIT 1;", probe.id);
+                 "SELECT rowid,msgfrom,msgto,msg FROM messages "
+                 "WHERE msgto='%s' LIMIT 1;", probe.id);
         if ((row = do_query(query, 1))) {
             mf msg;                 /* Message row fields */
 
@@ -273,12 +273,12 @@ void *doit(void *param) {
 
             /* Output log entry */
             printf("%s - Delivered message from %s to %s: %s\n",
-                    date, msg.from, msg.to, msg.msg);
+                   date, msg.from, msg.to, msg.msg);
             fflush(stdout);
 
             /* Remove message from db */
             snprintf(query, MAX_QUERY_LEN,
-                    "DELETE FROM messages WHERE rowid='%s';", msg.mid);
+                     "DELETE FROM messages WHERE rowid='%s';", msg.mid);
             do_query(query, 0);
 
             /* Deallocate row */
@@ -298,7 +298,7 @@ void *doit(void *param) {
 
         /* Append log to logfile */
         snprintf(logfile, MAX_FILENAME_LEN, "%s/%s.log",
-                config.log_dir, probe.id);
+                 config.log_dir, probe.id);
         lfp = fopen(logfile, "a");
         fprintf(lfp, "%s - %s\n%s\nEND - %s\n",
                 date, probe.param, log, probe.param);
@@ -306,8 +306,8 @@ void *doit(void *param) {
 
         /* Send message to bdm client */
         snprintf(query, MAX_QUERY_LEN,
-                "INSERT INTO messages (msgfrom, msgto, msg) "
-                "VALUES('%s','BDM','%s');", probe.id, probe.param);
+                 "INSERT INTO messages (msgfrom, msgto, msg) "
+                 "VALUES('%s','BDM','%s');", probe.id, probe.param);
         do_query(query, 0);
 
         /* Output log entry */
@@ -359,8 +359,7 @@ void *doit(void *param) {
                  "            t.free_ts < %lu)) "
                  "ORDER BY dt.priority DESC, t.free_ts ASC "
                  "LIMIT 1;",
-                 probe.id, request.type, request.cat,
-                 ts + config.max_delay);
+                 probe.id, request.type, request.cat, ts + config.max_delay);
         /* TODO this mutex is overbroad; need to look into row-level exclusive
          * locks for transactions, and to start a transaction with the above
          * SELECT and commit it following the UPDATE below if the measurement
@@ -391,7 +390,7 @@ void *doit(void *param) {
                 }
                 snprintf(query, MAX_QUERY_LEN,
                          "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
-                         (ts + delay + atoi(request.duration) + config.time_error),
+                         ts + delay + atoi(request.duration) + config.time_error,
                          target.ip);
                 do_query(query, 0);
             }
@@ -401,8 +400,8 @@ void *doit(void *param) {
 
             /* Output log entry */
             printf("%s - Scheduled %s measure from %s to %s at %lu "
-                    "for %s seconds\n", date, request.type, probe.id,
-                    target.ip, (ts + delay), request.duration);
+                   "for %s seconds\n", date, request.type, probe.id,
+                   target.ip, (ts + delay), request.duration);
             fflush(stdout);
         } else {
             /* no measurement possible, return an empty string */
@@ -427,8 +426,8 @@ void *doit(void *param) {
             reply[strlen(reply) - 1] = 0;
             reply[3] = 0;
             snprintf(query, MAX_QUERY_LEN,
-                    "INSERT INTO tunnels VALUES('%s',%d,%lu);",
-                    probe.id, atoi(&reply[4]), ts + 15);
+                     "INSERT INTO tunnels VALUES('%s',%d,%lu);",
+                     probe.id, atoi(&reply[4]), ts + 15);
             do_query(query, 0);
         }
 
@@ -677,4 +676,5 @@ int main(int argc, char *argv[])
     for (j=0; j<num_ports; j++) {
         close(ssd[j]);
     }
+    PQfinish(dbconn);
 }
