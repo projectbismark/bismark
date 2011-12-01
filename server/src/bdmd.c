@@ -319,7 +319,6 @@ void *doit(void *param) {
         mtf target;
         unsigned int delay = 0;
 
-        printf("probe.param: %s\n", probe.param);
         /* Parse request */
         request.cat = probe.param;
         for (i = 0; probe.param[i] != ' '; i++);
@@ -329,11 +328,6 @@ void *doit(void *param) {
         for (probe.param[i] = 0; probe.param[i] != ' '; i++);
         request.duration = &probe.param[i + 1];
         probe.param[i] = 0;
-        printf("request.cat: %s\n", request.cat);
-        printf("request.type: %s\n", request.type);
-        printf("request.zone: %s\n", request.zone);
-        printf("request.duration: %s\n", request.duration);
-        fflush(stdout);
 
         /*
          * Query for a measurement target
@@ -375,7 +369,6 @@ void *doit(void *param) {
         row = do_query(query, 1);
 
         if(row) {
-            printf("row: %s\n", row);
             /* We have a target; parse the query result and prepare reply */
             target.ip = row;
             for (i = 0; row[i] != ' '; i++);
@@ -389,13 +382,6 @@ void *doit(void *param) {
             for (row[i] = 0; row[i] != ' '; i++);
             target.exclusive = &row[i + 1];
             row[i] = 0;
-            printf("target.ip: %s\n", target.ip);
-            printf("target.info: %s\n", target.info);
-            printf("target.free_ts: %s\n", target.free_ts);
-            printf("target.curr_cli: %s\n", target.curr_cli);
-            printf("target.max_cli: %s\n", target.max_cli);
-            printf("target.exclusive: %s\n", target.exclusive);
-            fflush(stdout);
 
             if(*target.exclusive == '1') {
                 if(atol(target.free_ts) > ts) {
@@ -405,8 +391,6 @@ void *doit(void *param) {
                          "UPDATE targets SET free_ts=%lu WHERE ip='%s';",
                          (ts + delay + atoi(request.duration) +
                          config.time_error), target.ip);
-                printf("%s\n", query);
-                fflush(stdout);
                 do_query(query, 0);
             }
 
