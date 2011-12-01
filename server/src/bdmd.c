@@ -382,7 +382,6 @@ void *doit(void *param) {
             for (row[i] = 0; row[i] != ' '; i++);
             target.exclusive = &row[i + 1];
             row[i] = 0;
-            free(row);
 
             if(*target.exclusive == '1') {
                 if(atol(target.free_ts) > ts) {
@@ -403,6 +402,8 @@ void *doit(void *param) {
                    "for %s seconds\n", date, request.type, probe.id,
                    target.ip, (ts + delay), request.duration);
             fflush(stdout);
+
+            free(row);
         } else {
             /* no measurement possible, return an empty string */
             reply = malloc(2 * sizeof(char));
