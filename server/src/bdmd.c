@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <libpq-fe.h>
 
@@ -38,7 +39,8 @@ typedef struct {
     char *log_dir;
     int time_error;
     int max_delay;
-    int db_timeout;
+    int db_query_timeout;
+    int db_recon_timeout;
 } config_t;
 
 /* Probe format */
@@ -104,16 +106,17 @@ typedef struct {
 #define RCV_BUFF_SIZE 300000
 
 #define PG_CONNECT_PARAM_COUNT 6
-#define ENV_PG_HOST     "BDM_PG_HOST"
-#define ENV_PG_PORT     "BDM_PG_PORT"
-#define ENV_PG_USER     "BDM_PG_USER"
-#define ENV_PG_PASSWORD "BDM_PG_PASSWORD"
-#define ENV_PG_SSLMODE  "BDM_PG_SSLMODE"
-#define ENV_PG_DBNAME   "BDM_PG_DBNAME"
+#define ENV_PG_HOST           "BDM_PG_HOST"
+#define ENV_PG_PORT           "BDM_PG_PORT"
+#define ENV_PG_USER           "BDM_PG_USER"
+#define ENV_PG_PASSWORD       "BDM_PG_PASSWORD"
+#define ENV_PG_SSLMODE        "BDM_PG_SSLMODE"
+#define ENV_PG_DBNAME         "BDM_PG_DBNAME"
 
-#define ENV_TIME_ERROR  "BDM_TIME_ERROR"
-#define ENV_MAX_DELAY   "BDM_MAX_DELAY"
-#define ENV_DB_TIMEOUT  "BDM_DB_TIMEOUT"
+#define ENV_TIME_ERROR        "BDM_TIME_ERROR"
+#define ENV_MAX_DELAY         "BDM_MAX_DELAY"
+#define ENV_DB_QUERY_TIMEOUT  "BDM_DB_QUERY_TIMEOUT"
+#define ENV_DB_RECON_TIMEOUT  "BDM_DB_RECON_TIMEOUT"
 
 /*
  * Globals
@@ -129,25 +132,41 @@ pthread_mutex_t mutex_num_thread = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_dbconn = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_freets = PTHREAD_MUTEX_INITIALIZER;
 
+int thread_exec_timeout(void *(*start_routine) (void *), void *arg, int timeout) {
+    pthread_t thread;
+    struct timespec ts;
+
+    pthread_create(&thread, NULL, start_routine, arg);
+    ts.tv_sec = time(NULL) + timeout;
+    ts.tv_nsec = 0;
+    if(pthread_timedjoin_np(thread, NULL, &ts)) {
+        pthread_cancel(thread);
+        return 1;
+    }
+    return 0;
+}
+
+void *dbreconn_reset(void *arg) {
+    dbrc_t *args = (dbrc_t *)arg;
+    fprintf(stderr, "Attempting to reset database connection...\n");
+    PQreset(args->placeholder);
+    return NULL;
+}
+
 void *dbreconn_thread(void *arg) {
     dbrc_t *args = (dbrc_t *)arg;
+    thread_exec_timeout(&dbreconn_reset, arg, config.db_recon_timeout);
     while(PQstatus(args->placeholder) != CONNECTION_OK)
-        printf("dbreconn_thread(): "
-               "Attempting to reset database connection...\n");
-        fflush(stdout);
-        PQreset(args->placeholder);
+        thread_exec_timeout(&dbreconn_reset, arg, config.db_recon_timeout);
     pthread_mutex_lock(&mutex_dbconn);
     *args->connptr = args->placeholder;
     pthread_mutex_unlock(&mutex_dbconn);
-    printf("dbreconn_thread(): Database connection reset successful.\n");
+    fprintf(stderr, "Database connection reset successful.\n");
     free(args);
     return NULL;
 }
 
 void dbreconnect(PGconn **connptr, int blocking) {
-    printf("dbreconnect()\n");
-    fflush(stdout);
-
     if(!connptr || !*connptr)
         /* this should prevent multiple calls/threads */
         return;
@@ -155,12 +174,9 @@ void dbreconnect(PGconn **connptr, int blocking) {
     if(blocking) {
         /* the blocking version will only reset if the connection is bad */
         while(PQstatus(*connptr) != CONNECTION_OK)
-            printf("dbreconnect(): "
-                   "Attempting to reset database connection...\n");
-            fflush(stdout);
+            fprintf(stderr, "Attempting to reset database connection...\n");
             PQreset(*connptr);
-        printf("dbreconnect(): Database connection reset successful.\n");
-        fflush(stdout);
+        fprintf(stderr, "dbreconnect(): Database connection reset successful.\n");
     } else {
         PGconn *placeholder;
         pthread_t thread;
@@ -170,7 +186,7 @@ void dbreconnect(PGconn **connptr, int blocking) {
         pthread_mutex_lock(&mutex_dbconn);
         placeholder = *connptr;
         *connptr = NULL;
-        pthread_mutex_lock(&mutex_dbconn);
+        pthread_mutex_unlock(&mutex_dbconn);
         args->connptr = connptr;
         args->placeholder = placeholder;
         pthread_create(&thread, NULL, &dbreconn_thread, args);
@@ -185,22 +201,7 @@ void dbreconnect(PGconn **connptr, int blocking) {
 void *PQexec_thread(void *arg) {
     dbquery_t *args = (dbquery_t *)arg;
     args->res = PQexec(dbconn, args->query);
-    printf("PQexec_thread(): PQexec(dbconn, query);\n");
-    fflush(stdout);
     return NULL;
-}
-
-int call_thread_with_timeout(void *(*start_routine) (void *), void *arg, int timeout) {
-    pthread_t thread_id;
-    struct timespec ts;
-
-    pthread_create(&thread_id, NULL, start_routine, arg);
-    ts.tv_sec = time(NULL) + timeout;
-    if(pthread_timedjoin_np(thread_id, NULL, &ts)) {
-        pthread_cancel(thread_id);
-        return 1;
-    }
-    return 0;
 }
 
 /*
@@ -217,35 +218,24 @@ char *do_query(const char *query, const int process_output)
     int outlen = 0;
     int i;
     dbquery_t dbq;
-    pthread_t dbq_thread;
-    char timed_out = 0;
-    struct timespec ts;
+    int timed_out = 0;
 
     pthread_mutex_lock(&mutex_dbconn);
-    printf("do_query(): pthread_mutex_lock(&mutex_dbconn);\n");
-    fflush(stdout);
 
     if(!dbconn) {
         pthread_mutex_unlock(&mutex_dbconn);
-        printf("do_query(): pthread_mutex_unlock(&mutex_dbconn);\n");
         return NULL;
     }
 
     dbq.query = query;
     dbq.res = NULL;
-    pthread_create(&dbq_thread, NULL, &PQexec_thread, &dbq);
-    ts.tv_sec = time(NULL) + config.db_timeout;
-    if(pthread_timedjoin_np(dbq_thread, NULL, &ts)) {
-        pthread_cancel(dbq_thread);
-        printf("do_query(): pthread_cancel(dbq_thread);\n");
+    if(thread_exec_timeout(&PQexec_thread, &dbq, config.db_query_timeout)) {
+        fprintf(stderr, "do_query() timed_out\n");
         PQclear(dbq.res);
         dbq.res = NULL;
         timed_out = 1;
-        pthread_mutex_trylock(&mutex_dbconn); /* clean up mutex */
     }
     pthread_mutex_unlock(&mutex_dbconn);
-    printf("do_query(): pthread_mutex_unlock(&mutex_dbconn);\n");
-    fflush(stdout);
 
     res = dbq.res;
 
@@ -273,20 +263,15 @@ char *do_query(const char *query, const int process_output)
         }
     } else {
         if(res) {
-            printf("Postgres error: %s\n%s\n",
+            fprintf(stderr, "Postgres error: %s\n%s\n",
                    PQresStatus(PQresultStatus(res)),
                    PQresultErrorMessage(res));
-            fflush(stdout);
-
         }
-        perror("SQL error");
-        fflush(stdout);
+        fprintf(stderr, "SQL error");
         if(timed_out || PQstatus(dbconn) != CONNECTION_OK)
             dbreconnect(&dbconn, 0);  /* try reconnecting */
     }
-
     PQclear(res);
-
     return out;
 }
 
@@ -621,12 +606,19 @@ int main(int argc, char *argv[])
         if(cur != env)
             config.max_delay = converted;
     }
-    config.db_timeout = 10; /* default to 15 seconds */
-    env = getenv(ENV_DB_TIMEOUT);
+    config.db_query_timeout = 10; /* default to 10 seconds */
+    env = getenv(ENV_DB_QUERY_TIMEOUT);
     if(env) {
         converted = (int)strtol(env, &cur, 10);
         if(cur != env)
-            config.db_timeout = converted;
+            config.db_query_timeout = converted;
+    }
+    config.db_recon_timeout = 60; /* default to 60 seconds */
+    env = getenv(ENV_DB_RECON_TIMEOUT);
+    if(env) {
+        converted = (int)strtol(env, &cur, 10);
+        if(cur != env)
+            config.db_recon_timeout = converted;
     }
     env = cur = NULL;
 
@@ -670,7 +662,7 @@ int main(int argc, char *argv[])
     dbconn = PQconnectdb(pg_connect_str);
     if(dbconn == NULL || PQstatus(dbconn) != CONNECTION_OK) {
         PQfinish(dbconn);
-        perror("Could not connect to database\n");
+        fprintf(stderr, "Could not connect to database\n");
         exit(1);
     }
 
