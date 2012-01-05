@@ -455,6 +455,7 @@ void *doit(void *param) {
                  "FROM targets as t, capabilities as c, "
                  "     device_targets as dt, mtypes as mt "
                  "WHERE dt.device = '%s' "
+                 "      AND dt.priority >= 0 "
                  "      AND dt.server = c.ip "
                  "      AND c.service = '%s' "
                  "      AND dt.server = t.ip "
