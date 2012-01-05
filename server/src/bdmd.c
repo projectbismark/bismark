@@ -323,7 +323,7 @@ void *doit(void *param) {
     probe.cmd = &tp->payload[i + 1];
     for (tp->payload[i] = 0; tp->payload[i] != ' '; i++);
     probe.param = &tp->payload[i + 1];
-    for (tp->payload[i] = 0; tp->payload[i] != '\n'; i++);
+    for (tp->payload[i] = 0; tp->payload[i] != '\n' && i < strlen(tp->payload); i++);
     tp->payload[i] = 0;
 
 #ifdef DEBUG
