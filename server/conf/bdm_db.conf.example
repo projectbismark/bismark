@@ -6,3 +6,7 @@ export BDM_PG_USER=bismark
 export BDM_PG_PASSWORD=top_secret
 # see http://developer.postgresql.org/pgdocs/postgres/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS
 export BDM_PG_SSLMODE=require
+
+# connection timeouts
+export BDM_DB_QUERY_TIMEOUT=10
+export BDM_DB_RECON_TIMEOUT=60
