@@ -43,3 +43,5 @@ rm /tmp/bismark-crontab
 if [ -e /www/index.html ] && [ -e /www/index.htm ]; then
 	rm -f /www/index.html
 fi
+/etc/init.d/cron stop
+/etc/init.d/cron start
