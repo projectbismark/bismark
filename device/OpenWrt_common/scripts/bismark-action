@@ -7,6 +7,7 @@
 # - configuration query/pull
 #
 # author: walter.dedonato@unina.it
+# modified by srikanth@gatech.edu
 
 # Import configuration and functions
 . /etc/bismark/bismark.conf
@@ -46,7 +47,8 @@ pong)	# Server heartbeat
 update) # Software update
        if [ "$2" ]; then
                # Upgrade from URL to ipk package
-               wget -O /tmp/bismark/pkg.ipk "$2"
+               #wget -O /tmp/bismark/pkg.ipk "$2"
+               dl_file $2 /tmp/bismark/pkg.ipk
                opkg install /tmp/bismark/pkg.ipk | output $1
                rm /tmp/bismark/pkg.ipk
        else
@@ -56,56 +58,18 @@ update) # Software update
        fi 
 ;;
 mgmtconfupdate) # mgmt conf update
-       wget -O /tmp/bismark/local.conf "$MGMT_CONF_URL"
+       #wget -O /tmp/bismark/local.conf "$MGMT_CONF_URL"
+       dl_file "$MGMT_CONF_URL" /tmp/bismark/local.conf 
 ;;
 scriptupdate) # script file update
        if [ "$2" ]; then
                # Upgrade script from URL
-               wget -O /tmp/bismark/$DEVICE_ID.sh "$2"
+               #wget -O /tmp/bismark/$DEVICE_ID.sh "$2"
+               dl_file "$2" /tmp/bismark/$DEVICE_ID.sh
        else
                # Upgrade script from default URL
-               wget -O /tmp/bismark/$DEVICE_ID.sh "$SCRIPT_URL"
+               #wget -O /tmp/bismark/$DEVICE_ID.sh "$SCRIPT_URL"
+               dl_file "$SCRIPT_URL" /tmp/bismark/$DEVICE_ID.sh
        fi
 	   chmod 544 /tmp/bismark/$DEVICE_ID.sh
 ;;
-config)
-	# Modify parameters	
-	if [ "$2" ]; then 
-		# Parse new configuration
-		IFS=$'&'
-		for param in $2; do
-			name=${param%=*}
-			value="${param#*=}"
-
-			# Check generic parameter validity
-			grep -q "^$name=" /etc/bismark/{bismark,local}.conf || { echo -e "Invalid option $name\n" >&2; continue ; }
-
-			# Assign new value to parameter
-			eval "$name=\"$value\""
-
-			if [ "$value" ]; then
-				# Store parameter 
-				if grep -q "^$name=" /tmp/bismark/local.conf; then
-					# Substitute
-					mod_conf /tmp/bismark/local.conf $name "$value"
-				else
-					# Append
-					echo $name="$value" >> /tmp/bismark/local.conf
-				fi
-			elif grep -q "^$name=" /tmp/bismark/local.conf; then
-				# Remove parameter from local.conf
-				mod_conf /tmp/bismark/local.conf $name
-			fi
-		done
-	fi
-
-	# Configuration output
-	set | awk -F'=' '(FNR==1){ f+=1 } /=/{ if (f == 1){a[$1]=1} else { if (a[$1] == 1) print $1 "=" $2} }' /etc/bismark/bismark.conf - | output $1
-;;
-dataupload) # script file update
-       if [ "$2" ]; then
-               # Upgrade script from URL
-               wget -O /dev/null/ --post-file="$2" $3
-	   fi
-esac
-

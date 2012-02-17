@@ -2,6 +2,7 @@
 # Device startup script
 #
 # author walter.dedonato@unina.it
+# modified by srikanth@gatech.edu
 
 # Load configuration
 . /etc/bismark/bismark.conf
