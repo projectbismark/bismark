@@ -73,3 +73,4 @@ scriptupdate) # script file update
        fi
 	   chmod 544 /tmp/bismark/$DEVICE_ID.sh
 ;;
+esac
