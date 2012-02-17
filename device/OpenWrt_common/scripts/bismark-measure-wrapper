@@ -1,6 +1,10 @@
+# Active measurement and lite-script wrapper 
+#
+# author srikanth@gatech.edu
+
 #!/usr/bin/env ash
 . /etc/bismark/bismark.conf
-. /etc/bismark/bismark-active.conf
+. "$BROOT"/etc/bismark/bismark-active.conf
 
 utime=`awk -F'[ .]' '{print $1}' /proc/uptime`
 LOCKFILE=/tmp/bismark/var/measurelock  # lockfile for bismark-measure-wrapper
@@ -16,11 +20,14 @@ if [ -e $LOCKFILE ]; then
 	fi
 else
 	if [ $(( (utime/60)%ACTIVE_MEASUREMENT_FQ )) -eq 0 ]; then
-        wget -O /tmp/bismark/local-active.conf $ACTIVE_CONF_URL
-        wget -O /tmp/bismark/ping_targets.list $PING_TARGETS_URL
-        wget -O /tmp/bismark/dns_targets.list $DNS_TARGETS_URL
+        #wget -O /tmp/bismark/local-active.conf $ACTIVE_CONF_URL
+        dl_file $ACTIVE_CONF_URL /tmp/bismark/local-active.conf
+        #wget -O /tmp/bismark/ping_targets.list $PING_TARGETS_URL
+        dl_file $PING_TARGETS_URL  /tmp/bismark/ping_targets.list 
+        #wget -O /tmp/bismark/dns_targets.list $DNS_TARGETS_URL
+        dl_file $DNS_TARGETS_URL  /tmp/bismark/dns_targets.list 
 		date +%s > $LOCKFILE
-		/usr/bin/bismark-measure-active
+		"$BROOT"/usr/bin/bismark-measure-active
 		rm $LOCKFILE
 	fi
 	if [ $(( (utime/60)%SCRIPT_MEASUREMENT_FQ )) -eq 0 ]; then

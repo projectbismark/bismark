@@ -5,7 +5,7 @@
 
 # Load configuration files
 . /etc/bismark/bismark.conf
-. /etc/bismark/bismark-active.conf
+. "$BROOT"/etc/bismark/bismark-active.conf
 . /usr/lib/bismark/functions.inc.sh
 
 # Settings
@@ -27,15 +27,15 @@ for s in "$local_dns" "8.8.8.8"; do
                 rm $DATA_DIR/delays
 
 		IFS=$'\n'
-		for h in $(grep -shv ^# /usr/lib/bismark/dns_targets.list /tmp/bismark/dns_targets.list | sort -u); do
+		for h in $(grep -shv ^# "$BROOT"/usr/lib/bismark/dns_targets.list /tmp/bismark/dns_targets.list | sort -u); do
                         time -f %e --append -o $DATA_DIR/delays nslookup $h $s >/dev/null || : $((fail++))
 			: $((count++))
 		done
 
 		# Output
 		[ $s ] || s="127.0.0.1"
-                grep '^[0-9]' $DATA_DIR/delays | bismark-mstats DNSDELAY$m HOST $src $s
-		awk 'BEGIN{ print ('$fail'/'$count') * 100 }' | bismark-mstats DNSFAIL$m HOST $src $s
+                grep '^[0-9]' $DATA_DIR/delays | "$BROOT"/usr/bin/bismark-mstats DNSDELAY$m HOST $src $s
+		awk 'BEGIN{ print ('$fail'/'$count') * 100 }' | "$BROOT"/usr/bin/bismark-mstats DNSFAIL$m HOST $src $s
 	done
 done
 

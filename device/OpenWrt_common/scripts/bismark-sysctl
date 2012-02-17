@@ -1,0 +1,18 @@
+#!/bin/ash
+# Device sysctl settings
+# Reads /etc/bismark/sysctl.conf and /tmp/bismark/sysctl.conf
+# and sets sysctl
+# author: srikanth@gatech.edu
+
+. /etc/bismark/bismark.conf
+. "$BROOT"/etc/bismark/bismark-active.conf
+. /usr/lib/bismark/functions.inc.sh
+
+files = $BROOT"/etc/bismark/sysctl.conf /tmp/bismark/sysctl.conf"
+for file in files; do
+	if [ -e $file ]; then
+		for line in `grep -v ^# $file`; do
+			sysctl -w $line
+		done
+ 	fi
+done 

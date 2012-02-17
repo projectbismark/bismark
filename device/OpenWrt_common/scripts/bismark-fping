@@ -1,11 +1,11 @@
 #!/bin/ash
-# Bismark ping wrapper
+# Bismark fping wrapper
 #
 # author: srikanth@gatech.edu
 
 # Load configuration files
 . /etc/bismark/bismark.conf
-. /etc/bismark/bismark-active.conf
+. "$BROOT"/etc/bismark/bismark-active.conf
 
 # Help screen
 [ $2 ] || { echo "usage: $(basename $0) <target_file_name> <src_ip>" ; exit ; }
@@ -19,6 +19,6 @@ fping_out=/tmp/bismark/active/fping-out
 # Execute ping
 fping $opts -f $1 2>/dev/null | awk '/ms/{print $1, $6}' > $fping_out
 for i in `awk '{print $1}' $fping_out | sort -u`; do
-	awk '/'$i'/{print $2}' $fping_out | bismark-mstats RTT FPING $2 $i
+	awk '/'$i'/{print $2}' $fping_out | "$BROOT"/usr/bin/bismark-mstats RTT FPING $2 $i
 done
 rm $fping_out
