@@ -20,6 +20,8 @@ fi
 # Cronjobs setup
 if [ -e /etc/bismark/crontab-active ]; then
 	cat /etc/bismark/crontab-active > /tmp/bismark-crontab-active
+elif [ -e /etc/bismark/crontab-active-tmpfs ]; then
+	cat /etc/bismark/crontab-active-tmpfs > /tmp/bismark-crontab-active
 else
 	echo -n '' > /tmp/bismark-crontab-active
 fi
