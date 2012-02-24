@@ -16,7 +16,7 @@ get_ip
 dst=$1
 tstamp=$(date +%s)
 
-"$BROOT"/usr/bin/prober | awk '
+/usr/bin/prober | awk '
 	BEGIN{ RS="[\r\n]" }
 	/^Upstream:/{ print "\t<measurement param=CAPACITY tool=SP srcip='$src' dstip='$dst' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
 	/^Downstream:/{  print "\t<measurement param=CAPACITY tool=SP srcip='$dst' dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 />" }
