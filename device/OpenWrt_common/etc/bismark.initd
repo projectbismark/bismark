@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-START=99
+START=90
 STOP=1
 
 start() {
@@ -10,6 +10,6 @@ start() {
 stop() {
         #crontab -r
         #grep -v bismark-measure /etc/crontabs/root | crontab -
-		cat /dev/null
+	cat /dev/null
 }
 
