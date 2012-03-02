@@ -246,4 +246,4 @@ if [ -e /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness ]; t
 	echo 0 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
 fi
 
-scp -S "/tmp/bismark/ssh" -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
+#scp -S "/tmp/bismark/ssh" -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data && rm /tmp/bismark/data/*.xml
