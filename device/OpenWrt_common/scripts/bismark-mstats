@@ -3,7 +3,11 @@
 #
 # author: walter.dedonato@unina.it
 
-[ $4 ] || { echo "usage: samples_generator | $(basename $0) <param> <tool> <src_ip> <dst_ip>" ; exit ; }
+[ $4 ] || { echo "usage: samples_generator | $(basename $0) <param> <tool> <src_ip> <dst_ip> <direction>(optional)" ; exit ; }
+dir=""
+if [ $5 ]; then
+	dir="direction=\"$5\""
+fi
 
 sort -n | awk '
 BEGIN {	n = sum = qsum = 0 }
@@ -32,12 +36,12 @@ END {
 		iqr = q3 - q1
 
 		# XML output
-		printf "\t<measurement param=\"'$1'\" tool=\"'$2'\" srcip=\"'$3'\" dstip=\"'$4'\" timestamp=\"'$(date +%s)'\" avg=\"'%f'\" std=\"'%f'\" min=\"'%f'\" max=\"'%f'\" med=\"'%f'\" iqr=\"'%f'\" />\n", avg, std, min, max, median, iqr
+		printf "\t<measurement param=\"'$1'\" tool=\"'$2'\" srcip=\"'$3'\" dstip=\"'$4'\" timestamp=\"'$(date +%s)'\" avg=\"'%f'\" std=\"'%f'\" min=\"'%f'\" max=\"'%f'\" med=\"'%f'\" iqr=\"'%f'\" $dir />\n", avg, std, min, max, median, iqr
 	} else if (n == 1) {
 		# XML output
-		printf "\t<measurement param=\"'$1'\" tool=\"'$2'\" srcip=\"'$3'\" dstip=\"'$4'\" timestamp=\"'$(date +%s)'\" avg=\"'%f'\" std=\"'0'\" min=\"'%f'\" max=\"'%f'\" med=\"'%f'\" iqr=\"'0'\" />\n", sum, sum, sum, sum
+		printf "\t<measurement param=\"'$1'\" tool=\"'$2'\" srcip=\"'$3'\" dstip=\"'$4'\" timestamp=\"'$(date +%s)'\" avg=\"'%f'\" std=\"'0'\" min=\"'%f'\" max=\"'%f'\" med=\"'%f'\" iqr=\"'0'\" $dir />\n", sum, sum, sum, sum
 	} else {
 		# XML output
-		print "\t<measurement param=\"'$1'\" tool=\"'$2'\" srcip=\"'$3'\" dstip=\"'$4'\" timestamp=\"'$(date +%s)'\" avg=\"'0'\" std=\"'0'\" min=\"'0'\" max=\"'0'\" med=\"'0'\" iqr=\"'0'\" />"
+		print "\t<measurement param=\"'$1'\" tool=\"'$2'\" srcip=\"'$3'\" dstip=\"'$4'\" timestamp=\"'$(date +%s)'\" avg=\"'0'\" std=\"'0'\" min=\"'0'\" max=\"'0'\" med=\"'0'\" iqr=\"'0'\" $dir />"
 	}
 }'

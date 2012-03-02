@@ -45,7 +45,7 @@ tcp)
 	up)  
 		/usr/bin/ITGSend -a $2 -rp 0 -T TCP -c $pkt_size -C $pkt_rate -t ${5}000 -x /tmp/${DEVICE_ID}_$tstamp.log  >/dev/null 2>&1 
 		echo "log /tmp/${DEVICE_ID}_$tstamp.log" | nc -n $2 $3 | awk "$filter"
-		cat bitrate.txt | "$BROOT"/usr/bin/bismark-mstats BITRATE DITG $src $2 | grep -v nan
+		cat bitrate.txt | "$BROOT"/usr/bin/bismark-mstats BITRATE DITG $src $2 $4 | grep -v nan
 	;;
 	dw)
 		port=$(random 5000 15000)
@@ -53,7 +53,7 @@ tcp)
 		/usr/bin/ITGRecv -H $2 -Sp $port -l itgfifo.dat > /dev/null 2>&1
 		/usr/bin/ITGDec itgfifo.dat -b 1000 > /dev/null 2>&1
 		rm itgfifo.dat
-		awk '(NR > 1){ print $3 }' bitrate.txt | "$BROOT"/usr/bin/bismark-mstats BITRATE DITG $2 $src 
+		awk '(NR > 1){ print $3 }' bitrate.txt | "$BROOT"/usr/bin/bismark-mstats BITRATE DITG $2 $src $4
 	;;
 	esac
 ;;
@@ -66,8 +66,8 @@ udp)
 	up)  
 		/usr/bin/ITGSend -a $2 -rp 0 -T UDP -c $pkt_size -C $pkt_rate -t ${5}000 -x /tmp/${DEVICE_ID}_$tstamp.log  >/dev/null 2>&1
 		echo "log /tmp/${DEVICE_ID}_$tstamp.log" | nc -n $2 $3 | awk "$filter"
-		cat jitter.txt | "$BROOT"/usr/bin/bismark-mstats JITTER DITG $src $2 | grep -v nan
-		awk '{ print $1/'$pkt_rate' }' packetloss.txt | "$BROOT"/usr/bin/bismark-mstats PKTLOSS DITG $src $2 
+		cat jitter.txt | "$BROOT"/usr/bin/bismark-mstats JITTER DITG $src $2 $4 | grep -v nan
+		awk '{ print $1/'$pkt_rate' }' packetloss.txt | "$BROOT"/usr/bin/bismark-mstats PKTLOSS DITG $src $2 $4
 	;;
 	dw)
 		RANDOM=$(( `date +%s` % 32767 ))
@@ -76,8 +76,8 @@ udp)
 		/usr/bin/ITGRecv -H $2 -Sp $port -l itgfifo.dat > /dev/null 2>&1 
 		/usr/bin/ITGDec itgfifo.dat -p 1000 -j 1000 > /dev/null 2>&1
 		rm itgfifo.dat
-		awk '(NR > 1){ print $3 }' jitter.txt | "$BROOT"/usr/bin/bismark-mstats JITTER DITG $2 $src
-		awk '(NR > 1){ print $3/'$pkt_rate' }' packetloss.txt | "$BROOT"/usr/bin/bismark-mstats PKTLOSS DITG $2 $src
+		awk '(NR > 1){ print $3 }' jitter.txt | "$BROOT"/usr/bin/bismark-mstats JITTER DITG $2 $src $4
+		awk '(NR > 1){ print $3/'$pkt_rate' }' packetloss.txt | "$BROOT"/usr/bin/bismark-mstats PKTLOSS DITG $2 $src $4
 	;;
 	esac
 ;;
@@ -90,7 +90,7 @@ udpflood)
 	up)  
 		/usr/bin/ITGSend -a $2 -rp 0 -T UDP -c $pkt_size -C $pkt_rate -t ${5}000 -x /tmp/${DEVICE_ID}_$tstamp.log  >/dev/null 2>&1 
 		echo "log /tmp/${DEVICE_ID}_$tstamp.log" | nc -n $2 $3 | awk "$filter"
-		cat bitrate.txt | "$BROOT"/usr/bin/bismark-mstats UDPBITRATE DITG $src $2 | grep -v nan
+		cat bitrate.txt | "$BROOT"/usr/bin/bismark-mstats UDPBITRATE DITG $src $2 $4 | grep -v nan
 	;;
 	dw)
 		RANDOM=$(( `date +%s` % 32767 ))
@@ -99,7 +99,7 @@ udpflood)
 		/usr/bin/ITGRecv -H $2 -Sp $port -l itgfifo.dat > /dev/null 2>&1
 		/usr/bin/ITGDec itgfifo.dat -b 1000 > /dev/null 2>&1
 		rm itgfifo.dat
-		awk '(NR > 1){ print $3 }' bitrate.txt | "$BROOT"/usr/bin/bismark-mstats UDPBITRATE DITG $2 $src
+		awk '(NR > 1){ print $3 }' bitrate.txt | "$BROOT"/usr/bin/bismark-mstats UDPBITRATE DITG $2 $src $4
 	;;
 	esac
 ;;
