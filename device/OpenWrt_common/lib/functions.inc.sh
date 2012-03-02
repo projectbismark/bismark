@@ -55,8 +55,8 @@ rename_dump ()
 # Get public IP
 get_ip ()
 {
-	if [ -e /tmp/ip ] && [ $(grep -c '^[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*$' /tmp/ip) -ge 1 ]; then
-		src=$(cat /tmp/ip)
+	if [ -e /tmp/bismark/var/ip ] && [ $(grep -c '^[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*$' /tmp/bismark/var/ip) -ge 1 ]; then
+		src=$(cat /tmp/bismark/var/ip)
 	else
 		src=$(ifconfig $WAN_IF | awk '/inet addr:/{ print substr($2,6) }')
 	fi
