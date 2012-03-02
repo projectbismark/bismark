@@ -39,7 +39,7 @@ fi
 
 DEVID=`cat /etc/bismark/ID`
 if [ `grep -c $DEVID /etc/opkg.conf` -eq 0 ]; then                                        
-        sed -i -e "s!device-updateable!device-updateable/$DEVID!g" /etc/opkg.conf              
+        sed -i -e "s!updates-device!updates-device/$DEVID!g" /etc/opkg.conf              
 fi
 
 #Conf changes
