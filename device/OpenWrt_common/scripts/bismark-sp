@@ -18,9 +18,9 @@ tstamp=$(date +%s)
 
 /usr/bin/prober | awk '
 	BEGIN{ RS="[\r\n]" }
-	/^Upstream:/{ print "\t<measurement param=CAPACITY tool=SP srcip='$src' dstip='$dst' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction='up' />" }
-	/^Downstream:/{  print "\t<measurement param=CAPACITY tool=SP srcip='$dst' dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction='dw' />" }
-	/^Up:/{ print "\t<measurement param=SHAPERATE tool=SP srcip='$src' dstip='$dst' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction='up' />" }
-	/^Down:/{ print "\t<measurement param=SHAPERATE tool=SP srcip='$dst' dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction='dw' />" }
+	/^Upstream:/{ print "\t<measurement param=CAPACITY tool=SP srcip='$src' dstip='$dst' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction=\"up\" />" }
+	/^Downstream:/{  print "\t<measurement param=CAPACITY tool=SP srcip='$dst' dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction=\"dw\" />" }
+	/^Up:/{ print "\t<measurement param=SHAPERATE tool=SP srcip='$src' dstip='$dst' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction=\"up\" />" }
+	/^Down:/{ print "\t<measurement param=SHAPERATE tool=SP srcip='$dst' dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction=\"dw\" />" }
 '
 
