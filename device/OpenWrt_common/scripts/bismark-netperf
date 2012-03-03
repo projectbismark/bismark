@@ -9,7 +9,7 @@
 . "$BROOT"/etc/bismark/bismark-active.conf
 
 # Help screen
-[ $4 ] || { echo "usage: $(basename $0) <duration> <nthreads> <dst_ip> <up|dw>" ; exit ; }
+[ $5 ] || { echo "usage: $(basename $0) <duration> <nthreads> <dst_ip> <dst_post> <up|dw>" ; exit ; }
 
 # Settings
 DATA_DIR=/tmp/bismark/active
@@ -17,7 +17,7 @@ cmd=/usr/bin/netperf
 out="$DATA_DIR/netperf-tmp-out"
 err="$DATA_DIR/netperf-err"
 ifaceout="$DATA_DIR/iface-out"
-port=$NETPERF_PORT
+#port=$NETPERF_PORT
 dataport=$NETPERF_DATAPORT
 
 # Auxiliary functions
@@ -54,7 +54,8 @@ parse() {
 T=$1
 N=$2
 host=$3
-dir=$4
+port=$4
+dir=$5
 keys=" -l$T -P0 -fk"
 case $dir in
 dw) 

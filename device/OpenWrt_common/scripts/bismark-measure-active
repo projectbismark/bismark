@@ -158,7 +158,7 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 				sleep $wait
 				dir="dw"
 				( sleep 3 ; "$BROOT"/usr/bin/bismark-ping $dst | "$BROOT"/usr/bin/bismark-mstats ULRTTDW PING $src $dst $dir >> $XML_FILE ) &
-				"$BROOT"/usr/bin/bismark-netperf $BR_DW_DURATION $NTHREADS $dst dw > /tmp/bismark/active/netperf-out
+				"$BROOT"/usr/bin/bismark-netperf $BR_DW_DURATION $NTHREADS $dst $info dw > /tmp/bismark/active/netperf-out
 				cat /tmp/bismark/active/netperf-out | "$BROOT"/usr/bin/bismark-mstats BITRATE NETPERF_${NTHREADS} $dst $src $dir | grep -v nan >> $XML_FILE
 				cat /tmp/bismark/active/iface-out | "$BROOT"/usr/bin/bismark-mstats AGGL3BITRATE IFACE $dst $src $dir | grep -v nan >> $XML_FILE
 				rm /tmp/bismark/active/netperf-out
@@ -175,7 +175,7 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 				sleep $wait
 				dir="up"
 				( sleep 3 ; "$BROOT"/usr/bin/bismark-ping $dst | "$BROOT"/usr/bin/bismark-mstats ULRTTUP PING $src $dst $dir >> $XML_FILE ) &
-				"$BROOT"/usr/bin/bismark-netperf $BR_UP_DURATION $NTHREADS $dst up > /tmp/bismark/active/netperf-out
+				"$BROOT"/usr/bin/bismark-netperf $BR_UP_DURATION $NTHREADS $dst $info up > /tmp/bismark/active/netperf-out
 				cat /tmp/bismark/active/netperf-out | "$BROOT"/usr/bin/bismark-mstats BITRATE NETPERF_${NTHREADS} $src $dst $dir | grep -v nan >> $XML_FILE
 				cat /tmp/bismark/active/iface-out | "$BROOT"/usr/bin/bismark-mstats AGGL3BITRATE IFACE $dst $src $dir | grep -v nan >> $XML_FILE
 				rm /tmp/bismark/active/netperf-out
@@ -209,7 +209,7 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 		if get_target Bismark SP $ZONE 150 ; then
 			if [ $wait -lt $MAX_MEASURE_WAIT ]; then
 				sleep $wait
-				"$BROOT"/usr/bin/bismark-sp $dst >> $XML_FILE
+				"$BROOT"/usr/bin/bismark-sp $dst $info >> $XML_FILE
 			fi
 		fi
 	fi

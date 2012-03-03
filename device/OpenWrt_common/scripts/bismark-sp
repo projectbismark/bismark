@@ -9,14 +9,15 @@
 . /usr/lib/bismark/functions.inc.sh
 
 # Help screen
-[ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit ; }
+[ $2 ] || { echo "usage: $(basename $0) <dst_ip> <dst_port>" ; exit ; }
 
 # Get measure info 
 get_ip
 dst=$1
+port=$2
 tstamp=$(date +%s)
 
-/usr/bin/prober | awk '
+/usr/bin/prober -s $dst -p $port | awk '
 	BEGIN{ RS="[\r\n]" }
 	/^Upstream:/{ print "\t<measurement param=CAPACITY tool=SP srcip='$src' dstip='$dst' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction=\"up\" />" }
 	/^Downstream:/{  print "\t<measurement param=CAPACITY tool=SP srcip='$dst' dstip='$src' timestamp='$tstamp' avg=" $2 " std=0 min=" $2 " max=" $2 " med=" $2 " iqr=0 direction=\"dw\" />" }
