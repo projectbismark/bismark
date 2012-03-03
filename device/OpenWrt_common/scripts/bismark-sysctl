@@ -8,11 +8,9 @@
 . "$BROOT"/etc/bismark/bismark-active.conf
 . /usr/lib/bismark/functions.inc.sh
 
-files = $BROOT"/etc/bismark/sysctl.conf /tmp/bismark/sysctl.conf"
+files=$BROOT"/etc/bismark/sysctl.conf /tmp/bismark/sysctl.conf"
 for file in files; do
 	if [ -e $file ]; then
-		for line in `grep -v ^# $file`; do
-			sysctl -w $line
-		done
+		sysctl -p $file
  	fi
 done 
