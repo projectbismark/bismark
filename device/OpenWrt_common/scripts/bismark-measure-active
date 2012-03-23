@@ -137,7 +137,10 @@ if get_target Bismark PING $ZONE 10 ; then
 	fi
 
 	# MServer RTT
-	"$BROOT"/usr/bin/bismark-ping $dst | "$BROOT"/usr/bin/bismark-mstats RTT PING $src $dst >> $XML_FILE 
+	if [ $count -eq 0 ]; then
+		"$BROOT"/usr/bin/bismark-fping /tmp/bismark/mservers.list $src >> $XML_FILE
+	fi
+	#"$BROOT"/usr/bin/bismark-ping $dst | "$BROOT"/usr/bin/bismark-mstats RTT PING $src $dst >> $XML_FILE 
 fi
 
 # DNS delay and failure
