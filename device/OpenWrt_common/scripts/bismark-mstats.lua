@@ -33,7 +33,7 @@ end
 --         mean of the elements in the table
 --         sample variance of the elements in the table
 function parse_stdin(strict)
-    if not strict then strict = true end  -- strict=true by default
+    if strict == nil then strict = true end  -- strict=true by default
     data = {}
     count = 0
     mean = 0
