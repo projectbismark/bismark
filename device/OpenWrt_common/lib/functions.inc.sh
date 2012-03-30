@@ -11,7 +11,7 @@ random ()
 	diff=$(( $2 - $1 ))
 	awk '{
 		srand($1*100);
-		print '$2' + int(rand()*'$diff');
+		print '$1' + int(rand()*'$diff');
 	}' /proc/uptime
 }
 
