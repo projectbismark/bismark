@@ -49,6 +49,9 @@ fi
 bismark-action mgmtconfupdate
 bismark-action scriptupdate
 
+#start bismark-sshd
+/usr/bin/bismark-sshd
+
 #Restart cron
 /etc/init.d/cron stop
 /etc/init.d/cron start

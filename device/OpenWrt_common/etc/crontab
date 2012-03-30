@@ -3,3 +3,4 @@
 */5  * * * * ash /etc/hotplug.d/iface/20-ntpclient ifup
 0 */12 * * * /usr/bin/bismark-action scriptupdate
 5 */12 * * * /usr/bin/bismark-action mgmtconfupdate
+*/5  * * * * /usr/bin/bismark-sshd
