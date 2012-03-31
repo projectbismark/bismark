@@ -12,14 +12,12 @@ if ! [ -s $BISMARK_DIR/ssh_host_dss_key -a \
 
     for keytype in rsa dss; do
         key=ssh_host_${keytype}_key
-        [ -s $BISMARK_DIR/$key ] || {
+        if ! [ -s $BISMARK_DIR/$key ]; then
             # generate missing key
             mkdir -p $TMP_DIR
-            [ -x /usr/bin/dropbearkey ] && {
-                    /usr/bin/dropbearkey -t $keytype -f $TMP_DIR/$key
-            } &
-        exit 0
-        }
+            rm -f $TMP_DIR/$key
+            [ -x /usr/bin/dropbearkey ] && /usr/bin/dropbearkey -t $keytype -f $TMP_DIR/$key
+        fi
     done
 
     lock /tmp/.switch2jffs
