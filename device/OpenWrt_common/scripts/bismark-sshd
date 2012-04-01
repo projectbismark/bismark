@@ -1,0 +1,41 @@
+#!/bin/ash
+
+# Import configuration and functions
+. /etc/bismark/bismark.conf
+. /usr/lib/bismark/functions.inc.sh
+
+BISMARK_DIR='/etc/bismark/dropbear'
+TMP_DIR='/tmp/bismark'
+
+if ! [ -s $BISMARK_DIR/ssh_host_dss_key -a \
+       -s $BISMARK_DIR/ssh_host_rsa_key ]; then
+
+    for keytype in rsa dss; do
+        key=ssh_host_${keytype}_key
+        if ! [ -s $BISMARK_DIR/$key ]; then
+            # generate missing key
+            mkdir -p $TMP_DIR
+            rm -f $TMP_DIR/$key
+            [ -x /usr/bin/dropbearkey ] && /usr/bin/dropbearkey -t $keytype -f $TMP_DIR/$key
+        fi
+    done
+
+    lock /tmp/.switch2jffs
+    mkdir -p $BISMARK_DIR
+    mv $TMP_DIR/ssh_host_* $BISMARK_DIR
+    lock -u /tmp/.switch2jffs
+    chown root $BISMARK_DIR
+    chmod 0700 $BISMARK_DIR
+fi
+
+PIDFILE="/var/run/dropbear_port$MGMT_SSHD_PORT.pid"
+
+if ! [ -f $PIDFILE -a -d /proc/$(cat $PIDFILE)/ ]; then
+    /usr/sbin/dropbear -p $MGMT_SSHD_PORT \
+                       -P $PIDFILE \
+                       -s \
+                       -g \
+                       -d $BISMARK_DIR/ssh_host_dss_key \
+                       -r $BISMARK_DIR/ssh_host_rsa_key \
+                       -D /etc/bismark/authorized_keys
+fi

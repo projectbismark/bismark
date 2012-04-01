@@ -15,6 +15,8 @@ mkdir -p /tmp/bismark/var
 # Set the device identifier
 if [ ! -e /etc/bismark/ID ]; then
 	(echo -n OW; ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
+	uci set system.@system[0].hostname=`cat /etc/bismark/ID`
+	uci commit system
 fi
 
 # Cronjobs setup
@@ -43,10 +45,17 @@ if [ `grep -c $DEVID /etc/opkg.conf` -eq 0 ]; then
         sed -i -e "s!experiments-device!experiments-device/$DEVID!g" /etc/opkg.conf  
 fi
 
-#Conf changes
+# Conf changes
 bismark-action mgmtconfupdate
 bismark-action scriptupdate
 
-#Restart cron
+# start bismark-sshd
+/usr/bin/bismark-sshd
+
+# don't run netserver on boot
+/etc/init.d/netserver stop
+/etc/init.d/netserver disable
+
+# Restart cron
 /etc/init.d/cron stop
 /etc/init.d/cron start

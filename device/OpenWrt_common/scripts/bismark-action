@@ -20,8 +20,8 @@
 case $1 in
 fwd)	# on-demand SSH tunnel
 	if [ $2 == ${2#*:} ]; then
-		# Default to local port 22 
-		( ssh -y $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:22 $USER@$SERVER >/dev/null 2>&1 & )
+		# Default to local port $MGMT_SSHD_PORT
+		( ssh -y $KEEP_ALIVE -N -i $SSH_KEY -R $2:127.0.0.1:$MGMT_SSHD_PORT $USER@$SERVER >/dev/null 2>&1 & )
 	else
 		# To custom IP:PORT destination
 		( ssh -y $KEEP_ALIVE -N -i $SSH_KEY -R $2 $USER@$SERVER >/dev/null 2>&1 & )
@@ -41,7 +41,7 @@ pong)	# Server heartbeat
 	fi
 	echo $ltime > /tmp/bismark/var/server_last
 
-	# Store public IP 
+	# Store public IP
 	echo $2 > /tmp/bismark/var/ip
 ;;
 update) # Software update
@@ -54,12 +54,12 @@ update) # Software update
        else
                # Upgrade everything from repositories
                opkg update
-               opkg upgrade bismark-{mgmt,active,chrome} 
-       fi 
+               opkg upgrade bismark-{mgmt,active,chrome}
+       fi
 ;;
 mgmtconfupdate) # mgmt conf update
        #wget -O /tmp/bismark/local.conf "$MGMT_CONF_URL"
-       dl_file "$MGMT_CONF_URL" /tmp/bismark/local.conf 
+       dl_file "$MGMT_CONF_URL" /tmp/bismark/local.conf
 ;;
 scriptupdate) # script file update
        if [ "$2" ]; then
