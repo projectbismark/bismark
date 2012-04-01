@@ -9,7 +9,7 @@
 . /usr/lib/bismark/functions.inc.sh
 
 files=$BROOT"/etc/bismark/sysctl.conf /tmp/bismark/sysctl.conf"
-for file in files; do
+for file in $files; do
 	if [ -e $file ]; then
 		sysctl -p $file
  	fi
