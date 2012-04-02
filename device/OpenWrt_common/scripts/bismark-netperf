@@ -50,6 +50,7 @@ parse() {
 	head -$c -q "$out"* | awk '{print $5}' | awk 'BEGIN{sum=0;}{sum+=$1}END{print sum}'; 
 }
 
+clean
 # Parse input parameters
 T=$1
 N=$2
