@@ -17,6 +17,7 @@ if [ ! -e /etc/bismark/ID ]; then
 	(echo -n OW; ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
 	uci set system.@system[0].hostname=`cat /etc/bismark/ID`
 	uci commit system
+	cat /etc/bismark/ID > /proc/sys/kernel/hostname
 fi
 
 # Cronjobs setup
