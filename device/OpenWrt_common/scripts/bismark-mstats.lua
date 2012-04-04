@@ -47,13 +47,16 @@ function parse_stdin(strict)
     while true do
         line = io.read('*line')
         if line == nil then break end
-        element = tonumber(bmlua.str.strip(line))
+        line = bmlua.str.strip(line)
+        element = tonumber(line)
         if element then                     -- symbols from Knuth's version:
             data[#data+1] = element         -- x_k
             count = count + 1               -- k
             delta = element - mean          -- delta = x_k - M_k-1
             mean = mean + delta/count       -- M_k = M_k-1 + delta/k
             S = S + delta*(element - mean)  -- S_k = S_k-1 + delta*(x_k - M_k)
+        elseif line == '' then
+            -- blank line, ignore
         elseif strict then
             -- we hit a bad row, and strict parsing is enabled -- return nil
             data = nil
