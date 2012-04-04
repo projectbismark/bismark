@@ -35,23 +35,25 @@ end
 function parse_stdin(strict)
     if strict == nil then strict = true end  -- strict=true by default
     data = {}
-    count = 0
-    mean = 0
-    M2 = 0
+    -- sample variance computed by Welford's method
+    -- see Knuth's The Art of Computer Programming 3e, vol. 2, page 232
+    -- this version is slightly different in that it doesn't need to treat the
+    -- first element separately.
+    count = 0   -- k in Knuth
+    mean = 0    -- M in Knuth
+    S = 0       -- S in Knuth
     variance = nil
 
     while true do
         line = io.read('*line')
         if line == nil then break end
         element = tonumber(bmlua.str.strip(line))
-        if element then
-            data[#data+1] = element
-            count = count + 1
-            -- sample variance computed by Welford's method
-            -- see Knuth's The Art of Computer Programming v.2, 2ed, page 232
-            delta = element - mean
-            mean = mean + delta/count
-            M2 = M2 + delta*(element - mean)
+        if element then                     -- symbols from Knuth's version:
+            data[#data+1] = element         -- x_k
+            count = count + 1               -- k
+            delta = element - mean          -- delta = x_k - M_k-1
+            mean = mean + delta/count       -- M_k = M_k-1 + delta/k
+            S = S + delta*(element - mean)  -- S_k = S_k-1 + delta*(x_k - M_k)
         elseif strict then
             -- we hit a bad row, and strict parsing is enabled -- return nil
             data = nil
@@ -60,7 +62,7 @@ function parse_stdin(strict)
     end
 
     if count > 1 then
-        variance = M2/(count - 1)
+        variance = S/(count - 1)
     elseif count == 1 then
         variance = 0
     end
