@@ -121,7 +121,7 @@ fi
 if get_target Bismark PING $ZONE 10 ; then
 	# Last mile RTT
 	if [ "$gwip" ]; then
-		( "$BROOT"/usr/bin/bismark-ping $gwip | "$BROOT"/usr/bin/bismark-mstats LMRTT PING $src $gwip > /tmp/bismark/active/lmrtt ; cat /tmp/bismark/active/lmrtt >> $XML_FILE ) &
+		"$BROOT"/usr/bin/bismark-ping $gwip | "$BROOT"/usr/bin/bismark-mstats LMRTT PING $src $gwip > /tmp/bismark/active/lmrtt ; cat /tmp/bismark/active/lmrtt >> $XML_FILE
 	fi
 
 	# Geo-distributed servers RTT
@@ -130,6 +130,7 @@ if get_target Bismark PING $ZONE 10 ; then
 		for srv in $(grep -shv ^# "$BROOT"/usr/lib/bismark/ping_targets.list /tmp/bismark/ping_targets.list | sort -u); do
 			( "$BROOT"/usr/bin/bismark-ping $srv | "$BROOT"/usr/bin/bismark-mstats RTT PING $src $srv > /tmp/bismark/active/gdrtt/$srv ; cat /tmp/bismark/active/gdrtt/$srv >> $XML_FILE ) &
 		done
+		wait
 	else
 		grep -shv ^# "$BROOT"/usr/lib/bismark/ping_targets.list /tmp/bismark/ping_targets.list | sort -u > /tmp/bismark/active/fping_list
 		"$BROOT"/usr/bin/bismark-fping /tmp/bismark/active/fping_list $src >> $XML_FILE
