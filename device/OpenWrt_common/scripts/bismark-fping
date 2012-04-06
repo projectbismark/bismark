@@ -8,7 +8,13 @@
 . "$BROOT"/etc/bismark/bismark-active.conf
 
 # Help screen
-[ $2 ] || { echo "usage: $(basename $0) <target_file_name> <src_ip>" ; exit ; }
+[ $2 ] || { echo "usage: $(basename $0) <target_file_name> <src_ip> [mstats_param]" ; exit ; }
+
+if [ $3 ]; then
+    mstats_param="$3"
+else
+    mstats_param="RTT"
+fi
 
 # Options selection
 opts="$opts -c $FPING_COUNT"
@@ -19,6 +25,6 @@ fping_out=/tmp/bismark/active/fping-out
 # Execute ping
 fping $opts -f $1 2>/dev/null | awk '/ms/{print $1, $6}' > $fping_out
 for i in `awk '{print $1}' $fping_out | sort -u`; do
-	awk '/'$i'/{print $2}' $fping_out | "$BROOT"/usr/bin/bismark-mstats RTT FPING $2 $i
+	awk '/'$i'/{print $2}' $fping_out | "$BROOT"/usr/bin/bismark-mstats $mstats_param FPING $2 $i
 done
 rm $fping_out
