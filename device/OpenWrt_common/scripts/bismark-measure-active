@@ -138,7 +138,7 @@ if get_target Bismark PING $ZONE 10 ; then
 	fi
 
 	# MServer RTT
-	if [ $count -eq 0 ]; then
+	if [ $count -eq 10 ]; then
 		"$BROOT"/usr/bin/bismark-fping /tmp/bismark/mservers.list $src MSERVER_RTT >> $XML_FILE
 	fi
 	#"$BROOT"/usr/bin/bismark-ping $dst | "$BROOT"/usr/bin/bismark-mstats RTT PING $src $dst >> $XML_FILE 
