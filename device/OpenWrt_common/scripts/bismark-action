@@ -29,16 +29,6 @@ fwd)	# on-demand SSH tunnel
 ;;
 pong)	# Server heartbeat
 	ltime=$(date +%s)
-	stime=$(( $3 + 2 ))
-
-	# Check clock synch
-	[ $stime -gt $((ltime + 1)) ] && resync=true
-	[ $stime -lt $((ltime - 1)) ] && resync=true
-	if [ $resync ]; then
-		ltime=$stime
-		date -s @$ltime
-		hwclock -w
-	fi
 	echo $ltime > /tmp/bismark/var/server_last
 
 	# Store public IP
