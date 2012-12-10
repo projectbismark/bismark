@@ -82,8 +82,16 @@ end
 ## Concurrent measurements ##
 if [ $((count % TR_UP_FQ)) -eq 0 ]; then
 	# Traceroute
-	if get_target Bismark TR $ZONE 0 ; then
-		hops=$("$BROOT"/usr/bin/bismark-tr $dst)
+	TR_TMP=/tmp/bismark/active/tr
+	get_target Bismark TR $ZONE 0
+	tdst=$(grep -shv ^# /tmp/bismark/tr_targets.list | sort -u | tr "\n" " ")
+	alldst="$dst $tdst"
+	for dst in $alldst; do
+		( "$BROOT"/usr/bin/bismark-tr $dst > $TR_TMP_$dst ) &
+	done
+	wait
+	for dst in $alldst; do
+		hops=$(cat $TR_TMP_$dst)
 		hops_cnt=$(echo "$hops" | wc -l)
 		if [ $hops_cnt -gt 0 ]; then
 			cat >> $XML_FILE <<-end
@@ -92,8 +100,9 @@ if [ $((count % TR_UP_FQ)) -eq 0 ]; then
 			        </traceroute>
 			end
 		fi
-		gwip=$(cat /tmp/bismark/active/gwip)
-	fi
+		rm $TR_TMP_$dst
+	done
+	gwip=$(cat /tmp/bismark/active/gwip)
 fi
 
 if [ $(( (count + MOFFSET) % TR_DW_FQ)) -eq 0 ]; then
