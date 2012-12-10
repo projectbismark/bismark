@@ -29,48 +29,16 @@ fwd)	# on-demand SSH tunnel
 ;;
 pong)	# Server heartbeat
 	ltime=$(date +%s)
-	stime=$(( $3 + 2 ))
-
-	# Check clock synch
-	[ $stime -gt $((ltime + 1)) ] && resync=true
-	[ $stime -lt $((ltime - 1)) ] && resync=true
-	if [ $resync ]; then
-		ltime=$stime
-		date -s @$ltime
-		hwclock -w
-	fi
 	echo $ltime > /tmp/bismark/var/server_last
 
 	# Store public IP
 	echo $2 > /tmp/bismark/var/ip
 ;;
-update) # Software update
-       if [ "$2" ]; then
-               # Upgrade from URL to ipk package
-               #wget -O /tmp/bismark/pkg.ipk "$2"
-               dl_file $2 /tmp/bismark/pkg.ipk
-               opkg install /tmp/bismark/pkg.ipk | output $1
-               rm /tmp/bismark/pkg.ipk
-       else
-               # Upgrade everything from repositories
-               opkg update
-               opkg upgrade bismark-{mgmt,active,chrome}
-       fi
-;;
 mgmtconfupdate) # mgmt conf update
-       #wget -O /tmp/bismark/local.conf "$MGMT_CONF_URL"
-       dl_file "$MGMT_CONF_URL" /tmp/bismark/local.conf
+	dl_file "$MGMT_CONF_URL" /tmp/bismark/local.conf
 ;;
 scriptupdate) # script file update
-       if [ "$2" ]; then
-               # Upgrade script from URL
-               #wget -O /tmp/bismark/$DEVICE_ID.sh "$2"
-               dl_file "$2" /tmp/bismark/$DEVICE_ID.sh
-       else
-               # Upgrade script from default URL
-               #wget -O /tmp/bismark/$DEVICE_ID.sh "$SCRIPT_URL"
-               dl_file "$SCRIPT_URL" /tmp/bismark/$DEVICE_ID.sh
-       fi
-	   chmod 544 /tmp/bismark/$DEVICE_ID.sh
+	dl_file "$SCRIPT_URL" /tmp/bismark/$DEVICE_ID.sh
+	chmod 544 /tmp/bismark/$DEVICE_ID.sh
 ;;
 esac

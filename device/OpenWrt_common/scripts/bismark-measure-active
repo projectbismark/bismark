@@ -190,7 +190,7 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 				( sleep 3 ; "$BROOT"/usr/bin/bismark-ping $dst | "$BROOT"/usr/bin/bismark-mstats ULRTTUP PING $src $dst $dir >> $XML_FILE ) &
 				"$BROOT"/usr/bin/bismark-netperf $BR_UP_DURATION $NTHREADS $dst $info up > /tmp/bismark/active/netperf-out
 				cat /tmp/bismark/active/netperf-out | "$BROOT"/usr/bin/bismark-mstats BITRATE NETPERF_${NTHREADS} $src $dst $dir | grep -v nan >> $XML_FILE
-				cat /tmp/bismark/active/iface-out | "$BROOT"/usr/bin/bismark-mstats AGGL3BITRATE IFACE $dst $src $dir | grep -v nan >> $XML_FILE
+				cat /tmp/bismark/active/iface-out | "$BROOT"/usr/bin/bismark-mstats AGGL3BITRATE IFACE $src $dst $dir | grep -v nan >> $XML_FILE
 				rm /tmp/bismark/active/netperf-out
 				rm /tmp/bismark/active/iface-out
 			fi
