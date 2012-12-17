@@ -11,7 +11,9 @@
 DATA_DIR=/tmp/bismark/active
 
 # Help screen
-[ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit 1 ; }
+[ $1 ] || { echo "usage: $(basename $0) <dst_ip> <protocol (default ICMP)>" ; exit 1 ; }
+
+[ $2 ] && TR_TYPE=$2
 
 # AWK filters
 filter_common='	
@@ -51,7 +53,8 @@ filter_tcp='
 case $TR_TYPE in
 UDP)  
 	cmd="traceroute"
-	opts="-n -q1 -w1"
+	port=$(random 30000 50000)
+	opts="-n -q1 -w1 -p$port"
 	filter=$filter_std
 ;;
 TCP)
