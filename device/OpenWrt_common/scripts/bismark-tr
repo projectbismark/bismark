@@ -6,12 +6,13 @@
 # Load configuration files
 . /etc/bismark/bismark.conf
 . "$BROOT"/etc/bismark/bismark-active.conf
+. /usr/lib/bismark/functions.inc.sh
 
 # Settings
 DATA_DIR=/tmp/bismark/active
 
 # Help screen
-[ $1 ] || { echo "usage: $(basename $0) <dst_ip> <protocol (default ICMP)>" ; exit 1 ; }
+[ $1 ] || { echo "usage: $(basename $0) <dst_ip> <protocol(default ICMP)>" ; exit 1 ; }
 
 [ $2 ] && TR_TYPE=$2
 
@@ -53,7 +54,7 @@ filter_tcp='
 case $TR_TYPE in
 UDP)  
 	cmd="traceroute"
-	port=$(random 30000 50000)
+	port=$(random 33434 33504)
 	opts="-n -q1 -w1 -p$port"
 	filter=$filter_std
 ;;
