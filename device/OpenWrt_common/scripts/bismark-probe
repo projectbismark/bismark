@@ -44,13 +44,13 @@ PROBE_PORT=$(echo $PROBE_PORTS | awk '{print $'$((port_counter + 1))'}')
 
 # Send probe and store reply
 if [ $(cat /tmp/bismark/var/proxy) -eq 1 ]; then
-	msg | nc -u $NC_OPTS $PROXY $PROXY_PORT > /tmp/bismark/var/reply
+	repstr=`msg | nc -u $NC_OPTS $PROXY $PROXY_PORT`
 else
-	msg | nc -u $NC_OPTS $SERVER $PROBE_PORT > /tmp/bismark/var/reply
+	repstr=`msg | nc -u $NC_OPTS $SERVER $PROBE_PORT`
 fi
 
 # Faults control 
-if [ "`cat /tmp/bismark/var/reply`" ]; then
+if [ "$repstr" ]; then
 	# Reset faults count
 	echo 0 > /tmp/bismark/var/faults
 	#event uplink up
@@ -65,6 +65,10 @@ else
 fi
 
 # Parse reply
-read cmd value < /tmp/bismark/var/reply
+#read cmd value < /tmp/bismark/var/reply
+cmd=`echo $repstr | cut -d" " -f1`
+value=`echo $repstr | cut -d" " -f2-`
+echo $repstr > /tmp/bismark/var/reply
+
 [ $cmd ] && REMOTE=on bismark-action $cmd $value
 
