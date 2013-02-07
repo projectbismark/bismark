@@ -39,7 +39,13 @@ fi
 sleep $(random 0 $MAX_SLEEP)
 
 # Select probe port
-read port_counter < /tmp/bismark/var/port_counter
+if [ ! -e /tmp/bismark/var/port_counter ] || [ ! `cat /tmp/bismark/var/port_counter` ]; then
+	ports=$(echo $PROBE_PORTS | awk '{print NF}')
+	port_counter=$(random 0 $ports) 
+	echo 0 > /tmp/bismark/var/port_counter
+else
+	read port_counter < /tmp/bismark/var/port_counter
+fi
 PROBE_PORT=$(echo $PROBE_PORTS | awk '{print $'$((port_counter + 1))'}')
 
 # Send probe and store reply
@@ -60,8 +66,12 @@ else
 
 	# Cycle server port
 	ports=$(echo $PROBE_PORTS | awk '{print NF}')
-	echo $(( (port_counter + 1) % ports )) > /tmp/bismark/var/port_counter
-	#event uplink down
+	nport=$(( (port_counter + 1) % ports )) 
+	echo $nport > /tmp/bismark/var/port_counter
+	echo NPORT $nport
+	if [ ! -e /tmp/bismark/var/port_counter ] || [ ! `cat /tmp/bismark/var/port_counter` ] || [ $nport -ne `cat /tmp/bismark/var/port_counter` ]; then
+		rm -f /tmp/bismark/var/port_counter
+	fi
 fi
 
 # Parse reply
