@@ -61,14 +61,14 @@ TCP)
 		filter=$filter_tcp
 	else
 		cmd="traceroute"
-		opts="-n -q1 -T"
+		opts="-n -q1 -w1 -T"
 		filter=$filter_std
 	fi
 	[ $(id -u) -eq 0 ] || cmd="sudo $cmd"
 ;;
 ICMP)
 	cmd="traceroute"
-	opts="-n -q1 -I"
+	opts="-n -q1 -w1 -I"
 	filter=$filter_std
 	[ $(id -u) -eq 0 ] || cmd="sudo $cmd"
 ;;
