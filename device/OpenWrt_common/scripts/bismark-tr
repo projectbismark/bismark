@@ -51,7 +51,7 @@ filter_tcp='
 case $TR_TYPE in
 UDP)  
 	cmd="traceroute"
-	opts="-n -q1"
+	opts="-n -q1 -w1"
 	filter=$filter_std
 ;;
 TCP)
