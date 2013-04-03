@@ -127,12 +127,13 @@ if get_target Bismark PING $ZONE 10 ; then
 	# Geo-distributed servers RTT
 	if [ $USE_FPING -eq 0 ]; then
 		mkdir -p /tmp/bismark/active/gdrtt
-		for srv in $(grep -shv ^# "$BROOT"/usr/lib/bismark/ping_targets.list /tmp/bismark/ping_targets.list | sort -u); do
+		for srv in $dst $(grep -shv ^# "$BROOT"/usr/lib/bismark/ping_targets.list /tmp/bismark/ping_targets.list | sort -u); do
 			( "$BROOT"/usr/bin/bismark-ping $srv | "$BROOT"/usr/bin/bismark-mstats RTT PING $src $srv > /tmp/bismark/active/gdrtt/$srv ; cat /tmp/bismark/active/gdrtt/$srv >> $XML_FILE ) &
 		done
 		wait
 	else
 		grep -shv ^# "$BROOT"/usr/lib/bismark/ping_targets.list /tmp/bismark/ping_targets.list | sort -u > /tmp/bismark/active/fping_list
+		echo $dst >> /tmp/bismark/active/fping_list
 		"$BROOT"/usr/bin/bismark-fping /tmp/bismark/active/fping_list $src >> $XML_FILE
 		rm /tmp/bismark/active/fping_list
 	fi
