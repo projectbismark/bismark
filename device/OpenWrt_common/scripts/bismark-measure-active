@@ -79,6 +79,61 @@ cat > $XML_FILE <<-end
 	        <info deviceid="$DEVICE_ID" />
 end
 
+## Concurrent measurements using paris-traceroute
+if [ $((count%PTR_UP_FQ)) -eq 0 ] ; then
+    # Paris Traceroute to list and nearest MLAB server
+    get_target Bismark TR $ZONE 0
+    for srv in $(echo $dst | grep -shv ^# "$BROOT"/bismark/paristraceroute_targets.list - | grep -v ^$ | sort -u); do
+        ( "$BROOT"/usr/bin/bismark-ptr $srv > /tmp/bismark/active/gdptr/$srv)&
+    done
+    wait
+
+    # Reading $srv (forward traceroute) file and parsing into XML file
+    for value in $(ls "$BROOT"/bismark/active/gdptr/); do
+        hops_cnt=$(cat "$BROOT"/bismark/active/gdptr/$value |wc -l)
+        if [ $hops_cnt -gt 0 ] ; then
+            cat >> $XML_FILE <<-end
+        <paristraceroute srcip="$src" dstip="$value" timestamp="$(date +%s)" hops="$hops_cnt" direction="up">
+            end
+            cat "$BROOT"/bismark/active/gdptr/$value | awk '{ print "                " $0 }' | cat >> $XML_FILE 
+            cat >> $XML_FILE <<-end
+                    </paristraceroute>
+            end
+        fi
+    done
+
+    # clean up
+    rm /tmp/bismark/active/gdptr/*
+
+fi
+
+if [ $(((count + P_MOFFSET)%PTR_DW_FQ)) -eq 0 ] ; then
+    # Reverse paris Traceroute from list and nearest MLAB server
+    get_target Bismark RTR $ZONE 0
+    for srv in $(echo $dst | grep -shv ^# "$BROOT"/bismark/paristraceroute_targets.list - | grep -v ^$ | sort -u); do
+        ( "$BROOT"/usr/bin/bismark-rptr $srv $RPTR_PORT > /tmp/bismark/active/gdptr/$srv)&
+    done
+    wait
+
+    # Reading $srv (reverse traceroute) file and parsing into XML file
+    for value in $(ls "$BROOT"/bismark/active/gdptr/); do
+        hops_cnt=$(cat /tmp/bismark/active/gdptr/$value |wc -l)
+        if [ $hops_cnt -gt 0 ] ; then
+            cat >> $XML_FILE <<-end
+        <paristraceroute srcip="$value" dstip="$src" timestamp="$(date +%s)" hops="$hops_cnt" direction="dw">
+            end
+            cat "$BROOT"/bismark/active/gdptr/$value | awk '{ print "                " $0 }' | cat >> $XML_FILE 
+            cat >> $XML_FILE <<-end
+                    </paristraceroute>
+            end
+        fi
+    done
+    wait
+
+    # clean up
+    rm /tmp/bismark/active/gdptr/*
+fi
+
 ## Concurrent measurements ##
 if [ $((count % TR_UP_FQ)) -eq 0 ]; then
 	# Traceroute
