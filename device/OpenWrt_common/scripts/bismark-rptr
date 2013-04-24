@@ -1,0 +1,24 @@
+#!/bin/ash
+# Bismark reverse traceroute wrapper
+#
+# author: walter.dedonato@unina.it
+# modified by sarthak
+
+# Load configuration files
+. /etc/bismark/bismark.conf
+. "$BROOT"/etc/bismark/bismark-active.conf
+
+# Help screen
+[ $2 ] || { echo "usage: $(basename $0) <ip> <port>" ; exit 1 ; }
+
+# AWK filters
+filter='
+    ! /trace/{
+        if ( $1 == "MPLS" || $1=="") {
+            next
+        }
+        print "<hop id=\""$1"\" ip=\""$2"\" rtt=\""$3"\" />"
+        }'
+
+# Exec reverse traceroute
+{ echo $RPTR_TYPE ; sleep 30 ; } | nc $NC_OPTS $1 $2 | awk "$filter"
