@@ -1,0 +1,84 @@
+#!/bin/ash
+# Bismark traceroute wrapper
+#
+# original author: walter.dedonato@unina.it
+# edit: swati, sarthak
+#
+# Load configuration files
+. /etc/bismark/bismark.conf
+. "$BROOT"/etc/bismark/bismark-active.conf
+
+# Settings
+DATA_DIR=/tmp/bismark/active
+
+# Help screen
+[ $1 ] || { echo "usage: $(basename $0) <dst_ip>" ; exit 1 ; }
+
+# AWK filters
+filter_common='	
+    if (! gwip) {
+        if ( $2 ~ /^10\./ || $2 ~ /^192\.168/ ) {
+            next
+        }
+        if ( $2 ~ /^172\./ ) {
+            split($2,sip,".")
+            if ( sip[2] > 15 && sip[2] < 32 ) {
+                next
+            }
+        }
+    gwip=$2
+    if (gwip == "*")
+        gwip = ""
+    else
+        print gwip > "'$DATA_DIR'/gwip"
+    }
+'
+filter_std='
+    ! /trace/{
+        #TODO change this if we want to store MPLS labels
+        #if MPLS append label number and TTL to previous entry
+        if ( $1 == "MPLS" || $1=="") {
+            next
+        }
+        #TODO comment out to store !Tx ttl values
+        #split($5, ttl, "")
+        #print "<hop id=\""$1"\" ip=\""$2"\" rtt=\""$3"\" original_ttl=\""ttl[3]"\"/>"
+        print "<hop id=\""$1"\" ip=\""$2"\" rtt=\""$3"\" />"
+        '$filter_common'
+        }
+'
+filter_tcp='
+    { rtt=$3 }  
+    /\[.*\]/{ rtt=$4 }
+    {
+        print "<hop id=\""$1"\" ip=\""$2"\" rtt=\""rtt"\" />" 
+        '$filter_common'
+    }
+'
+
+# Select traceroute type: Default ICMP
+case $PTR_TYPE in
+UDP)  
+# TODO find a way to implement source port option using temp files --- Sarthak
+    cmd="paris-traceroute"
+    opts="-n -q1 -p udp -w $WAIT_TIME -s $SRC_PORT"
+    filter=$filter_std
+    [ $(id -u) -eq 0 ] || cmd="sudo $cmd"
+;;
+TCP)
+    cmd="paris-traceroute"
+    opts="-n -q1 -p tcp -w $WAIT_TIME"
+    filter=$filter_std
+    [ $(id -u) -eq 0 ] || cmd="sudo $cmd"
+;;
+ICMP)
+    cmd="paris-traceroute"
+    opts="-n -q1 -p icmp -w $WAIT_TIME"
+    filter=$filter_std
+    [ $(id -u) -eq 0 ] || cmd="sudo $cmd"
+;;
+esac
+
+# Run traceroute
+echo "" > $DATA_DIR/gwip
+$cmd $opts $1 | awk "$filter"
