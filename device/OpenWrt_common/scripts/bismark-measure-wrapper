@@ -28,6 +28,7 @@ else
         #wget -O /tmp/bismark/dns_targets.list $DNS_TARGETS_URL
         dl_file $DNS_TARGETS_URL  /tmp/bismark/dns_targets.list 
         dl_file $MSERVERS_URL /tmp/bismark/mservers.list 
+        dl_file $PTR_TARGETS /tmp/bismark/paristraceroute_targets.list
         dl_file $SYSCTL_URL /tmp/bismark/sysctl.conf
 		date +%s > $LOCKFILE
 		"$BROOT"/usr/bin/bismark-measure-active
