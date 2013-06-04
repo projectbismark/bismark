@@ -96,7 +96,7 @@ if [ $((count % PTR_UP_FQ)) -eq 0 ] ; then
 			cat >> $XML_FILE <<-end
 			        <traceroute srcip="$src" dstip="$filename" timestamp="$(date +%s)" hops="$hops_cnt" direction="up" tool="paristraceroute">
 			end
-			cat "$BROOT"/bismark/active/gdptr/$filename | awk '{ print "                " $0 }' | cat >> $XML_FILE 
+			cat "$BROOT"/bismark/active/gdptr/$filename | awk '{ print "                " $0 }' | cat >> $XML_FILE
 			cat >> $XML_FILE <<-end
 			        </traceroute>
 			end
@@ -109,7 +109,7 @@ if [ $((count % PTR_UP_FQ)) -eq 0 ] ; then
 
 fi
 
-if [ $( ((count + P_MOFFSET) % PTR_DW_FQ) ) -eq 0 ] ; then
+if [ $(( (count + P_MOFFSET) % PTR_DW_FQ)) -eq 0 ] ; then
 	# Reverse paris Traceroute from list and nearest MLAB server
 	get_target Bismark RTR $ZONE 0
 	for srv in $( echo $dst | grep -shv ^# "$BROOT"/bismark/paristraceroute_targets.list - | grep -v ^$ | sort -u ); do
@@ -122,9 +122,9 @@ if [ $( ((count + P_MOFFSET) % PTR_DW_FQ) ) -eq 0 ] ; then
 		hops_cnt=$(cat /tmp/bismark/active/gdptr/$filename | wc -l)
 		if [ $hops_cnt -gt 0 ] ; then
 			cat >> $XML_FILE <<-end
-			        <traceroute srcip="$value" dstip="$src" timestamp="$(date +%s)" hops="$hops_cnt" direction="dw" tool="paristraceroute">
+			        <traceroute srcip="$filename" dstip="$src" timestamp="$(date +%s)" hops="$hops_cnt" direction="dw" tool="paristraceroute">
 			end
-			cat "$BROOT"/bismark/active/gdptr/$value | awk '{ print "                " $0 }' | cat >> $XML_FILE 
+			cat "$BROOT"/bismark/active/gdptr/$filename | awk '{ print "                " $0 }' | cat >> $XML_FILE
 			cat >> $XML_FILE <<-end
 			        </traceroute>
 			end
