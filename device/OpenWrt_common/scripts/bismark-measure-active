@@ -307,7 +307,7 @@ mv $XML_FILE /tmp/bismark/data
 if [ -e /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness ]; then
 	echo 0 > /sys/devices/platform/leds-gpio/leds/wndr3700:orange:wps/brightness
 fi
-
+pkill ITG
 #scp -S "/tmp/bismark/ssh" -i $SSH_KEY /tmp/bismark/data/*.xml $USER@$SERVER:var/data/test/ 
 mv /tmp/bismark/data/*.xml /tmp/bismark-uploads/active
 #&& rm /tmp/bismark/data/*.xml
