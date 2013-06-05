@@ -94,7 +94,7 @@ if [ $((count % PTR_UP_FQ)) -eq 0 ] ; then
 		hops_cnt=$( cat "$BROOT"/bismark/active/gdptr/$filename | wc -l )
 		if [ $hops_cnt -gt 0 ] ; then
 			cat >> $XML_FILE <<-end
-			        <traceroute srcip="$src" dstip="$filename" timestamp="$(date +%s)" hops="$hops_cnt" direction="up" tool="paristraceroute">
+			        <traceroute srcip="$src" dstip="$filename" timestamp="$(date +%s)" hops="$hops_cnt" direction="up" toolid="paristraceroute">
 			end
 			cat "$BROOT"/bismark/active/gdptr/$filename | awk '{ print "                " $0 }' | cat >> $XML_FILE
 			cat >> $XML_FILE <<-end
@@ -122,7 +122,7 @@ if [ $(( (count + P_MOFFSET) % PTR_DW_FQ)) -eq 0 ] ; then
 		hops_cnt=$(cat /tmp/bismark/active/gdptr/$filename | wc -l)
 		if [ $hops_cnt -gt 0 ] ; then
 			cat >> $XML_FILE <<-end
-			        <traceroute srcip="$filename" dstip="$src" timestamp="$(date +%s)" hops="$hops_cnt" direction="dw" tool="paristraceroute">
+			        <traceroute srcip="$filename" dstip="$src" timestamp="$(date +%s)" hops="$hops_cnt" direction="dw" toolid="paristraceroute">
 			end
 			cat "$BROOT"/bismark/active/gdptr/$filename | awk '{ print "                " $0 }' | cat >> $XML_FILE
 			cat >> $XML_FILE <<-end
