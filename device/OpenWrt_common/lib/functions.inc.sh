@@ -71,3 +71,59 @@ dl_file ()
 		echo -n "" > $2
 	fi
 }
+
+# Atomically acquire the measurement lock.
+# Arguments: process names to kill when expiring the lock.
+# CAUTION: These process names should be unique to this active
+# measurement, otherwise there will be collateral damage when
+# the lock is expired and these processes are killed.
+# Returns: 0 if locking was successful, nonzero if unsuccessful.
+acquire_active_measurements_lock ()
+{
+	(set -o noclobber; busybox echo "$*" > $ACTIVE_MEASUREMENTS_LOCK_FILE)
+}
+
+# Atomically release the measurement lock.
+# Returns: 0 if successful, nonzero if lock was already released.
+release_active_measurments_lock ()
+{
+	busybox rm $ACTIVE_MEASUREMENTS_LOCK_FILE
+}
+
+# Print the timestamp when the mlock was last locked.
+# Returns: 0 if lock exists and we could get its creation time; nonzero otherise
+active_measurements_lock_creation_time ()
+{
+	if ! stat_result=$(busybox stat -t $ACTIVE_MEASUREMENTS_LOCK_FILE); then
+		return $?
+	fi
+	echo $stat_result | busybox cut -d" " -f13
+}
+
+# Check if the active measurements lock has expired. If it has, expire the lock
+# by killing its processes and releasing the lock.
+# Returns: 0 if successful, nonzero on error.
+expire_active_measurements_lock ()
+{
+	if ! processes_to_kill=$(busybox cat $ACTIVE_MEASUREMENTS_LOCK_FILE); then
+		return $?
+	fi
+	if ! locktime=$(active_measurements_lock_creation_time); then
+		return $?
+	fi
+	currtime=$(busybox date +%s)
+	if [ $((currtime - locktime)) -lt $ACTIVE_MEASUREMENTS_MAX_DURATION_SECONDS ]; then
+		return 0
+	fi
+	# There's a race condition here. Between getting the lock creation time
+	# and releasing the lock, it's possible that the lock has been released
+	# and subquently acquired by someone else, who shouldn't be expired or
+	# released at this time. The chance of this happening is very low,
+	# but you never know...
+	if ! release_active_measurments_lock; then
+		return 0
+	fi
+	for process in $processes_to_kill; do
+		busybox killall $process
+	done
+}
