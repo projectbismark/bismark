@@ -90,7 +90,7 @@ release_active_measurments_lock ()
 	busybox rm $ACTIVE_MEASUREMENTS_LOCK_FILE
 }
 
-# Print the timestamp when the mlock was last locked.
+# Print the timestamp when the active measurements lock was last acquired.
 # Returns: 0 if lock exists and we could get its creation time; nonzero otherise
 active_measurements_lock_creation_time ()
 {
