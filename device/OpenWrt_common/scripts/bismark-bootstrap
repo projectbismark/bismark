@@ -14,7 +14,8 @@ mkdir -p /tmp/bismark/var
 
 # Set the device identifier
 if [ ! -e /etc/bismark/ID ]; then
-	(echo -n OW; ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }' ) > /etc/bismark/ID
+	lanmac=0x`ifconfig $LAN_IF | awk '/HWaddr / { gsub(":","", $5); print $5 }'`
+	printf "OW%X\n" $((lanmac & 0xFDFFFFFFFFFF)) > /etc/bismark/ID
 	uci set system.@system[0].hostname=`cat /etc/bismark/ID`
 	uci commit system
 	cat /etc/bismark/ID > /proc/sys/kernel/hostname
