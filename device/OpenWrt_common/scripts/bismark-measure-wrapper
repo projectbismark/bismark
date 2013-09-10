@@ -9,7 +9,6 @@
 
 utime=`awk -F'[ .]' '{print $1}' /proc/uptime`
 LOCKFILE=/tmp/bismark/var/measurelock  # lockfile for bismark-measure-wrapper
-MLOCKFILE=/tmp/bismark/var/mlock  # lockfile for server-scheduled tests run by bismark-measure-active
 
 if [ -e $LOCKFILE ]; then
 	ntime=`date +%s`
@@ -17,7 +16,8 @@ if [ -e $LOCKFILE ]; then
 	if [ $((ntime - ctime)) -gt $MAX_TEST_DURATION ]; then
 		kill -9 `ps aux | grep bismark-measure-active | awk -F" " '!/grep/{print $1}'`
 		kill -9 `ps aux | grep "$DEVICE_ID".sh | awk -F" " '!/grep/{print $1}'`
-		rm $LOCKFILE $MLOCKFILE /tmp/bismark/data/* /tmp/bismark/active/*.xml
+		rm $LOCKFILE /tmp/bismark/data/* /tmp/bismark/active/*.xml
+		expire_active_measurements_lock
 	fi
 else
 	if [ $(( (utime/60)%ACTIVE_MEASUREMENT_FQ )) -eq 0 ]; then

@@ -208,9 +208,7 @@ if [ $((count % DNS_FQ)) -eq 0 ]; then
 fi
 
 ## Serial measurements ##
-if [ ! -e /tmp/bismark/var/mlock ]; then 
-	# Set measure lock
-	echo $(date +%s) > /tmp/bismark/var/mlock
+if acquire_active_measurements_lock netperf prober ITGRecv ITGSend; then
 	# Bitrate
 	if [ $(( (count + MOFFSET) % BR_DW_FQ)) -eq 0 ]; then
 		# Downstream bitrate using NETPERF
@@ -277,15 +275,10 @@ if [ ! -e /tmp/bismark/var/mlock ]; then
 	fi
 
 	# Release measure lock
-	rm /tmp/bismark/var/mlock
+	release_active_measurments_lock
 else
-	# Check lock
-	locktime=$(cat /tmp/bismark/var/mlock)
-	currtime=$(date +%s)
-	if [ $((currtime - locktime)) -gt 400  ]; then
-		killall netperf prober ITGRecv ITGSend
-		rm /tmp/bismark/var/mlock
-	fi
+	# Check if lock has expired
+	expire_active_measurements_lock
 fi
 
 # XML file footer
