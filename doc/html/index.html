@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Project BISmark - Bradband Internet Service Benchmark
+        </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="assets/css/tabs.css">
+        <link href='http://fonts.googleapis.com/css?family=Ubuntu&subset=cyrillic,latin' rel='stylesheet' type='text/css' />
+        <a href="https://your-url" class="github-corner" aria-label="View source on GitHub">
+            <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true">
+                <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+                <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+                <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
+            </svg>
+        </a>
+        <style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+        <style>
+        .tb {
+            color: #0091C9
+        }
+        body {
+            font-family : 'Ubuntu', sans-serif;
+            font-style: normal;
+            background-color: #ccc;
+        }
+        h2 {
+            font-family : 'Ubuntu', sans-serif;
+            text-align: center;
+            margin: 5px;
+        }
+        p {
+            font-family : 'Ubuntu', sans-serif;
+            font-size: 14px;
+            font-style: italic;
+            text-align: center;
+            margin: 0;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            background-color: white;
+            border-top: none;
+        }
+        .activediv {
+            display: block;
+            padding: 6px 12px;
+            background-color: white;
+            border-top: none;
+        }
+        </style>
+        <body>
+        <div id="container" style="max-width:900px; margin: 5px auto; background-color: white; box-shadow: 10px 10px 5px grey;">
+            <div style="padding-top: 10px; text-align: center; "> <!--border: solid 1px black-->
+            <h2 style=""> <!--border: solid 1px black-->
+                <b class="tb">Project BISmark</b> - <b class="tb">B</b>roadband <b class="tb">I</b>nternet <b class="tb">S</b>ervice <b class="tb">B</b>ench<b class="tb">MARK</b>
+            </h2>
+            <p style="">BISmark is an <b>open source</b>, <b>open data</b>, neutral platform for active internet performance<br>
+                monitoring. It's designed to run in your Single Board Computer (SBC) through the installation of the free<br>
+                packages. The software is pre configured to send performance statistics to our centralized server.
+            </p> <!--border: solid 1px black-->
+            </div>
+
+            <div style="max-width:900px; margin: 10px auto; ">
+                    <div class=tab-container style=""> <!--border: 1px solid black;-->
+                        <ul class="tabs clearfix" >
+                        <li id="social">
+                            <a href=#>Social Media</a> 
+                        </li>
+                        <li id="data"> 
+                            <a href="#" id="asdf">Data and Source Code</a> 
+                        </li>
+                        <li id="publications"> 
+                            <a href=#>Publications</a> 
+                        </li>
+                        <li id="works" class=active >
+                            <a href=#>How it Works</a>
+                        </li>
+                        </ul>
+                    </div>
+                    <div class=outer-circle></div>
+                        <div id="works_div" class="activediv">
+                            <img src="poster20191017.jpg" style="width:100%">
+                        </div>
+                        
+                        <div id="data_div" class="tabcontent" style="min-height:500px;">
+                                <p style="text-align: left">Main resources:</p>
+                                <ul>
+                                        <li>
+                                            <a href="http://networkdaskboard.org">http://networkdaskboard.org</a>: The official BISmark dataset explorer for <b>old</b> and <b>new</b> architecture.
+                                        </li>
+                                        <li>
+                                            Data CSV Format (from the <a href="https://github.com/projectbismark">retired architecture</a>): 
+                                            <a href="">2011</a> 
+                                            <a href="">2012</a> 
+                                            <a href="">2013</a> 
+                                            <a href="">2014</a> 
+                                            <a href="">2015</a> 
+                                            <a href="">2016</a> 
+                                            <a href="">2017</a> 
+                                            <a href="">2018</a> 
+                                            <a href="">2019</a> 
+                                        </li>
+                                        <li>
+                                            Source Code on Github: <a href="https://github.com/chicago-cdac">Network Microscope Active</a> (new architecture).
+                                        </li>
+                                </ul>
+                                <p style="text-align: left"> Related Resources:</p>
+                                <ul>
+                                    <li>
+                                        List of supported devices: Jetson Nano / Google Coral / Raspberry Pi4
+                                    </li>
+                                    <li>
+                                        List of tools used: ping / traceroute / paris-traceroute / iperf / httping / scamper
+                                    </li>
+                                    <li>
+                                            Network Microscope Passive
+                                    </li>
+                                    <li>
+                                        CAIDA 
+                                    </li>
+                                    <li>
+                                        M-Lab 
+                                    </li>
+                                </ul>
+                        </div>
+                        
+                        <div id="publications_div" class="tabcontent">
+                                <ul>
+                                        <li>
+                                        <em><a href="https://www.usenix.org/system/files/conference/atc14/atc14-paper-sundaresan.pdf">BISmark: A Testbed for Deploying Measurements and Applications in Broadband Access Networks</a></em><br>
+                                        S. Sundaresan, S. Burnett, N. Feamster, W. de Donato<br>
+                                        To appear at <em>USENIX Annual Technical Conference</em><br>
+                                        Philadelphia, Pennsylvania, USA. June 2014
+                                        </li>
+                                        <li>
+                                        <em><a href="http://link.springer.com/chapter/10.1007%2F978-3-319-04918-2_20">
+                                        Peering at the Internet's Frontier: A First Look at ISP Interconnectivity in Africa</a></em><br>
+                                        A. Gupta, M. Calder, N. Feamster, M. Chetty, E. Calandro, E. Katz-Bassett<br>
+                                        <em>Passive and Active Measurement Conference</em><br>
+                                        Los Angeles, California, USA. March 2014
+                                        </li>
+                                        <li>
+                                        <em><a href="http://www1.icsi.berkeley.edu/~srikanth/docs/broadband-sa-dev4.pdf">
+                                        Measuring Broadband Performance in South Africa</a></em><br>
+                                        M. Chetty, S. Sundaresan, S. Muckaden, N. Feamster, Enrico Calandro<br>
+                                        <em>ACM DEV</em><br>
+                                        Cape Town, South Africa. December 2013
+                                        </li>
+                                        <li><em><a href="http://conferences.sigcomm.org/imc/2013/papers/imc061-groverA.pdf">
+                                        Peeking Behind the NAT: An Empirical Study of Home Networks</a></em>
+                                        <br> S. Grover, M.S. Park, S. Sundaresan, S. Burnett, H. Kim, N. Feamster<br>
+                                        <em> ACM SIGCOMM Internet Measurement Conference</em><br> Barcelona, Spain. 
+                                        October 2013 </li>
+                                        <li><em><a href="http://conferences.sigcomm.org/imc/2013/papers/imc120-sundaresanA.pdf">
+                                        Measuring and Mitigating Web Performance Bottlenecks in Broadband Access 
+                                        Networks</a></em>
+                                        <br> S. Sundaresan, N. Feamster, R. Teixeira, N. Magharei<br>
+                                        <em> ACM SIGCOMM Internet Measurement Conference</em><br> Barcelona, Spain. 
+                                        October 2013 </li>
+                                        <li><em><a href="http://hal.upmc.fr/docs/00/83/50/36/PDF/paper.pdf">
+                                        Measuring home broadband performance</a></em>
+                                        <br>S.  Sundaresan, W. de Donato, N. Feamster, R. Teixeira, S.
+                                        Crawford, A. Pescape<br><em>Communications of the ACM</em><br> Volume 55,
+                                        Issue 11.  November 2012.</li>
+                                        <li><em><a href="http://conferences.sigcomm.org/sigcomm/2011/papers/sigcomm/p134.pdf">
+                                        Broadband Internet Performance: A View From the Gateway</a></em>
+                                        <br>S.  Sundaresan, W. de Donato, N. Feamster, R. Teixeira, S.
+                                        Crawford, A. Pescape<br><em>ACM SIGCOMM</em><br> Toronto, Ontario,
+                                        Canada.  August 2011.</li>
+                                        <li><em><a href="http://conferences.sigcomm.org/sigcomm/2011/papers/homenets/p13.pdf">
+                                        Helping Users Shop for ISPs with Internet Nutrition Labels</a></em>
+                                        <br>S. Sundaresan, N. Feamster, R. Teixeira, A. Tang, W.
+                                        Edwards, R. Grinter, M. Chetty, W. de Donato<br><em>ACM SIGCOMM
+                                        HomeNets Workshop</em><br>Toronto, Ontario, Canada.  August 2011.
+                                        </li>
+                                        <li><em><a href="http://www.sigcomm.org/sites/default/files/ccr/papers/2011/January/1925861-1925875.pdf">
+                                        Instrumenting Home Networks</a></em><br> K. Calvert, W. K.  Edwards,
+                                        N. Feamster, R. Grinter, Y. Deng, X. Zhou<br> <em>ACM SIGCOMM
+                                        Computer Communications Review</em><br> Volume 41, Issue 1, January
+                                        2011.</li>
+                                    </ul>
+                        </div>
+                        <div id="social_div" class="tabcontent" style="min-height:500px;">
+                            <div style="margin: 0; display: inline-block;width: 50%;">
+                                <p style="text-align: left"> Twitter</p></div><!--
+                         --><div style="margin: 0; display: inline-block;width: 50%;">
+                                <p style="text-align: left"> Youtube</p>
+                            </div>
+                        </div>
+                    </div>
+                <div style="max-width:800px;  margin: 0 auto;text-align: center; padding-bottom: 5px">
+                    <b>Copyright 2019 &reg Project BISmark</b>
+                </div>
+            </div>
+
+        </div>
+
+                <script>
+                        var tabs = $('.tabs > li');
+                        tabs.on("click", function(){
+                            tabs.removeClass('active');
+                            $(this).addClass('active');
+                            $("#social_div").attr("class", "tabcontent");
+                            $("#works_div").attr("class", "tabcontent");
+                            $("#publications_div").attr("class", "tabcontent");
+                            $("#data_div").attr("class", "tabcontent");
+                            $("#"+$(this).attr("id")+"_div").attr("class", "activediv");
+                        });
+                </script>
+        </body>
+        </html>
+        
